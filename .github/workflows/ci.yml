@@ -85,7 +85,7 @@ jobs:
                                              --job-type p3.2x \
                                              --name GluonCV-GPU-ModelZooMxnet-${{ github.ref }} \
                                              --source-ref ${{ github.ref }} \
-                                             --work-dir tests \
+                                             --work-dir . \
                                              --remote https://github.com/${{ github.repository }} \
                                              --command "chmod +x ./.github/workflows/gpu_test.sh && ./.github/workflows/gpu_test.sh gluoncv tests/model_zoo" \
                                              --wait
@@ -97,7 +97,7 @@ jobs:
                                              --job-type p3.2x \
                                              --name GluonCV-GPU-ModelZooMxnet-PR#${{ github.event.number }} \
                                              --source-ref ${{ github.event.pull_request.head.ref }} \
-                                             --work-dir tests \
+                                             --work-dir . \
                                              --remote https://github.com/${{ github.event.pull_request.head.repo.full_name }} \
                                              --command "chmod +x ./.github/workflows/gpu_test.sh && ./.github/workflows/gpu_test.sh gluoncv tests/model_zoo" \
                                              --wait
@@ -126,7 +126,7 @@ jobs:
                                              --job-type p3.2x \
                                              --name GluonCV-GPU-ModelZooTorch-${{ github.ref }} \
                                              --source-ref ${{ github.ref }} \
-                                             --work-dir tests \
+                                             --work-dir . \
                                              --remote https://github.com/${{ github.repository }} \
                                              --command "chmod +x ./.github/workflows/gpu_test.sh && ./.github/workflows/gpu_test.sh gluoncv/torch tests/model_zoo_torch" \
                                              --wait
@@ -138,7 +138,7 @@ jobs:
                                              --job-type p3.2x \
                                              --name GluonCV-GPU-ModelZooTorch-PR#${{ github.event.number }} \
                                              --source-ref ${{ github.event.pull_request.head.ref }} \
-                                             --work-dir tests \
+                                             --work-dir . \
                                              --remote https://github.com/${{ github.event.pull_request.head.repo.full_name }} \
                                              --command "chmod +x ./.github/workflows/gpu_test.sh && ./.github/workflows/gpu_test.sh gluoncv/torch tests/model_zoo_torch" \
                                              --wait
