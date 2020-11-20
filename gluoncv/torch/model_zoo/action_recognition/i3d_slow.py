@@ -272,6 +272,7 @@ class ResNet_SlowFast(nn.Module):
                  depth,
                  pretrained=None,
                  pretrained_base=True,
+                 feat_ext=False,
                  num_stages=4,
                  spatial_strides=(1, 2, 2, 2),
                  temporal_strides=(1, 1, 1, 1),
@@ -323,6 +324,7 @@ class ResNet_SlowFast(nn.Module):
         self.bn_frozen = bn_frozen
         self.partial_bn = partial_bn
         self.with_cp = with_cp
+        self.feat_ext = feat_ext
 
         self.dropout_ratio = dropout_ratio
         self.init_std = init_std
@@ -392,6 +394,10 @@ class ResNet_SlowFast(nn.Module):
         if self.dropout is not None:
             x = self.dropout(x)
         x = x.view(x.size(0), -1)
+
+        if self.feat_ext:
+            return x
+
         out = self.fc(x)
         return out
 
@@ -401,6 +407,7 @@ def i3d_slow_resnet50_f32s2_kinetics400(cfg):
                             depth=50,
                             pretrained=cfg.CONFIG.MODEL.PRETRAINED,
                             pretrained_base=cfg.CONFIG.MODEL.PRETRAINED_BASE,
+                            feat_ext=cfg.CONFIG.INFERENCE.FEAT,
                             bn_eval=cfg.CONFIG.MODEL.BN_EVAL,
                             partial_bn=cfg.CONFIG.MODEL.PARTIAL_BN,
                             bn_frozen=cfg.CONFIG.MODEL.BN_FROZEN)
@@ -417,6 +424,7 @@ def i3d_slow_resnet50_f16s4_kinetics400(cfg):
                             depth=50,
                             pretrained=cfg.CONFIG.MODEL.PRETRAINED,
                             pretrained_base=cfg.CONFIG.MODEL.PRETRAINED_BASE,
+                            feat_ext=cfg.CONFIG.INFERENCE.FEAT,
                             bn_eval=cfg.CONFIG.MODEL.BN_EVAL,
                             partial_bn=cfg.CONFIG.MODEL.PARTIAL_BN,
                             bn_frozen=cfg.CONFIG.MODEL.BN_FROZEN)
@@ -433,6 +441,7 @@ def i3d_slow_resnet50_f8s8_kinetics400(cfg):
                             depth=50,
                             pretrained=cfg.CONFIG.MODEL.PRETRAINED,
                             pretrained_base=cfg.CONFIG.MODEL.PRETRAINED_BASE,
+                            feat_ext=cfg.CONFIG.INFERENCE.FEAT,
                             bn_eval=cfg.CONFIG.MODEL.BN_EVAL,
                             partial_bn=cfg.CONFIG.MODEL.PARTIAL_BN,
                             bn_frozen=cfg.CONFIG.MODEL.BN_FROZEN)
@@ -449,6 +458,7 @@ def i3d_slow_resnet101_f32s2_kinetics400(cfg):
                             depth=101,
                             pretrained=cfg.CONFIG.MODEL.PRETRAINED,
                             pretrained_base=cfg.CONFIG.MODEL.PRETRAINED_BASE,
+                            feat_ext=cfg.CONFIG.INFERENCE.FEAT,
                             bn_eval=cfg.CONFIG.MODEL.BN_EVAL,
                             partial_bn=cfg.CONFIG.MODEL.PARTIAL_BN,
                             bn_frozen=cfg.CONFIG.MODEL.BN_FROZEN)
@@ -465,6 +475,7 @@ def i3d_slow_resnet101_f16s4_kinetics400(cfg):
                             depth=101,
                             pretrained=cfg.CONFIG.MODEL.PRETRAINED,
                             pretrained_base=cfg.CONFIG.MODEL.PRETRAINED_BASE,
+                            feat_ext=cfg.CONFIG.INFERENCE.FEAT,
                             bn_eval=cfg.CONFIG.MODEL.BN_EVAL,
                             partial_bn=cfg.CONFIG.MODEL.PARTIAL_BN,
                             bn_frozen=cfg.CONFIG.MODEL.BN_FROZEN)
@@ -481,6 +492,7 @@ def i3d_slow_resnet101_f8s8_kinetics400(cfg):
                             depth=101,
                             pretrained=cfg.CONFIG.MODEL.PRETRAINED,
                             pretrained_base=cfg.CONFIG.MODEL.PRETRAINED_BASE,
+                            feat_ext=cfg.CONFIG.INFERENCE.FEAT,
                             bn_eval=cfg.CONFIG.MODEL.BN_EVAL,
                             partial_bn=cfg.CONFIG.MODEL.PARTIAL_BN,
                             bn_frozen=cfg.CONFIG.MODEL.BN_FROZEN)
@@ -497,6 +509,7 @@ def i3d_slow_resnet50_f32s2_custom(cfg):
                             depth=50,
                             pretrained=cfg.CONFIG.MODEL.PRETRAINED,
                             pretrained_base=cfg.CONFIG.MODEL.PRETRAINED_BASE,
+                            feat_ext=cfg.CONFIG.INFERENCE.FEAT,
                             bn_eval=cfg.CONFIG.MODEL.BN_EVAL,
                             partial_bn=cfg.CONFIG.MODEL.PARTIAL_BN,
                             bn_frozen=cfg.CONFIG.MODEL.BN_FROZEN)
@@ -511,5 +524,5 @@ def i3d_slow_resnet50_f32s2_custom(cfg):
 
         msg = model.load_state_dict(state_dict, strict=False)
         assert set(msg.missing_keys) == {'fc.weight', 'fc.bias'}
-        print("=> initialized from a I3D_slow model pretrained on Kinetcis400 dataset")
+        print("=> Initialized from a I3D_slow model pretrained on Kinetcis400 dataset")
     return model

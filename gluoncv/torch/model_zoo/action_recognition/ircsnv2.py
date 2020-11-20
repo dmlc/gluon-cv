@@ -92,11 +92,13 @@ class ResNet_IRCSNv2(nn.Module):
                  block,
                  block_nums,
                  num_classes=400,
+                 feat_ext=False,
                  use_affine=True):
 
         self.use_affine = use_affine
         self.in_planes = 64
         self.num_classes = num_classes
+        self.feat_ext = feat_ext
 
         super(ResNet_IRCSNv2, self).__init__()
 
@@ -177,6 +179,10 @@ class ResNet_IRCSNv2(nn.Module):
 
         x = self.avgpool(x)
         x = x.view(bs, -1)
+
+        if self.feat_ext:
+            return x
+
         logits = self.out_fc(x)
 
         return logits
@@ -186,6 +192,7 @@ def ircsn_v2_resnet152_f32s2_kinetics400(cfg):
     model = ResNet_IRCSNv2(Bottleneck_IRCSNv2,
                            num_classes=cfg.CONFIG.DATA.NUM_CLASSES,
                            block_nums=[3, 8, 36, 3],
+                           feat_ext=cfg.CONFIG.INFERENCE.FEAT,
                            use_affine=cfg.CONFIG.MODEL.USE_AFFINE)
 
     if cfg.CONFIG.MODEL.PRETRAINED:

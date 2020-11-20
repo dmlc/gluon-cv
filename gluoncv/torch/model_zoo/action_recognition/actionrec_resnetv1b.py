@@ -25,6 +25,8 @@ class ActionRecResNetV1b(nn.Module):
         Number of classes in the training dataset.
     pretrained_base : bool, default is True.
         Load pretrained base network (backbone), the extra layers are randomized.
+    feat_ext : bool, default is False.
+        Whether to extract features from backbone network or perform a standard network forward.
     partial_bn : bool, default is False.
         Freeze all batch normalization layers during training except the first one.
     dropout_ratio : float, default is 0.5.
@@ -42,13 +44,14 @@ class ActionRecResNetV1b(nn.Module):
     """
     def __init__(self, depth, num_classes, pretrained_base=True,
                  dropout_ratio=0.5, init_std=0.01,
-                 num_segment=1, num_crop=1,
+                 num_segment=1, num_crop=1, feat_ext=False,
                  partial_bn=False, **kwargs):
         super(ActionRecResNetV1b, self).__init__()
 
         self.depth = depth
         self.num_classes = num_classes
         self.pretrained_base = pretrained_base
+        self.feat_ext = feat_ext
 
         if self.depth == 18:
             C2D = torchvision.models.resnet18(pretrained=self.pretrained_base, progress=True)
@@ -89,7 +92,6 @@ class ActionRecResNetV1b(nn.Module):
         nn.init.normal_(self.fc.weight, 0, self.init_std)
         nn.init.constant_(self.fc.bias, 0)
 
-
     def forward(self, x):
         bs, ch, tm, h, w = x.shape
         x = x.permute(0, 2, 1, 3, 4)
@@ -113,6 +115,9 @@ class ActionRecResNetV1b(nn.Module):
         x = x.view(bs, tm, self.feat_dim)
         x = torch.mean(x, dim=1)
 
+        if self.feat_ext:
+            return x
+
         x = self.fc(x)
         return x
 
@@ -121,6 +126,7 @@ def resnet18_v1b_kinetics400(cfg):
     model = ActionRecResNetV1b(depth=18,
                                num_classes=cfg.CONFIG.DATA.NUM_CLASSES,
                                pretrained_base=cfg.CONFIG.MODEL.PRETRAINED_BASE,
+                               feat_ext=cfg.CONFIG.INFERENCE.FEAT,
                                partial_bn=cfg.CONFIG.MODEL.PARTIAL_BN,
                                num_segment=cfg.CONFIG.DATA.NUM_SEGMENT,
                                num_crop=cfg.CONFIG.DATA.NUM_CROP,
@@ -138,6 +144,7 @@ def resnet34_v1b_kinetics400(cfg):
     model = ActionRecResNetV1b(depth=34,
                                num_classes=cfg.CONFIG.DATA.NUM_CLASSES,
                                pretrained_base=cfg.CONFIG.MODEL.PRETRAINED_BASE,
+                               feat_ext=cfg.CONFIG.INFERENCE.FEAT,
                                partial_bn=cfg.CONFIG.MODEL.PARTIAL_BN,
                                num_segment=cfg.CONFIG.DATA.NUM_SEGMENT,
                                num_crop=cfg.CONFIG.DATA.NUM_CROP,
@@ -155,6 +162,7 @@ def resnet50_v1b_kinetics400(cfg):
     model = ActionRecResNetV1b(depth=50,
                                num_classes=cfg.CONFIG.DATA.NUM_CLASSES,
                                pretrained_base=cfg.CONFIG.MODEL.PRETRAINED_BASE,
+                               feat_ext=cfg.CONFIG.INFERENCE.FEAT,
                                partial_bn=cfg.CONFIG.MODEL.PARTIAL_BN,
                                num_segment=cfg.CONFIG.DATA.NUM_SEGMENT,
                                num_crop=cfg.CONFIG.DATA.NUM_CROP,
@@ -172,6 +180,7 @@ def resnet101_v1b_kinetics400(cfg):
     model = ActionRecResNetV1b(depth=101,
                                num_classes=cfg.CONFIG.DATA.NUM_CLASSES,
                                pretrained_base=cfg.CONFIG.MODEL.PRETRAINED_BASE,
+                               feat_ext=cfg.CONFIG.INFERENCE.FEAT,
                                partial_bn=cfg.CONFIG.MODEL.PARTIAL_BN,
                                num_segment=cfg.CONFIG.DATA.NUM_SEGMENT,
                                num_crop=cfg.CONFIG.DATA.NUM_CROP,
@@ -189,6 +198,7 @@ def resnet152_v1b_kinetics400(cfg):
     model = ActionRecResNetV1b(depth=152,
                                num_classes=cfg.CONFIG.DATA.NUM_CLASSES,
                                pretrained_base=cfg.CONFIG.MODEL.PRETRAINED_BASE,
+                               feat_ext=cfg.CONFIG.INFERENCE.FEAT,
                                partial_bn=cfg.CONFIG.MODEL.PARTIAL_BN,
                                num_segment=cfg.CONFIG.DATA.NUM_SEGMENT,
                                num_crop=cfg.CONFIG.DATA.NUM_CROP,
@@ -206,6 +216,7 @@ def resnet50_v1b_sthsthv2(cfg):
     model = ActionRecResNetV1b(depth=50,
                                num_classes=cfg.CONFIG.DATA.NUM_CLASSES,
                                pretrained_base=cfg.CONFIG.MODEL.PRETRAINED_BASE,
+                               feat_ext=cfg.CONFIG.INFERENCE.FEAT,
                                partial_bn=cfg.CONFIG.MODEL.PARTIAL_BN,
                                num_segment=cfg.CONFIG.DATA.NUM_SEGMENT,
                                num_crop=cfg.CONFIG.DATA.NUM_CROP,
@@ -223,6 +234,7 @@ def resnet50_v1b_custom(cfg):
     model = ActionRecResNetV1b(depth=50,
                                num_classes=cfg.CONFIG.DATA.NUM_CLASSES,
                                pretrained_base=cfg.CONFIG.MODEL.PRETRAINED_BASE,
+                               feat_ext=cfg.CONFIG.INFERENCE.FEAT,
                                partial_bn=cfg.CONFIG.MODEL.PARTIAL_BN,
                                num_segment=cfg.CONFIG.DATA.NUM_SEGMENT,
                                num_crop=cfg.CONFIG.DATA.NUM_CROP,
@@ -239,5 +251,5 @@ def resnet50_v1b_custom(cfg):
 
         msg = model.load_state_dict(state_dict, strict=False)
         assert set(msg.missing_keys) == {'fc.weight', 'fc.bias'}
-        print("=> initialized from a ResNet50 model pretrained on Kinetcis400 dataset")
+        print("=> Initialized from a ResNet50 model pretrained on Kinetcis400 dataset")
     return model
