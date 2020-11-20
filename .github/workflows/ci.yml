@@ -205,7 +205,7 @@ jobs:
       - name: Build docs on AWS Batch(For push)
         shell: bash -l {0}
         if: ${{ github.event_name == 'push' }}
-        run: chmod +x ./.github/workflows/build_docs.sh && ./.github/workflows/build_docs.sh ${{ github.ref }} ${{ github.event.number }} ${{ steps.vars.outputs.sha_short }} ${{ github.repository }}
+        run: chmod +x ./.github/workflows/build_docs.sh && ./.github/workflows/build_docs.sh ${{ github.ref }} ${{ steps.vars.outputs.sha_short }} ${{ github.repository }} ${{ github.event.number }}
         # run: |
         #   echo "Start submitting job"
         #   python ./tools/batch/submit-job.py --region us-east-1 \
