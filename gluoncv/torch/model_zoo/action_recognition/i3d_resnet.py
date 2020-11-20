@@ -709,5 +709,5 @@ def i3d_resnet50_v1_custom(cfg):
 
         msg = model.load_state_dict(state_dict, strict=False)
         assert set(msg.missing_keys) == {'fc.weight', 'fc.bias', 'head.1.weight', 'head.1.bias'}
-        print("=> initialized from an I3D model pretrained on Kinetcis400 dataset")
+        print("=> Initialized from an I3D model pretrained on Kinetcis400 dataset")
     return model

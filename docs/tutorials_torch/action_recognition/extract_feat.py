@@ -57,4 +57,10 @@ You can extract strong video features from many popular pre-trained models in th
 
 
 ######################################################################
-# There are many other options and other models you can choose, please check ``feat_extract_pytorch.py`` for more usage information.
+# There are many other options and other models you can choose,
+# e.g., `resnet50_v1b_feat.yaml <https://raw.githubusercontent.com/dmlc/gluon-cv/master/scripts/action-recognition/configuration/resnet50_v1b_feat.yaml>`_,
+# `slowfast_4x16_resnet50_feat.yaml <https://raw.githubusercontent.com/dmlc/gluon-cv/master/scripts/action-recognition/configuration/slowfast_4x16_resnet50_feat.yaml>`_,
+# `tpn_resnet50_f32s2_feat.yaml <https://raw.githubusercontent.com/dmlc/gluon-cv/master/scripts/action-recognition/configuration/tpn_resnet50_f32s2_feat.yaml>`_,
+# `r2plus1d_v1_resnet50_feat.yaml <https://raw.githubusercontent.com/dmlc/gluon-cv/master/scripts/action-recognition/configuration/r2plus1d_v1_resnet50_feat.yaml>`_,
+# `i3d_slow_resnet50_f32s2_feat.yaml <https://raw.githubusercontent.com/dmlc/gluon-cv/master/scripts/action-recognition/configuration/i3d_slow_resnet50_f32s2_feat.yaml>`_.
+# Try extracting features from these SOTA video models on your own dataset and see which one performs better.

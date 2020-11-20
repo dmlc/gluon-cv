@@ -577,6 +577,7 @@ class TPNet(nn.Module):
                  num_classes=400,
                  pretrained=None,
                  pretrained_base=True,
+                 feat_ext=False,
                  num_stages=4,
                  spatial_strides=(1, 2, 2, 2),
                  temporal_strides=(1, 1, 1, 1),
@@ -625,6 +626,7 @@ class TPNet(nn.Module):
         self.bn_frozen = bn_frozen
         self.partial_bn = partial_bn
         self.with_cp = with_cp
+        self.feat_ext = feat_ext
 
         self.dropout_ratio = dropout_ratio
 
@@ -694,6 +696,10 @@ class TPNet(nn.Module):
         if self.dropout is not None:
             x = self.dropout(x)
         x = x.view(x.size(0), -1)
+
+        if self.feat_ext:
+            return x
+
         out = self.fc(x)
         return out
 
@@ -738,6 +744,7 @@ def tpn_resnet50_f8s8_kinetics400(cfg):
                   num_classes=cfg.CONFIG.DATA.NUM_CLASSES,
                   pretrained=cfg.CONFIG.MODEL.PRETRAINED,
                   pretrained_base=cfg.CONFIG.MODEL.PRETRAINED_BASE,
+                  feat_ext=cfg.CONFIG.INFERENCE.FEAT,
                   bn_eval=cfg.CONFIG.MODEL.BN_EVAL,
                   partial_bn=cfg.CONFIG.MODEL.PARTIAL_BN,
                   bn_frozen=cfg.CONFIG.MODEL.BN_FROZEN)
@@ -789,6 +796,7 @@ def tpn_resnet50_f16s4_kinetics400(cfg):
                   num_classes=cfg.CONFIG.DATA.NUM_CLASSES,
                   pretrained=cfg.CONFIG.MODEL.PRETRAINED,
                   pretrained_base=cfg.CONFIG.MODEL.PRETRAINED_BASE,
+                  feat_ext=cfg.CONFIG.INFERENCE.FEAT,
                   bn_eval=cfg.CONFIG.MODEL.BN_EVAL,
                   partial_bn=cfg.CONFIG.MODEL.PARTIAL_BN,
                   bn_frozen=cfg.CONFIG.MODEL.BN_FROZEN)
@@ -840,6 +848,7 @@ def tpn_resnet50_f32s2_kinetics400(cfg):
                   num_classes=cfg.CONFIG.DATA.NUM_CLASSES,
                   pretrained=cfg.CONFIG.MODEL.PRETRAINED,
                   pretrained_base=cfg.CONFIG.MODEL.PRETRAINED_BASE,
+                  feat_ext=cfg.CONFIG.INFERENCE.FEAT,
                   bn_eval=cfg.CONFIG.MODEL.BN_EVAL,
                   partial_bn=cfg.CONFIG.MODEL.PARTIAL_BN,
                   bn_frozen=cfg.CONFIG.MODEL.BN_FROZEN)
@@ -891,6 +900,7 @@ def tpn_resnet101_f8s8_kinetics400(cfg):
                   num_classes=cfg.CONFIG.DATA.NUM_CLASSES,
                   pretrained=cfg.CONFIG.MODEL.PRETRAINED,
                   pretrained_base=cfg.CONFIG.MODEL.PRETRAINED_BASE,
+                  feat_ext=cfg.CONFIG.INFERENCE.FEAT,
                   bn_eval=cfg.CONFIG.MODEL.BN_EVAL,
                   partial_bn=cfg.CONFIG.MODEL.PARTIAL_BN,
                   bn_frozen=cfg.CONFIG.MODEL.BN_FROZEN)
@@ -942,6 +952,7 @@ def tpn_resnet101_f16s4_kinetics400(cfg):
                   num_classes=cfg.CONFIG.DATA.NUM_CLASSES,
                   pretrained=cfg.CONFIG.MODEL.PRETRAINED,
                   pretrained_base=cfg.CONFIG.MODEL.PRETRAINED_BASE,
+                  feat_ext=cfg.CONFIG.INFERENCE.FEAT,
                   bn_eval=cfg.CONFIG.MODEL.BN_EVAL,
                   partial_bn=cfg.CONFIG.MODEL.PARTIAL_BN,
                   bn_frozen=cfg.CONFIG.MODEL.BN_FROZEN)
@@ -993,6 +1004,7 @@ def tpn_resnet101_f32s2_kinetics400(cfg):
                   num_classes=cfg.CONFIG.DATA.NUM_CLASSES,
                   pretrained=cfg.CONFIG.MODEL.PRETRAINED,
                   pretrained_base=cfg.CONFIG.MODEL.PRETRAINED_BASE,
+                  feat_ext=cfg.CONFIG.INFERENCE.FEAT,
                   bn_eval=cfg.CONFIG.MODEL.BN_EVAL,
                   partial_bn=cfg.CONFIG.MODEL.PARTIAL_BN,
                   bn_frozen=cfg.CONFIG.MODEL.BN_FROZEN)
@@ -1044,6 +1056,7 @@ def tpn_resnet50_f32s2_custom(cfg):
                   num_classes=cfg.CONFIG.DATA.NUM_CLASSES,
                   pretrained=cfg.CONFIG.MODEL.PRETRAINED,
                   pretrained_base=cfg.CONFIG.MODEL.PRETRAINED_BASE,
+                  feat_ext=cfg.CONFIG.INFERENCE.FEAT,
                   bn_eval=cfg.CONFIG.MODEL.BN_EVAL,
                   partial_bn=cfg.CONFIG.MODEL.PARTIAL_BN,
                   bn_frozen=cfg.CONFIG.MODEL.BN_FROZEN)
