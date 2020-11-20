@@ -14,6 +14,15 @@ def test_image_classification():
     assert task.fit_summary().get('valid_acc', 0) > 0
     test_result = classifier.predict(IMAGE_CLASS_TEST)
 
+def test_image_classification_custom_net():
+    from gluoncv.auto.tasks import ImageClassification
+    from gluoncv.model_zoo import get_model
+    net = get_model('resnet18_v1')
+    task = ImageClassification({'num_trials': 1, 'custom_net': net})
+    classifier = task.fit(IMAGE_CLASS_DATASET)
+    assert task.fit_summary().get('valid_acc', 0) > 0
+    test_result = classifier.predict(IMAGE_CLASS_TEST)
+
 def test_object_detection_estimator():
     from gluoncv.auto.tasks import ObjectDetection
     task = ObjectDetection({'num_trials': 1})

@@ -39,7 +39,7 @@ def test_image_classification_estimator_custom_net():
     from gluoncv.auto.estimators import ImageClassificationEstimator
     from gluoncv.model_zoo import get_model
     net = get_model('resnet18_v1')
-    est = ImageClassificationEstimator({'custom_net': net, 'train': {'epochs': 1, 'batch_size': 8}, 'gpus': list(range(get_gpu_count()))})
+    est = ImageClassificationEstimator({'train': {'epochs': 1, 'batch_size': 8}, 'gpus': list(range(get_gpu_count()))}, net=net)
     res = est.fit(IMAGE_CLASS_DATASET)
     assert res.get('valid_acc', 0) > 0
     test_result = est.predict(IMAGE_CLASS_TEST)
