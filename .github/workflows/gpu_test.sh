@@ -5,10 +5,10 @@ TESTS_PATH=$2
 
 EFS=/mnt/efs
 
-# mkdir -p ~/.mxnet/models
-# for f in $EFS/.mxnet/models/*.params; do
-    # ln -s $EFS/.mxnet/models/$f ~/.mxnet/models/$f
-# done
+mkdir -p ~/.mxnet/models
+for f in $EFS/.mxnet/models/*.params; do
+    ln -s $EFS/.mxnet/models/$f ~/.mxnet/models/$f
+done
 
 export MXNET_CUDNN_AUTOTUNE_DEFAULT=0 
 export MPLBACKEND=Agg 
