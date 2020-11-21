@@ -35,12 +35,23 @@ class ImageClassificationEstimator(BaseEstimator):
         Optional logger for this estimator, can be `None` when default setting is used.
     reporter : callable
         The reporter for metric checkpointing.
+    net : mx.gluon.Block
+        The custom network. If defined, the model name in config will be ignored so your
+        custom network will be used for training rather than pulling it from model zoo.
     """
-    def __init__(self, config, logger=None, reporter=None):
+    def __init__(self, config, logger=None, reporter=None, net=None):
         super(ImageClassificationEstimator, self).__init__(config, logger, reporter=reporter, name=None)
         self.last_train = None
         self.input_size = self._cfg.train.input_size
         self._feature_net = None
+        if net is not None:
+            assert isinstance(net, gluon.Block), f"given custom network {type(net)}, `gluon.Block` expected"
+            try:
+                # to avoid cuda initialization error, we keep network copies in cpu
+                net.collect_params().reset_ctx(mx.cpu())
+            except ValueError:
+                pass
+        self._custom_net = net
 
     def _fit(self, train_data, val_data):
         self._best_acc = 0
@@ -202,18 +213,25 @@ class ImageClassificationEstimator(BaseEstimator):
         self.ctx = self.ctx if self.ctx else [mx.cpu()]
 
         # network
-        model_name = self._cfg.img_cls.model.lower()
-        input_size = self.input_size
-        if 'inception' in model_name or 'googlenet' in model_name:
-            self.input_size = 299
-        elif 'resnest101' in model_name:
-            self.input_size = 256
-        elif 'resnest200' in model_name:
-            self.input_size = 320
-        elif 'resnest269' in model_name:
-            self.input_size = 416
-        elif 'cifar' in model_name:
-            self.input_size = 28
+        if self._custom_net is None:
+            model_name = self._cfg.img_cls.model.lower()
+            input_size = self.input_size
+            if 'inception' in model_name or 'googlenet' in model_name:
+                self.input_size = 299
+            elif 'resnest101' in model_name:
+                self.input_size = 256
+            elif 'resnest200' in model_name:
+                self.input_size = 320
+            elif 'resnest269' in model_name:
+                self.input_size = 416
+            elif 'cifar' in model_name:
+                self.input_size = 28
+        else:
+            self._logger.debug('Custom network specified, ignore the model name in config...')
+            self.net = copy.deepcopy(self._custom_net)
+            model_name = ''
+            self.input_size = input_size = self._cfg.train.input_size
+
 
         if input_size != self.input_size:
             self._logger.info(f'Change input size to {self.input_size}, given model type: {model_name}')
@@ -232,8 +250,9 @@ class ImageClassificationEstimator(BaseEstimator):
         if self._cfg.img_cls.last_gamma:
             kwargs['last_gamma'] = True
 
-        self.net = get_model(model_name, **kwargs)
-        if self._cfg.img_cls.use_pretrained:
+        if model_name:
+            self.net = get_model(model_name, **kwargs)
+        if model_name and self._cfg.img_cls.use_pretrained:
             # reset last fully connected layer
             fc_layer_found = False
             for fc_name in ('output', 'fc'):

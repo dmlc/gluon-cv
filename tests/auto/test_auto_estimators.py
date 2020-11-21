@@ -24,6 +24,7 @@ from autogluon.core.scheduler.resource import get_cpu_count, get_gpu_count
 IMAGE_CLASS_DATASET, _, IMAGE_CLASS_TEST = ImageClassification.Dataset.from_folders(
     'https://autogluon.s3.amazonaws.com/datasets/shopee-iet.zip')
 OBJECT_DETCTION_DATASET = ObjectDetection.Dataset.from_voc('https://autogluon.s3.amazonaws.com/datasets/tiny_motorbike.zip')
+OBJECT_DETECTION_TRAIN, OBJECT_DETECTION_VAL, OBJECT_DETECTION_TEST = OBJECT_DETCTION_DATASET.random_split(val_size=0.3, test_size=0.2)
 
 def test_image_classification_estimator():
     from gluoncv.auto.estimators import ImageClassificationEstimator
@@ -34,41 +35,50 @@ def test_image_classification_estimator():
     evaluate_result = est.evaluate(IMAGE_CLASS_TEST)
     feature = est.predict_feature(IMAGE_CLASS_TEST)
 
+def test_image_classification_estimator_custom_net():
+    from gluoncv.auto.estimators import ImageClassificationEstimator
+    from gluoncv.model_zoo import get_model
+    net = get_model('resnet18_v1')
+    est = ImageClassificationEstimator({'train': {'epochs': 1, 'batch_size': 8}, 'gpus': list(range(get_gpu_count()))}, net=net)
+    res = est.fit(IMAGE_CLASS_DATASET)
+    assert res.get('valid_acc', 0) > 0
+    test_result = est.predict(IMAGE_CLASS_TEST)
+    evaluate_result = est.evaluate(IMAGE_CLASS_TEST)
+    feature = est.predict_feature(IMAGE_CLASS_TEST)
+
 def test_center_net_estimator():
     from gluoncv.auto.estimators import CenterNetEstimator
     est = CenterNetEstimator({'train': {'epochs': 1, 'batch_size': 8}, 'gpus': list(range(get_gpu_count()))})
-    res = est.fit(OBJECT_DETCTION_DATASET)
+    res = est.fit(OBJECT_DETECTION_TRAIN)
     assert res.get('valid_map', 0) > 0
-    _, _, test_data = OBJECT_DETCTION_DATASET.random_split()
-    test_result = est.predict(test_data)
-    evaluate_result = est.evaluate(test_data)
+    test_result = est.predict(OBJECT_DETECTION_TEST)
+    evaluate_result = est.evaluate(OBJECT_DETECTION_VAL)
 
 def test_ssd_estimator():
     from gluoncv.auto.estimators import SSDEstimator
     est = SSDEstimator({'train': {'epochs': 1, 'batch_size': 8}, 'gpus': list(range(get_gpu_count()))})
-    res = est.fit(OBJECT_DETCTION_DATASET)
+    res = est.fit(OBJECT_DETECTION_TRAIN)
     assert res.get('valid_map', 0) > 0
-    _, _, test_data = OBJECT_DETCTION_DATASET.random_split()
-    test_result = est.predict(test_data)
-    evaluate_result = est.evaluate(test_data)
+    test_result = est.predict(OBJECT_DETECTION_TEST)
+    evaluate_result = est.evaluate(OBJECT_DETECTION_VAL)
 
 def test_yolo3_estimator():
     from gluoncv.auto.estimators import YOLOv3Estimator
     est = YOLOv3Estimator({'train': {'epochs': 1, 'batch_size': 8}, 'gpus': list(range(get_gpu_count()))})
-    res = est.fit(OBJECT_DETCTION_DATASET)
+    res = est.fit(OBJECT_DETECTION_TRAIN)
     assert res.get('valid_map', 0) > 0
-    _, _, test_data = OBJECT_DETCTION_DATASET.random_split()
-    test_result = est.predict(test_data)
-    evaluate_result = est.evaluate(test_data)
+    test_result = est.predict(OBJECT_DETECTION_TEST)
+    evaluate_result = est.evaluate(OBJECT_DETECTION_VAL)
 
 def test_frcnn_estimator():
     from gluoncv.auto.estimators import FasterRCNNEstimator
     est = FasterRCNNEstimator({'train': {'epochs': 1}, 'gpus': list(range(get_gpu_count()))})
-    res = est.fit(OBJECT_DETCTION_DATASET)
+    OBJECT_DETECTION_TRAIN_MINI, OBJECT_DETECTION_VAL_MINI, OBJECT_DETECTION_TEST_MINI = OBJECT_DETECTION_TRAIN.random_split(
+        val_size=0.3, test_size=0.2)
+    res = est.fit(OBJECT_DETECTION_TRAIN_MINI)
     assert res.get('valid_map', 0) > 0
-    _, _, test_data = OBJECT_DETCTION_DATASET.random_split()
-    test_result = est.predict(test_data)
-    evaluate_result = est.evaluate(test_data)
+    test_result = est.predict(OBJECT_DETECTION_TEST_MINI)
+    evaluate_result = est.evaluate(OBJECT_DETECTION_VAL_MINI)
 
 if __name__ == '__main__':
     import nose
