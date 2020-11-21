@@ -27,6 +27,12 @@ Action Recognition
 
         Extracting video features from pre-trained models on your own videos
 
+    .. card::
+        :title: Computing FLOPS, latency and fps of a model
+        :link: ../build/examples_torch_action_recognition/speed.html
+
+        How to compute FLOPS, number of parameters, latency and fps of a video model
+
 
 .. toctree::
     :hidden:
