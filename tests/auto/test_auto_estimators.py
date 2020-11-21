@@ -73,10 +73,12 @@ def test_yolo3_estimator():
 def test_frcnn_estimator():
     from gluoncv.auto.estimators import FasterRCNNEstimator
     est = FasterRCNNEstimator({'train': {'epochs': 1}, 'gpus': list(range(get_gpu_count()))})
-    res = est.fit(OBJECT_DETECTION_TRAIN)
+    OBJECT_DETECTION_TRAIN_MINI, OBJECT_DETECTION_VAL_MINI, OBJECT_DETECTION_TEST_MINI = OBJECT_DETECTION_TRAIN.random_split(
+        val_size=0.3, test_size=0.2)
+    res = est.fit(OBJECT_DETECTION_TRAIN_MINI)
     assert res.get('valid_map', 0) > 0
-    test_result = est.predict(OBJECT_DETECTION_TEST)
-    evaluate_result = est.evaluate(OBJECT_DETECTION_VAL)
+    test_result = est.predict(OBJECT_DETECTION_TEST_MINI)
+    evaluate_result = est.evaluate(OBJECT_DETECTION_VAL_MINI)
 
 if __name__ == '__main__':
     import nose
