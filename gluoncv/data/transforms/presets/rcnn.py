@@ -1,4 +1,5 @@
 """Transforms for RCNN series."""
+# pylint: disable=not-callable
 from __future__ import absolute_import
 
 import copy

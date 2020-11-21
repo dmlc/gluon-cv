@@ -1,4 +1,5 @@
 """Transforms for YOLO series."""
+# pylint: ddisable=not-callable
 from __future__ import absolute_import
 import copy
 import numpy as np

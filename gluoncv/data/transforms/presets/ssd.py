@@ -1,4 +1,5 @@
 """Transforms described in https://arxiv.org/abs/1512.02325."""
+# pylint: disable=not-callable
 from __future__ import absolute_import
 import numpy as np
 import mxnet as mx
