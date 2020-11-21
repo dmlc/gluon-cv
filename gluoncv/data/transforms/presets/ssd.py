@@ -237,13 +237,16 @@ class SSDDALIPipeline(dali.Pipeline):
     dataset_reader: float
         Partial pipeline object, which __call__ function has to return
         (images, bboxes, labels) DALI EdgeReference tuple.
+    seed: int
+        Random seed. Default value is -1, which corresponds to no seed.
     """
     def __init__(self, num_workers, device_id, batch_size, data_shape,
-                 anchors, dataset_reader):
+                 anchors, dataset_reader, seed=-1):
         super(SSDDALIPipeline, self).__init__(
             batch_size=batch_size,
             device_id=device_id,
-            num_threads=num_workers)
+            num_threads=num_workers,
+            seed=seed)
 
         self.dataset_reader = dataset_reader
 
