@@ -250,7 +250,7 @@ class ImageClassificationEstimator(BaseEstimator):
         if self._cfg.img_cls.last_gamma:
             kwargs['last_gamma'] = True
 
-        if self.net is None:
+        if model_name:
             self.net = get_model(model_name, **kwargs)
         if model_name and self._cfg.img_cls.use_pretrained:
             # reset last fully connected layer
