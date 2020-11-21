@@ -96,4 +96,8 @@ We list these four numbers and the models' accuracy on Kinetics400 dataset in th
 
     ``python get_flops.py --config-file CONFIG`` and ``python get_fps.py --config-file CONFIG``
 
+    If you encouter missing dependecy issue of ``thop``, please install the package first.
+
+    ``pip install thop``
+
 """
