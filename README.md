@@ -22,9 +22,10 @@ students to fast prototype products and research ideas based on these
 models. This toolkit offers four main features:
 
 1. Training scripts to reproduce SOTA results reported in research papers
-2. A large number of pre-trained models
-3. Carefully designed APIs that greatly reduce the implementation complexity
-4. Community supports
+2. Supports both PyTorch and MXNet
+3. A large number of pre-trained models
+4. Carefully designed APIs that greatly reduce the implementation complexity
+5. Community supports
 
 # Demo
 
@@ -37,9 +38,12 @@ models. This toolkit offers four main features:
 Check the HD video at [Youtube](https://www.youtube.com/watch?v=nfpouVAzXt0) or [Bilibili](https://www.bilibili.com/video/av55619231).
 
 <details>
-<summary>MXNet</summary>
+<summary>
 
-# Supported Applications
+# MXNet
+</summary>
+
+## Supported Applications
 
 | Application  | Illustration  | Available Models |
 |:-----------------------:|:---:|:---:|
@@ -53,11 +57,11 @@ Check the HD video at [Youtube](https://www.youtube.com/watch?v=nfpouVAzXt0) or 
 | [GAN:](https://github.com/dmlc/gluon-cv/tree/master/scripts/gan) <br/>generate visually deceptive images | <a href="https://github.com/dmlc/gluon-cv/tree/master/scripts/gan"><img src="https://github.com/dmlc/gluon-cv/raw/master/scripts/gan/wgan/fake_samples_400000.png" alt="lsun" height="200"/></a> | <a href="https://github.com/dmlc/gluon-cv/tree/master/scripts/gan/wgan">WGAN</a>, <a href="https://github.com/dmlc/gluon-cv/tree/master/scripts/gan/cycle_gan">CycleGAN</a>, <a href="https://github.com/dmlc/gluon-cv/tree/master/scripts/gan/stylegan">StyleGAN</a>|
 | [Person Re-ID:](https://github.com/dmlc/gluon-cv/tree/master/scripts/re-id/baseline) <br/>re-identify pedestrians across scenes | <a href="https://github.com/dmlc/gluon-cv/tree/master/scripts/re-id/baseline"><img src="https://user-images.githubusercontent.com/3307514/46702937-f4311800-cbd9-11e8-8eeb-c945ec5643fb.png" alt="re-id" height="160"/></a> |<a href="https://github.com/dmlc/gluon-cv/tree/master/scripts/re-id/baseline">Market1501 baseline</a> |
 
-# Installation
+## Installation
 
 GluonCV supports Python 3.5 or later. The easiest way to install is via pip.
 
-## Stable Release
+### Stable Release
 The following commands install the stable version of GluonCV and MXNet:
 
 ```bash
@@ -69,7 +73,7 @@ pip install -U --pre mxnet -f https://dist.mxnet.io/python/cu100mkl
 
 **The latest stable version of GluonCV is 0.8 and we recommend mxnet 1.6.0/1.7.0**
 
-## Nightly Release
+### Nightly Release
 
 You may get access to latest features and bug fixes with the following commands which install the nightly build of GluonCV and MXNet:
 
@@ -83,6 +87,43 @@ pip install -U --pre mxnet -f https://dist.mxnet.io/python/cu100mkl
 There are multiple versions of MXNet pre-built package available. Please refer to [mxnet packages](https://gluon-crash-course.mxnet.io/mxnet_packages.html) if you need more details about MXNet versions.
 
 </details>
+
+<details>
+<summary>
+
+# PyTorch
+</summary>
+
+## Supported Applications
+
+| Application  | Illustration  | Available Models |
+|:-----------------------:|:---:|:---:|
+| [Video Action Recognition:](https://gluon-cv.mxnet.io/model_zoo/action_recognition.html) <br/>recognize human actions <br/> in a video. | <a href="https://gluon-cv.mxnet.io/model_zoo/action_recognition.html"><img src="docs/_static/action-recognition.png" alt="action_recognition" height="200"/></a> | <a href="https://gluon-cv.mxnet.io/model_zoo/action_recognition.html">TSN</a>, <a href="https://gluon-cv.mxnet.io/model_zoo/action_recognition.html">C3D</a>, <a href="https://gluon-cv.mxnet.io/model_zoo/action_recognition.html">I3D</a>, <a href="https://gluon-cv.mxnet.io/model_zoo/action_recognition.html">P3D</a>, <a href="https://gluon-cv.mxnet.io/model_zoo/action_recognition.html">R3D</a>, <a href="https://gluon-cv.mxnet.io/model_zoo/action_recognition.html">R2+1D</a>, <a href="https://gluon-cv.mxnet.io/model_zoo/action_recognition.html">Non-local</a>, <a href="https://gluon-cv.mxnet.io/model_zoo/action_recognition.html">SlowFast</a> |
+
+## Installation
+
+GluonCV supports Python 3.5 or later. The easiest way to install is via pip.
+
+### Stable Release
+The following commands install the stable version of GluonCV and PyTorch:
+
+```bash
+pip install gluoncv --upgrade
+pip install torch==1.6.0 torchvision==0.7.0 # for cuda 10.2
+```
+There are multiple versions of PyTorch pre-built package available. Please refer to [PyTorch](https://pytorch.org/get-started/previous-versions/) if you need other versions.
+
+
+**The latest stable version of GluonCV is 0.8 and we recommend PyTorch 1.6.0**
+
+### Nightly Release
+
+You may get access to latest features and bug fixes with the following commands which install the nightly build of GluonCV:
+
+```bash
+pip install gluoncv --pre --upgrade
+```
+
 
 # Docs 📖
 GluonCV documentation is available at [our website](https://gluon-cv.mxnet.io/index.html).
