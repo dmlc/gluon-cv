@@ -36,6 +36,9 @@ models. This toolkit offers four main features:
 
 Check the HD video at [Youtube](https://www.youtube.com/watch?v=nfpouVAzXt0) or [Bilibili](https://www.bilibili.com/video/av55619231).
 
+<details>
+<summary>MXNet</summary>
+
 # Supported Applications
 
 | Application  | Illustration  | Available Models |
@@ -78,6 +81,8 @@ pip install -U --pre mxnet -f https://dist.mxnet.io/python/cu100mkl
 ```
 
 There are multiple versions of MXNet pre-built package available. Please refer to [mxnet packages](https://gluon-crash-course.mxnet.io/mxnet_packages.html) if you need more details about MXNet versions.
+
+</details>
 
 # Docs 📖
 GluonCV documentation is available at [our website](https://gluon-cv.mxnet.io/index.html).
