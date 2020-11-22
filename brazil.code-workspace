@@ -1,0 +1,12 @@
+{
+    "folders": [
+        {
+            "name": "📦 gluon-cv",
+            "path": "."
+        }
+    ],
+    "settings": {
+        "telemetry.enableCrashReporter": false,
+        "telemetry.enableTelemetry": false
+    }
+}
