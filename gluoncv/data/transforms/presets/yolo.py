@@ -1,7 +1,6 @@
 """Transforms for YOLO series."""
-# pylint: ddisable=not-callable
+# pylint: disable=not-callable
 from __future__ import absolute_import
-import copy
 import numpy as np
 import mxnet as mx
 from mxnet import autograd
@@ -150,7 +149,6 @@ class YOLO3DefaultTrainTransform(object):
         net.collect_params().reset_ctx(mx.cpu())
         with autograd.train_mode():
             _, self._anchors, self._offsets, self._feat_maps, _, _, _, _ = net(self._fake_x)
-        
         net.collect_params().reset_ctx(old_ctx)
 
     @property
