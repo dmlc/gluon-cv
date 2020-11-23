@@ -1,5 +1,5 @@
 """Transforms described in https://arxiv.org/abs/1904.07850."""
-# pylint: disable=too-many-function-args disable=not-callable
+# pylint: disable=too-many-function-args,not-callable
 from __future__ import absolute_import
 import numpy as np
 import mxnet as mx
@@ -119,8 +119,8 @@ class CenterNetDefaultTrainTransform(object):
         self._height = height
         self._num_class = num_class
         self._scale_factor = scale_factor
-        self._mean = np.array(mean, dtype=np.float32).reshape(1, 1, 3)
-        self._std = np.array(std, dtype=np.float32).reshape(1, 1, 3)
+        self._mean = np.array(mean, dtype=np.float32).reshape((1, 1, 3))
+        self._std = np.array(std, dtype=np.float32).reshape((1, 1, 3))
         self._data_rng = np.random.RandomState(123)
         self._eig_val = np.array([0.2141788, 0.01817699, 0.00341571],
                                  dtype=np.float32)
@@ -209,8 +209,8 @@ class CenterNetDefaultValTransform(object):
     def __init__(self, width, height, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)):
         self._width = width
         self._height = height
-        self._mean = np.array(mean, dtype=np.float32).reshape(1, 1, 3)
-        self._std = np.array(std, dtype=np.float32).reshape(1, 1, 3)
+        self._mean = np.array(mean, dtype=np.float32).reshape((1, 1, 3))
+        self._std = np.array(std, dtype=np.float32).reshape((1, 1, 3))
 
     def __call__(self, src, label):
         """Apply transform to validation image/label."""
