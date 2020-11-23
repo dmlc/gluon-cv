@@ -70,3 +70,25 @@ class GradualWarmupScheduler(_LRScheduler):
                 return super(GradualWarmupScheduler, self).step(epoch)
         else:
             self.step_ReduceLROnPlateau(metrics, epoch)
+
+class ReduceLROnPlateauWarmup(ReduceLROnPlateau):
+    def __init__(self, optimizer: Optimizer, warmup_epochs, **kwargs):
+        self.warmup_epochs = warmup_epochs
+        super().__init__(optimizer, **kwargs)
+        self.base_lrs = []
+        for group in optimizer.param_groups:
+            self.base_lrs.append(group["lr"])
+        self.step_rop(self.mode_worse, False, None)
+
+    def step_rop(self, metrics, do_eval, epoch=None):
+        assert epoch is None
+        epoch = self.last_epoch + 1
+        if epoch <= self.warmup_epochs:
+            factor = epoch / self.warmup_epochs
+            self.last_epoch = epoch
+            for i, param_group in enumerate(self.optimizer.param_groups):
+                param_group['lr'] = self.base_lrs[i] * factor
+        elif not do_eval:
+            pass
+        else:
+            super().step(metrics, epoch=epoch)
