@@ -224,6 +224,7 @@ def compute_retr_vid_to_par(video_feat, cap_feat):
     similarity_scores = np.dot(video_feat, cap_feat.T)
     return compute_retrieval_metrics(similarity_scores)
 
+
 def compute_retr_par_to_vid(video_feat, cap_feat):
     similarity_scores = np.dot(cap_feat, video_feat.T)
     return compute_retrieval_metrics(similarity_scores)
@@ -279,7 +280,10 @@ def get_logger_without_file(name, log_level="INFO") -> logging.Logger:
     return logger
 
 
-def get_logger(logdir, name, filename="run", log_level="INFO",
+def get_logger(logdir,
+               name,
+               filename="run",
+               log_level="INFO",
                log_file=True) -> logging.Logger:
     logger = logging.getLogger(name)
     logger.setLevel(log_level)
@@ -305,3 +309,18 @@ def close_logger(logger: logging.Logger):
         logger.removeHandler(i)
         i.flush()
         i.close()
+
+def unpack_data(data_dict, use_cuda):
+    def to_device(x):
+        if use_cuda and isinstance(x, torch.Tensor):
+            return x.cuda(non_blocking=True)
+        return x
+
+    return [
+        to_device(data_dict[a])
+        for a in ("vid_id", "vid_frames", "vid_frames_mask", "vid_frames_len",
+                  "par_cap_vectors", "par_cap_mask", "par_cap_len", "clip_num",
+                  "clip_frames", "clip_frames_len", "clip_frames_mask",
+                  "sent_num", "sent_cap_vectors", "sent_cap_mask",
+                  "sent_cap_len")
+    ]

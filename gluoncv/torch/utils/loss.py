@@ -16,8 +16,6 @@ class MaxMarginRankingLoss(nn.Module):
     Outputs:
         - **loss**: loss tensor with shape (batch_size,).
     """
-
-        
     def __init__(self, use_cuda: bool, margin: float = 0.2):
         super(MaxMarginRankingLoss, self).__init__()
         self.margin = margin
@@ -28,12 +26,17 @@ class MaxMarginRankingLoss(nn.Module):
         return x1.mm(x2.t())
 
     def forward(self, x_embedding, y_embedding):
-        scores = self.sim(x_embedding, y_embedding) # calculate the cosine similarity
-        diagonal = scores.diag().view(x_embedding.size(0), 1) # extract the diagonal scores ( i.e. video_i, sentence_i)
+        scores = self.sim(x_embedding,
+                          y_embedding)  # calculate the cosine similarity
+        diagonal = scores.diag().view(
+            x_embedding.size(0),
+            1)  # extract the diagonal scores ( i.e. video_i, sentence_i)
         d1 = diagonal.expand_as(scores)
         d2 = diagonal.t().expand_as(scores)
-        cost_x1 = (self.margin + scores - d1).clamp(min=0) # First term in eq.1 of COOT paper
-        cost_x2 = (self.margin + scores - d2).clamp(min=0) # Second term in eq.1 of COOT paper
+        cost_x1 = (self.margin + scores - d1).clamp(
+            min=0)  # First term in eq.1 of COOT paper
+        cost_x2 = (self.margin + scores - d2).clamp(
+            min=0)  # Second term in eq.1 of COOT paper
         mask = torch.eye(scores.size(0)) > .5
 
         if self.use_cuda:
@@ -41,7 +44,8 @@ class MaxMarginRankingLoss(nn.Module):
 
         cost_x1 = cost_x1.masked_fill_(mask, 0)
         cost_x2 = cost_x2.masked_fill_(mask, 0)
-        return (cost_x1.sum() + cost_x2.sum()).div(x_embedding.shape[0] * y_embedding.shape[0])
+        return (cost_x1.sum() + cost_x2.sum()).div(x_embedding.shape[0] *
+                                                   y_embedding.shape[0])
 
 
 class CycleConsistencyCootLoss(nn.Module):
@@ -60,7 +64,6 @@ class CycleConsistencyCootLoss(nn.Module):
         - ** sentence to sentence loss**: loss tensor with shape (batch_size,).
 
     """
-
     def __init__(self, num_samples=-1, use_cuda=True):
         super(CycleConsistencyCootLoss, self).__init__()
         self.num_samples = num_samples
@@ -75,32 +78,31 @@ class CycleConsistencyCootLoss(nn.Module):
         self.softmax = nn.Softmax(dim=-1)
 
     def _compute_mean_distance_l2(self, c, s):
-        return torch.mean((c - s) ** 2, dim=-1)
-
+        return torch.mean((c - s)**2, dim=-1)
 
     def _compute_mean_distance_negative_l2(self, c, s):
         return -compute_mean_distance_l2(c, s)
 
-    def forward(self, clip_emb, clip_mask, clip_lens,
-                sentence_emb, sentence_mask, sentence_lens):
+    def forward(self, clip_emb, clip_mask, clip_lens, sentence_emb,
+                sentence_mask, sentence_lens):
         clip_max_len, _ = torch.max(clip_lens, dim=-1)
         sentence_max_len, _ = torch.max(sentence_lens, dim=-1)
         clip_sentence_nn, clip_alpha, clip_alpha_raw = self._get_soft_nn(
             clip_emb, clip_mask, sentence_emb, sentence_mask)
         clip_clip_nn, clip_beta, clip_beta_raw = self._get_soft_nn(
             clip_sentence_nn, clip_mask, clip_emb, clip_mask)
-        clip_clip_loss = self._get_loss(
-            clip_mask, clip_lens, clip_max_len, clip_beta)
+        clip_clip_loss = self._get_loss(clip_mask, clip_lens, clip_max_len,
+                                        clip_beta)
         sentence_clip_nn, sentence_alpha, sentence_alpha_raw = self._get_soft_nn(
             sentence_emb, sentence_mask, clip_emb, clip_mask)
         sentence_sentence_nn, sentence_beta, sentence_beta_raw = self._get_soft_nn(
             sentence_clip_nn, sentence_mask, sentence_emb, sentence_mask)
-        sentence_sentence_loss = self._get_loss(
-            sentence_mask, sentence_lens, sentence_max_len, sentence_beta)
+        sentence_sentence_loss = self._get_loss(sentence_mask, sentence_lens,
+                                                sentence_max_len,
+                                                sentence_beta)
         return clip_clip_loss, sentence_sentence_loss
 
-    def _get_mxn_repr(
-            self, source_emb, source_mask, target_emb, target_mask):
+    def _get_mxn_repr(self, source_emb, source_mask, target_emb, target_mask):
         source_rep = source_emb.unsqueeze(2)
         target_rep = target_emb.unsqueeze(1)
         total_mask = source_mask.unsqueeze(2).bool() & target_mask.unsqueeze(
@@ -126,19 +128,19 @@ class CycleConsistencyCootLoss(nn.Module):
         index_nn = torch.sum(idx_orig.unsqueeze(1) * beta, dim=-1)
         idx_nn_rep, idx_orig_rep, emb_mask_rep = self._get_mxn_repr(
             index_nn, emb_mask, idx_orig, emb_mask)
-        distance = self.loss_distance_fn(
-            idx_nn_rep.unsqueeze(-1), idx_orig_rep.unsqueeze(-1))
+        distance = self.loss_distance_fn(idx_nn_rep.unsqueeze(-1),
+                                         idx_orig_rep.unsqueeze(-1))
         distance.masked_fill_(emb_mask_rep == 0, 0)
         l_seq = distance.diagonal(dim1=-2, dim2=-1)
         if self.num_samples != -1:
             n_samp = torch.min(emb_lens, self.num_samples_tensor)
             total_loss = 0
-            for batch, (c_loss, c_mask, c_nsamp) in enumerate(zip(
-                    l_seq, emb_mask, n_samp)):
+            for batch, (c_loss, c_mask,
+                        c_nsamp) in enumerate(zip(l_seq, emb_mask, n_samp)):
                 idx = torch.multinomial(c_mask, int(c_nsamp))
                 total_loss += c_loss[idx].mean()
             return (total_loss / batch_size)
 
         else:
-            
+
             return (l_seq.sum(dim=-1) / emb_lens).mean(dim=-1)
