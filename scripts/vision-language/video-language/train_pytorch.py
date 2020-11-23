@@ -10,7 +10,7 @@ from tensorboardX import SummaryWriter
 from gluoncv.torch.model_zoo import get_model
 from gluoncv.torch.data import build_dataloader
 from gluoncv.torch.utils.model_utils import deploy_model, load_model, save_model
-from gluoncv.torch.utils.task_utils import train_classification, validation_classification
+from gluoncv.torch.utils.task_utils import train_coot, validate_coot
 from gluoncv.torch.engine.config import get_cfg_defaults
 from gluoncv.torch.engine.launch import spawn_workers
 from gluoncv.torch.utils.utils import build_log_dir
