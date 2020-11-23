@@ -68,7 +68,9 @@ def _train_image_classification(args, reporter):
         estimator_cls = args.pop('estimator', None)
         assert estimator_cls == ImageClassificationEstimator
         custom_net = args.pop('custom_net', None)
-        estimator = estimator_cls(args, reporter=reporter, net=custom_net)
+        custom_optimizer = args.pop('custom_optimizer', None)
+        estimator = estimator_cls(args, reporter=reporter,
+            net=custom_net, optimizer=custom_optimizer)
         # training
         result = estimator.fit(train_data=train_data, val_data=val_data)
     # pylint: disable=bare-except
