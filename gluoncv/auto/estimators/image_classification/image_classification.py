@@ -9,6 +9,7 @@ import pandas as pd
 import numpy as np
 import mxnet as mx
 from mxnet import gluon, nd
+from mxnet.optimizer import Optimizer
 from mxnet import autograd as ag
 from mxnet.gluon.data.vision import transforms
 from ....data.transforms.presets.imagenet import transform_eval
@@ -39,7 +40,7 @@ class ImageClassificationEstimator(BaseEstimator):
         The custom network. If defined, the model name in config will be ignored so your
         custom network will be used for training rather than pulling it from model zoo.
     """
-    def __init__(self, config, logger=None, reporter=None, net=None):
+    def __init__(self, config, logger=None, reporter=None, net=None, optimizer=None):
         super(ImageClassificationEstimator, self).__init__(config, logger, reporter=reporter, name=None)
         self.last_train = None
         self.input_size = self._cfg.train.input_size
@@ -52,6 +53,9 @@ class ImageClassificationEstimator(BaseEstimator):
             except ValueError:
                 pass
         self._custom_net = net
+        if optimizer is not None:
+            assert isinstance(optimizer, Optimizer)
+        self._optimizer = optimizer
 
     def _fit(self, train_data, val_data):
         self._best_acc = 0
@@ -324,13 +328,17 @@ class ImageClassificationEstimator(BaseEstimator):
                         step_factor=lr_decay, power=2)
         ])
 
-        optimizer = 'nag'
-        optimizer_params = {'wd': self._cfg.train.wd,
-                            'momentum': self._cfg.train.momentum,
-                            'lr_scheduler': lr_scheduler}
-        if self._cfg.train.dtype != 'float32':
-            optimizer_params['multi_precision'] = True
-        self.trainer = gluon.Trainer(self.net.collect_params(), optimizer, optimizer_params)
+        if self._optimizer is None:
+            optimizer = 'nag'
+            optimizer_params = {'wd': self._cfg.train.wd,
+                                'momentum': self._cfg.train.momentum,
+                                'lr_scheduler': lr_scheduler}
+            if self._cfg.train.dtype != 'float32':
+                optimizer_params['multi_precision'] = True
+            self.trainer = gluon.Trainer(self.net.collect_params(), optimizer, optimizer_params)
+        else:
+            optimizer = self._optimizer
+            self.trainer = gluon.Trainer(self.net.collect_params(), optimizer)
 
     def _evaluate(self, val_data):
         """Test on validation dataset."""
