@@ -55,7 +55,7 @@ Check the HD video at [Youtube](https://www.youtube.com/watch?v=nfpouVAzXt0) or 
 
 # Installation (MXNet)
 
-GluonCV supports Python 3.5 or later. The easiest way to install is via pip.
+GluonCV supports Python 3.6 or later. The easiest way to install is via pip.
 
 ## Stable Release
 The following commands install the stable version of GluonCV and MXNet:
@@ -63,8 +63,8 @@ The following commands install the stable version of GluonCV and MXNet:
 ```bash
 pip install gluoncv --upgrade
 pip install -U --pre mxnet -f https://dist.mxnet.io/python/mkl
-# if cuda 10.1 is installed
-pip install -U --pre mxnet -f https://dist.mxnet.io/python/cu100mkl
+# cuda 10.2
+pip install -U --pre mxnet -f https://dist.mxnet.io/python/cu102mkl
 ```
 
 **The latest stable version of GluonCV is 0.8 and we recommend mxnet 1.6.0/1.7.0**
@@ -76,8 +76,8 @@ You may get access to latest features and bug fixes with the following commands 
 ```bash
 pip install gluoncv --pre --upgrade
 pip install -U --pre mxnet -f https://dist.mxnet.io/python/mkl
-# if cuda 10.1 is installed
-pip install -U --pre mxnet -f https://dist.mxnet.io/python/cu100mkl
+# cuda 10.2
+pip install -U --pre mxnet -f https://dist.mxnet.io/python/cu102mkl
 ```
 
 There are multiple versions of MXNet pre-built package available. Please refer to [mxnet packages](https://gluon-crash-course.mxnet.io/mxnet_packages.html) if you need more details about MXNet versions.
@@ -85,14 +85,15 @@ There are multiple versions of MXNet pre-built package available. Please refer t
 
 # Installation (PyTorch)
 
-GluonCV supports Python 3.5 or later. The easiest way to install is via pip.
+GluonCV supports Python 3.6 or later. The easiest way to install is via pip.
 
 ## Stable Release
 The following commands install the stable version of GluonCV and PyTorch:
 
 ```bash
 pip install gluoncv --upgrade
-pip install torch==1.6.0 torchvision==0.7.0 # for cuda 10.2
+# cuda 10.2
+pip install torch==1.6.0 torchvision==0.7.0
 ```
 There are multiple versions of PyTorch pre-built package available. Please refer to [PyTorch](https://pytorch.org/get-started/previous-versions/) if you need other versions.
 
