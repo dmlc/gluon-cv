@@ -1,0 +1,2 @@
+Name,Pretrained,Segment,Clip Length,Top-1,Hashtag,Config
+i3d_slow_resnet101_f16s4_kinetics700 [8]_,Scratch,1,16 (64/4),67.65,b5be1a2e,`config <https://raw.githubusercontent.com/dmlc/gluon-cv/master/scripts/action-recognition/configuration/i3d_slow_resnet101_f16s4_kinetics700.yaml>`_
