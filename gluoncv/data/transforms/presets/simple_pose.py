@@ -50,20 +50,31 @@ class SimplePoseDefaultTrainTransform(object):
                  sigma=2, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225),
                  random_flip=True, scale_factor=0.25, rotation_factor=30,
                  **kwargs):
-        from ....model_zoo.simple_pose.pose_target import SimplePoseGaussianTargetGenerator
-        self._target_generator = SimplePoseGaussianTargetGenerator(
-            num_joints, (image_size[1], image_size[0]), (heatmap_size[1], heatmap_size[0]), sigma)
+        self._internal_target_generator = None
         self._num_joints = num_joints
         self._image_size = image_size
         self._joint_pairs = joint_pairs
         self._height = image_size[0]
         self._width = image_size[1]
+        self._heatmap_height = heatmap_size[0]
+        self._heatmap_width = heatmap_size[1]
+        self._sigma = sigma
         self._mean = mean
         self._std = std
         self._random_flip = random_flip
         self._scale_factor = scale_factor
         self._rotation_factor = rotation_factor
         self._aspect_ratio = float(self._width) / self._height
+
+    @property
+    def _target_generator(self):
+        if self._internal_target_generator is None:
+            from ....model_zoo.simple_pose.pose_target import SimplePoseGaussianTargetGenerator
+            self._internal_target_generator = SimplePoseGaussianTargetGenerator(
+                self._num_joints, (self._width, self._height), (self._heatmap_width, self._heatmap_height), self._sigma)
+            return self._internal_target_generator
+        else:
+            return self._internal_target_generator
 
     def __call__(self, src, label, img_path):
         cv2 = try_import_cv2()

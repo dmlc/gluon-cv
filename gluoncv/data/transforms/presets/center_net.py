@@ -1,5 +1,5 @@
 """Transforms described in https://arxiv.org/abs/1904.07850."""
-# pylint: disable=too-many-function-args
+# pylint: disable=too-many-function-args,not-callable
 from __future__ import absolute_import
 import numpy as np
 import mxnet as mx
@@ -119,8 +119,8 @@ class CenterNetDefaultTrainTransform(object):
         self._height = height
         self._num_class = num_class
         self._scale_factor = scale_factor
-        self._mean = np.array(mean, dtype=np.float32).reshape(1, 1, 3)
-        self._std = np.array(std, dtype=np.float32).reshape(1, 1, 3)
+        self._mean = np.array(mean, dtype=np.float32).reshape((1, 1, 3))
+        self._std = np.array(std, dtype=np.float32).reshape((1, 1, 3))
         self._data_rng = np.random.RandomState(123)
         self._eig_val = np.array([0.2141788, 0.01817699, 0.00341571],
                                  dtype=np.float32)
@@ -129,10 +129,19 @@ class CenterNetDefaultTrainTransform(object):
             [-0.5832747, 0.00994535, -0.81221408],
             [-0.56089297, 0.71832671, 0.41158938]
         ], dtype=np.float32)
+        self._internal_target_generator = None
+        self._target_width = width // scale_factor
+        self._target_height = height // scale_factor
 
-        from ....model_zoo.center_net.target_generator import CenterNetTargetGenerator
-        self._target_generator = CenterNetTargetGenerator(
-            num_class, width // scale_factor, height // scale_factor)
+    @property
+    def _target_generator(self):
+        if self._internal_target_generator is None:
+            from ....model_zoo.center_net.target_generator import CenterNetTargetGenerator
+            self._internal_target_generator = CenterNetTargetGenerator(
+                self._num_class, self._target_width, self._target_height)
+            return self._internal_target_generator
+        else:
+            return self._internal_target_generator
 
     def __call__(self, src, label):
         """Apply transform to training image/label."""
@@ -200,8 +209,8 @@ class CenterNetDefaultValTransform(object):
     def __init__(self, width, height, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)):
         self._width = width
         self._height = height
-        self._mean = np.array(mean, dtype=np.float32).reshape(1, 1, 3)
-        self._std = np.array(std, dtype=np.float32).reshape(1, 1, 3)
+        self._mean = np.array(mean, dtype=np.float32).reshape((1, 1, 3))
+        self._std = np.array(std, dtype=np.float32).reshape((1, 1, 3))
 
     def __call__(self, src, label):
         """Apply transform to validation image/label."""
