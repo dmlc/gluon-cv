@@ -37,6 +37,7 @@ _models = {
     'i3d_slow_resnet50_f8s8_kinetics400': i3d_slow_resnet50_f8s8_kinetics400,
     'i3d_slow_resnet101_f32s2_kinetics400': i3d_slow_resnet101_f32s2_kinetics400,
     'i3d_slow_resnet101_f16s4_kinetics400': i3d_slow_resnet101_f16s4_kinetics400,
+    'i3d_slow_resnet101_f16s4_kinetics700': i3d_slow_resnet101_f16s4_kinetics700,
     'i3d_slow_resnet101_f8s8_kinetics400': i3d_slow_resnet101_f8s8_kinetics400,
     'i3d_slow_resnet50_f32s2_custom': i3d_slow_resnet50_f32s2_custom,
     'r2plus1d_v1_resnet18_kinetics400': r2plus1d_v1_resnet18_kinetics400,
