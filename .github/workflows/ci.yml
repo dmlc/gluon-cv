@@ -6,7 +6,7 @@ on:
   pull_request_target:
 jobs:
   unittests:
-    if: ${{ (github.event_name == 'push' && github.repository == 'yinweisu/gluon-cv') || (github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name == 'yinweisu/gluon-cv')  }}
+    if: ${{ (github.event_name == 'push' && github.repository == 'yinweis/gluon-cv') || (github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name == 'yinweis/gluon-cv')  }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
