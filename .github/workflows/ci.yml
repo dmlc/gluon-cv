@@ -6,6 +6,7 @@ on:
   pull_request_target:
 jobs:
   unittests:
+    if: ${{ (github.event_name == 'push' && github.repository == 'yinweis/gluon-cv') || (github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name == 'yinweis/gluon-cv')  }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -61,6 +62,7 @@ jobs:
           unzip -q tiny_motorbike.zip -d $TINY_MOTORBIKE
           nosetests --with-timer --timer-ok 5 --timer-warning 20 -x --with-coverage --cover-package gluoncv -v tests/unittests
   model_zoo_mxnet:
+    if: ${{ (github.event_name == 'push' && github.repository == 'yinweis/gluon-cv') || (github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name == 'yinweis/gluon-cv')  }}
     needs: unittests
     runs-on: ubuntu-latest
     steps:
@@ -102,6 +104,7 @@ jobs:
                                              --command "chmod +x ./.github/workflows/gpu_test.sh && ./.github/workflows/gpu_test.sh gluoncv tests/model_zoo" \
                                              --wait
   model_zoo_torch:
+    if: ${{ (github.event_name == 'push' && github.repository == 'yinweis/gluon-cv') || (github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name == 'yinweis/gluon-cv')  }}
     needs: unittests
     runs-on: ubuntu-latest
     steps:
@@ -143,6 +146,7 @@ jobs:
                                              --command "chmod +x ./.github/workflows/gpu_test.sh && ./.github/workflows/gpu_test.sh gluoncv/torch tests/model_zoo_torch" \
                                              --wait
   auto:
+    if: ${{ (github.event_name == 'push' && github.repository == 'yinweis/gluon-cv') || (github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name == 'yinweis/gluon-cv')  }}
     needs: unittests
     runs-on: ubuntu-latest
     steps:
@@ -184,6 +188,7 @@ jobs:
                                              --command "chmod +x ./.github/workflows/gpu_test.sh && ./.github/workflows/gpu_test.sh gluoncv tests/auto" \
                                              --wait
   build-docs:
+    if: ${{ (github.event_name == 'push' && github.repository == 'yinweis/gluon-cv') || (github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name == 'yinweis/gluon-cv')  }}
     needs: [unittests, model_zoo_mxnet, model_zoo_torch, auto]
     runs-on: ubuntu-latest
     steps:
