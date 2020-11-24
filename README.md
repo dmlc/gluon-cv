@@ -52,13 +52,8 @@ Check the HD video at [Youtube](https://www.youtube.com/watch?v=nfpouVAzXt0) or 
 | [GAN:](https://github.com/dmlc/gluon-cv/tree/master/scripts/gan) <br/>generate visually deceptive images | <a href="https://github.com/dmlc/gluon-cv/tree/master/scripts/gan"><img src="https://github.com/dmlc/gluon-cv/raw/master/scripts/gan/wgan/fake_samples_400000.png" alt="lsun" height="200"/></a> | <a href="https://github.com/dmlc/gluon-cv/tree/master/scripts/gan/wgan">WGAN</a>, <a href="https://github.com/dmlc/gluon-cv/tree/master/scripts/gan/cycle_gan">CycleGAN</a>, <a href="https://github.com/dmlc/gluon-cv/tree/master/scripts/gan/stylegan">StyleGAN</a>|
 | [Person Re-ID:](https://github.com/dmlc/gluon-cv/tree/master/scripts/re-id/baseline) <br/>re-identify pedestrians across scenes | <a href="https://github.com/dmlc/gluon-cv/tree/master/scripts/re-id/baseline"><img src="https://user-images.githubusercontent.com/3307514/46702937-f4311800-cbd9-11e8-8eeb-c945ec5643fb.png" alt="re-id" height="160"/></a> |<a href="https://github.com/dmlc/gluon-cv/tree/master/scripts/re-id/baseline">Market1501 baseline</a> |
 
-# Installation
 
-<details>
-<summary>
-
-## MXNet
-</summary>
+# Installation (MXNet)
 
 GluonCV supports Python 3.5 or later. The easiest way to install is via pip.
 
@@ -86,13 +81,9 @@ pip install -U --pre mxnet -f https://dist.mxnet.io/python/cu100mkl
 ```
 
 There are multiple versions of MXNet pre-built package available. Please refer to [mxnet packages](https://gluon-crash-course.mxnet.io/mxnet_packages.html) if you need more details about MXNet versions.
-</details>
 
-<details>
-<summary>
 
-## PyTorch
-</summary>
+# Installation (PyTorch)
 
 GluonCV supports Python 3.5 or later. The easiest way to install is via pip.
 
@@ -116,7 +107,7 @@ You may get access to latest features and bug fixes with the following commands 
 pip install gluoncv --pre --upgrade
 pip install torch==1.6.0 torchvision==0.7.0 # for cuda 10.2
 ```
-</details>
+
 
 # Docs 📖
 GluonCV documentation is available at [our website](https://gluon-cv.mxnet.io/index.html).
