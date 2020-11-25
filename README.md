@@ -52,12 +52,17 @@ Check the HD video at [Youtube](https://www.youtube.com/watch?v=nfpouVAzXt0) or 
 | [GAN:](https://github.com/dmlc/gluon-cv/tree/master/scripts/gan) <br/>generate visually deceptive images | <a href="https://github.com/dmlc/gluon-cv/tree/master/scripts/gan"><img src="https://github.com/dmlc/gluon-cv/raw/master/scripts/gan/wgan/fake_samples_400000.png" alt="lsun" height="200"/></a> | <a href="https://github.com/dmlc/gluon-cv/tree/master/scripts/gan/wgan">WGAN</a>, <a href="https://github.com/dmlc/gluon-cv/tree/master/scripts/gan/cycle_gan">CycleGAN</a>, <a href="https://github.com/dmlc/gluon-cv/tree/master/scripts/gan/stylegan">StyleGAN</a>|
 | [Person Re-ID:](https://github.com/dmlc/gluon-cv/tree/master/scripts/re-id/baseline) <br/>re-identify pedestrians across scenes | <a href="https://github.com/dmlc/gluon-cv/tree/master/scripts/re-id/baseline"><img src="https://user-images.githubusercontent.com/3307514/46702937-f4311800-cbd9-11e8-8eeb-c945ec5643fb.png" alt="re-id" height="160"/></a> |<a href="https://github.com/dmlc/gluon-cv/tree/master/scripts/re-id/baseline">Market1501 baseline</a> |
 
+# Installation
 
-# Installation (MXNet)
+GluonCV is built on top of MXNet and PyTorch. Depending on the individual model implementation(check [model zoo](https://gluon-cv.mxnet.io/model_zoo/index.html) for the complete list), you will need to install either one of the deep learning framework. Of course you can always install both for the best coverage.
+
+Please also check [installation guide](https://cv.gluon.ai/install.html) for a comprehensive guide to help you choose the right installation command for your environment.
+
+## Installation (MXNet)
 
 GluonCV supports Python 3.6 or later. The easiest way to install is via pip.
 
-## Stable Release
+### Stable Release
 The following commands install the stable version of GluonCV and MXNet:
 
 ```bash
@@ -69,7 +74,7 @@ pip install -U --pre mxnet -f https://dist.mxnet.io/python/cu102mkl
 
 **The latest stable version of GluonCV is 0.8 and we recommend mxnet 1.6.0/1.7.0**
 
-## Nightly Release
+### Nightly Release
 
 You may get access to latest features and bug fixes with the following commands which install the nightly build of GluonCV and MXNet:
 
@@ -83,11 +88,11 @@ pip install -U --pre mxnet -f https://dist.mxnet.io/python/cu102mkl
 There are multiple versions of MXNet pre-built package available. Please refer to [mxnet packages](https://gluon-crash-course.mxnet.io/mxnet_packages.html) if you need more details about MXNet versions.
 
 
-# Installation (PyTorch)
+## Installation (PyTorch)
 
 GluonCV supports Python 3.6 or later. The easiest way to install is via pip.
 
-## Stable Release
+### Stable Release
 The following commands install the stable version of GluonCV and PyTorch:
 
 ```bash
@@ -100,7 +105,7 @@ There are multiple versions of PyTorch pre-built package available. Please refer
 
 **The latest stable version of GluonCV is 0.8 and we recommend PyTorch 1.6.0**
 
-## Nightly Release
+### Nightly Release
 
 You may get access to latest features and bug fixes with the following commands which install the nightly build of GluonCV:
 
