@@ -45,6 +45,8 @@ def test_image_classification_estimator_custom_net_optimizer():
         net=net, optimizer=optim)
     res = est.fit(IMAGE_CLASS_DATASET)
     assert res.get('valid_acc', 0) > 0
+    est.save('test_image_classification.pkl')
+    est = ImageClassificationEstimator.load('test_image_classification.pkl')
     test_result = est.predict(IMAGE_CLASS_TEST)
     evaluate_result = est.evaluate(IMAGE_CLASS_TEST)
     feature = est.predict_feature(IMAGE_CLASS_TEST)
