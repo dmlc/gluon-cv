@@ -1,18 +1,7 @@
-MXNet Installation
-------------------
+Installation
+------------
 
 .. include:: install-include.rst
-
-.. raw:: html
-
-   <style>.disabled { display: none; }</style>
-   <script type="text/javascript" src='../_static/install-options.js'></script>
-
-
-PyTorch Installation
---------------------
-
-.. include:: install-include-torch.rst
 
 .. raw:: html
 
