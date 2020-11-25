@@ -45,6 +45,10 @@ _C.CONFIG.TRAIN.BATCH_SIZE = 8
 _C.CONFIG.TRAIN.LR = 0.01
 # Momentum.
 _C.CONFIG.TRAIN.MOMENTUM = 0.9
+# Adam Beta 2
+_C.CONFIG.TRAIN.ADAM.BETA2 = 0.98
+# Adam eps
+_C.CONFIG.TRAIN.ADAM.EPS = 1.5e-09
 # L2 regularization.
 _C.CONFIG.TRAIN.W_DECAY = 1e-4
 # Learning rate policy
