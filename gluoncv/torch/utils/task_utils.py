@@ -245,61 +245,7 @@ def train_coot(base_iter, model, dataloader, epoch, constrastive_loss, cmc_loss,
                 f"LR {optimizer.param_groups[0]['lr']:5.3e} "
                 f"L {loss:.4f}")
             logger.info(print_string)
-        
-        # ====================
-        # # validate one epoch
-        # logger.info(
-        #     "---------- Validating epoch {} ----------".format(epoch))
-        # vid_metrics, clip_metrics = validate_coot(val_loader)
-        # v2p_res, p2v_res, vid_best_at_1 = vid_metrics
-        # c2s_res, s2c_res, clip_best_at_1 = None, None, None
-        # if clip_metrics is not None:
-        #     c2s_res, s2c_res, clip_best_at_1 = clip_metrics
-
-        # # find field which determines is_best
-        # if cfg.training.det_best_field == "val_score_at_1":
-        #     det_best_field_current = vid_best_at_1
-        # elif cfg.training.det_best_field == "val_clip_score_at_1":
-        #     det_best_field_current = clip_best_at_1
-        # else:
-        #     raise NotImplementedError
-
-        # # check if best
-        # is_best = compare_metrics(det_best_field_current,
-        #                                 det_best_field_best)
-        # if is_best:
-        #     det_best_field_best = det_best_field_current
-        #     best_epoch = epoch
-
-        # # write validation results to csv
-        # csv_input = {"ep": epoch, "time": timer() - timer_start_train}
-        # for key_ret, dict_ret in zip(["v", "p", "c", "s"],
-        #                                 [v2p_res, p2v_res, c2s_res, s2c_res]):
-        #     if dict_ret is None:
-        #         continue
-        #     for key in coot_utils.EVALKEYS:
-        #         csv_input.update([(f"{key_ret}-{key}", dict_ret[key])])
-        # metrics_writer.writerow(csv_input)
-        # metrics_fh.flush()
-
-        # # step lr scheduler
-        # lr_scheduler.step_rop(det_best_field_current, True)
-        # logger.info(
-        #     f"ROP: model improved: {is_best}, "
-        #     f"value {det_best_field_current:.3f},"
-        #     f"new LR: {optimizer.param_groups[0]['lr']:5.3e}")
-
-        # # save checkpoint
-        # model.save_checkpoint(log_dir / f"ckpt_ep{epoch}.pth")
-
-        # # check if model did not improve for too long
-        # term_after = 15
-        # if epoch - best_epoch > term_after:
-        #     logger.info(
-        #         f"NO improvements for {term_after} epochs (current "
-        #         f"{epoch} best {best_epoch}) STOP training.")
-        #     break
-
+    
     time_total = timer() - timer_start_train
     logger.info(
         "Training {} epochs took {:.3f}s / {:.3f}s/ep val".format(
