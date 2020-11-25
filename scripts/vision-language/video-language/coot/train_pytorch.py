@@ -8,7 +8,7 @@ import torch.optim
 from tensorboardX import SummaryWriter
 
 from gluoncv.torch.model_zoo import get_model
-from gluoncv.torch.data import build_dataloader
+from gluoncv.torch.data import create_datasets, create_loaders
 from gluoncv.torch.utils.model_utils import deploy_model, load_model, save_model
 from gluoncv.torch.utils.task_utils import train_coot, validate_coot
 from gluoncv.torch.engine.config import get_cfg_defaults
@@ -37,6 +37,13 @@ def main_worker(cfg):
     train_loader, val_loader, train_sampler, val_sampler, mg_sampler = build_dataloader(
         cfg)
 
+    data_path_dict = create_dataloader_path(args.dataroot, args.group_k, configuration.dataset.name, video_feature_name=args.modality)
+    
+    train_set, val_set = create_datasets(data_path_dict, cfg, args.preload_vid,
+                                         not args.no_preload_text)
+    train_loader, val_loader = create_loaders(train_set, val_set,
+                                              cfg.CONFIG.TRAIN.BATCH_SIZE,
+                                              cfg.CONFIG.DATA.NUM_WORKERS)
     # optimizer = torch.optim.SGD(model.parameters(),
     #                             lr=cfg.CONFIG.TRAIN.LR,
     #                             momentum=cfg.CONFIG.TRAIN.MOMENTUM,
@@ -90,8 +97,8 @@ def main_worker(cfg):
     base_iter = 0
     det_best_field_best = 0
     for epoch in range(cfg.CONFIG.TRAIN.EPOCH_NUM):
-        if cfg.DDP_CONFIG.DISTRIBUTED:
-            train_sampler.set_epoch(epoch)
+        # if cfg.DDP_CONFIG.DISTRIBUTED:
+        #     train_sampler.set_epoch(epoch)
 
         ## ======== Training step ===============
         base_iter = train_coot(base_iter,
@@ -103,8 +110,6 @@ def main_worker(cfg):
                                          cfg,
                                          writer,
                                          logger)
-        scheduler.step()
-
 
 
         ## ======= Validation step ================
@@ -115,7 +120,6 @@ def main_worker(cfg):
         # Check if the performance of model is improving
         logger.info(
             "---------- Validating epoch {} ----------".format(epoch))
-        v2p_res, p2v_res, vid_best_at_1 = vid_metrics
         c2s_res, s2c_res, clip_best_at_1 = None, None, None
         if clip_metrics is not None:
             c2s_res, s2c_res, clip_best_at_1 = clip_metrics

@@ -119,7 +119,7 @@ _C.CONFIG.DATA.SHORT_SIDE_SIZE = 256
 _C.CONFIG.DATA.NEW_HEIGHT = 256
 # Pre-defined width for resizing input video frames.
 _C.CONFIG.DATA.NEW_WIDTH = 340
-
+_C.CONFIG.DATA.NUM_WORKERS = 0
 
 _C.CONFIG.MODEL = CN(new_allowed=True)
 # Model architecture. You can find available models in the model zoo.
