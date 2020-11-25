@@ -37,6 +37,18 @@ The following table lists our trained models on Kinetics400.
    :widths: 36 12 10 10 8 12 12
 
 
+Kinetics700 Dataset
+-------------------
+
+The following table lists our trained models on Kinetics700.
+
+.. csv-table::
+   :file: ./csv_tables/Action_Recognitions/Kinetics700_torch.csv
+   :header-rows: 1
+   :class: tight-table
+   :widths: 36 12 10 10 8 12 12
+
+
 Something-Something-V2 Dataset
 ------------------------------
 

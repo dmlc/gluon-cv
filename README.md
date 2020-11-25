@@ -22,9 +22,10 @@ students to fast prototype products and research ideas based on these
 models. This toolkit offers four main features:
 
 1. Training scripts to reproduce SOTA results reported in research papers
-2. A large number of pre-trained models
-3. Carefully designed APIs that greatly reduce the implementation complexity
-4. Community supports
+2. Supports both PyTorch and MXNet
+3. A large number of pre-trained models
+4. Carefully designed APIs that greatly reduce the implementation complexity
+5. Community supports
 
 # Demo
 
@@ -36,6 +37,7 @@ models. This toolkit offers four main features:
 
 Check the HD video at [Youtube](https://www.youtube.com/watch?v=nfpouVAzXt0) or [Bilibili](https://www.bilibili.com/video/av55619231).
 
+
 # Supported Applications
 
 | Application  | Illustration  | Available Models |
@@ -45,39 +47,73 @@ Check the HD video at [Youtube](https://www.youtube.com/watch?v=nfpouVAzXt0) or 
 | [Semantic Segmentation:](https://gluon-cv.mxnet.io/model_zoo/segmentation.html#semantic-segmentation) <br/>associate each pixel of an image <br/> with a categorical label. |  <a href="https://gluon-cv.mxnet.io/model_zoo/segmentation.html#semantic-segmentation"><img src="docs/_static/semantic-segmentation.png" alt="semantic" height="200"/></a> | <a href="https://gluon-cv.mxnet.io/model_zoo/segmentation.html#semantic-segmentation">FCN</a>, <a href="https://gluon-cv.mxnet.io/model_zoo/segmentation.html#semantic-segmentation">PSP</a>, <a href="https://gluon-cv.mxnet.io/model_zoo/segmentation.html#semantic-segmentation">ICNet</a>, <a href="https://gluon-cv.mxnet.io/model_zoo/segmentation.html#semantic-segmentation">DeepLab-v3</a>, <a href="https://gluon-cv.mxnet.io/model_zoo/segmentation.html#semantic-segmentation">DeepLab-v3+</a>, <a href="https://gluon-cv.mxnet.io/model_zoo/segmentation.html#semantic-segmentation">DANet</a>, <a href="https://gluon-cv.mxnet.io/model_zoo/segmentation.html#semantic-segmentation">FastSCNN</a> |
 | [Instance Segmentation:](https://gluon-cv.mxnet.io/model_zoo/segmentation.html#instance-segmentation) <br/>detect objects and associate <br/> each pixel inside object area with an <br/> instance label. | <a href="https://gluon-cv.mxnet.io/model_zoo/segmentation.html#instance-segmentation"><img src="docs/_static/instance-segmentation.png" alt="instance" height="200"/></a> | <a href="https://gluon-cv.mxnet.io/model_zoo/segmentation.html#instance-segmentation">Mask RCNN</a>|
 | [Pose Estimation:](https://gluon-cv.mxnet.io/model_zoo/pose.html) <br/>detect human pose <br/> from images. | <a href="https://gluon-cv.mxnet.io/model_zoo/pose.html"><img src="docs/_static/pose-estimation.svg" alt="pose" height="200"/></a> | <a href="https://gluon-cv.mxnet.io/model_zoo/pose.html#simple-pose-with-resnet">Simple Pose</a>|
-| [Video Action Recognition:](https://gluon-cv.mxnet.io/model_zoo/action_recognition.html) <br/>recognize human actions <br/> in a video. | <a href="https://gluon-cv.mxnet.io/model_zoo/action_recognition.html"><img src="docs/_static/action-recognition.png" alt="action_recognition" height="200"/></a> | <a href="https://gluon-cv.mxnet.io/model_zoo/action_recognition.html">TSN</a>, <a href="https://gluon-cv.mxnet.io/model_zoo/action_recognition.html">C3D</a>, <a href="https://gluon-cv.mxnet.io/model_zoo/action_recognition.html">I3D</a>, <a href="https://gluon-cv.mxnet.io/model_zoo/action_recognition.html">P3D</a>, <a href="https://gluon-cv.mxnet.io/model_zoo/action_recognition.html">R3D</a>, <a href="https://gluon-cv.mxnet.io/model_zoo/action_recognition.html">R2+1D</a>, <a href="https://gluon-cv.mxnet.io/model_zoo/action_recognition.html">Non-local</a>, <a href="https://gluon-cv.mxnet.io/model_zoo/action_recognition.html">SlowFast</a> |
+| [Video Action Recognition:](https://gluon-cv.mxnet.io/model_zoo/action_recognition.html) <br/>recognize human actions <br/> in a video. | <a href="https://gluon-cv.mxnet.io/model_zoo/action_recognition.html"><img src="docs/_static/action-recognition.png" alt="action_recognition" height="200"/></a> | MXNet: <a href="https://gluon-cv.mxnet.io/model_zoo/action_recognition.html">TSN</a>, <a href="https://gluon-cv.mxnet.io/model_zoo/action_recognition.html">C3D</a>, <a href="https://gluon-cv.mxnet.io/model_zoo/action_recognition.html">I3D</a>, <a href="https://gluon-cv.mxnet.io/model_zoo/action_recognition.html">P3D</a>, <a href="https://gluon-cv.mxnet.io/model_zoo/action_recognition.html">R3D</a>, <a href="https://gluon-cv.mxnet.io/model_zoo/action_recognition.html">R2+1D</a>, <a href="https://gluon-cv.mxnet.io/model_zoo/action_recognition.html">Non-local</a>, <a href="https://gluon-cv.mxnet.io/model_zoo/action_recognition.html">SlowFast</a> <br/> PyTorch: <a href="https://gluon-cv.mxnet.io/model_zoo/action_recognition.html">TSN</a>, <a href="https://gluon-cv.mxnet.io/model_zoo/action_recognition.html">I3D</a>, <a href="https://gluon-cv.mxnet.io/model_zoo/action_recognition.html">I3D_slow</a>, <a href="https://gluon-cv.mxnet.io/model_zoo/action_recognition.html">R2+1D</a>, <a href="https://gluon-cv.mxnet.io/model_zoo/action_recognition.html">Non-local</a>, <a href="https://gluon-cv.mxnet.io/model_zoo/action_recognition.html">CSN</a>, <a href="https://gluon-cv.mxnet.io/model_zoo/SlowFast.html">TSN</a>, <a href="https://gluon-cv.mxnet.io/model_zoo/action_recognition.html">TPN</a> |
 | [Depth Prediction:](https://gluon-cv.mxnet.io/model_zoo/depth.html) <br/>predict depth map <br/> from images. | <a href="https://gluon-cv.mxnet.io/model_zoo/depth.html"><img src="docs/_static/depth.png" alt="depth" height="200"/></a> | <a href="https://gluon-cv.mxnet.io/model_zoo/depth.html#kitti-dataset">Monodepth2</a>|
 | [GAN:](https://github.com/dmlc/gluon-cv/tree/master/scripts/gan) <br/>generate visually deceptive images | <a href="https://github.com/dmlc/gluon-cv/tree/master/scripts/gan"><img src="https://github.com/dmlc/gluon-cv/raw/master/scripts/gan/wgan/fake_samples_400000.png" alt="lsun" height="200"/></a> | <a href="https://github.com/dmlc/gluon-cv/tree/master/scripts/gan/wgan">WGAN</a>, <a href="https://github.com/dmlc/gluon-cv/tree/master/scripts/gan/cycle_gan">CycleGAN</a>, <a href="https://github.com/dmlc/gluon-cv/tree/master/scripts/gan/stylegan">StyleGAN</a>|
 | [Person Re-ID:](https://github.com/dmlc/gluon-cv/tree/master/scripts/re-id/baseline) <br/>re-identify pedestrians across scenes | <a href="https://github.com/dmlc/gluon-cv/tree/master/scripts/re-id/baseline"><img src="https://user-images.githubusercontent.com/3307514/46702937-f4311800-cbd9-11e8-8eeb-c945ec5643fb.png" alt="re-id" height="160"/></a> |<a href="https://github.com/dmlc/gluon-cv/tree/master/scripts/re-id/baseline">Market1501 baseline</a> |
 
 # Installation
 
-GluonCV supports Python 3.5 or later. The easiest way to install is via pip.
+GluonCV is built on top of MXNet and PyTorch. Depending on the individual model implementation(check [model zoo](https://gluon-cv.mxnet.io/model_zoo/index.html) for the complete list), you will need to install either one of the deep learning framework. Of course you can always install both for the best coverage.
 
-## Stable Release
+Please also check [installation guide](https://cv.gluon.ai/install.html) for a comprehensive guide to help you choose the right installation command for your environment.
+
+## Installation (MXNet)
+
+GluonCV supports Python 3.6 or later. The easiest way to install is via pip.
+
+### Stable Release
 The following commands install the stable version of GluonCV and MXNet:
 
 ```bash
 pip install gluoncv --upgrade
 pip install -U --pre mxnet -f https://dist.mxnet.io/python/mkl
-# if cuda 10.1 is installed
-pip install -U --pre mxnet -f https://dist.mxnet.io/python/cu100mkl
+# cuda 10.2
+pip install -U --pre mxnet -f https://dist.mxnet.io/python/cu102mkl
 ```
 
 **The latest stable version of GluonCV is 0.8 and we recommend mxnet 1.6.0/1.7.0**
 
-## Nightly Release
+### Nightly Release
 
 You may get access to latest features and bug fixes with the following commands which install the nightly build of GluonCV and MXNet:
 
 ```bash
 pip install gluoncv --pre --upgrade
 pip install -U --pre mxnet -f https://dist.mxnet.io/python/mkl
-# if cuda 10.1 is installed
-pip install -U --pre mxnet -f https://dist.mxnet.io/python/cu100mkl
+# cuda 10.2
+pip install -U --pre mxnet -f https://dist.mxnet.io/python/cu102mkl
 ```
 
 There are multiple versions of MXNet pre-built package available. Please refer to [mxnet packages](https://gluon-crash-course.mxnet.io/mxnet_packages.html) if you need more details about MXNet versions.
+
+
+## Installation (PyTorch)
+
+GluonCV supports Python 3.6 or later. The easiest way to install is via pip.
+
+### Stable Release
+The following commands install the stable version of GluonCV and PyTorch:
+
+```bash
+pip install gluoncv --upgrade
+# cuda 10.2
+pip install torch==1.6.0 torchvision==0.7.0
+```
+There are multiple versions of PyTorch pre-built package available. Please refer to [PyTorch](https://pytorch.org/get-started/previous-versions/) if you need other versions.
+
+
+**The latest stable version of GluonCV is 0.8 and we recommend PyTorch 1.6.0**
+
+### Nightly Release
+
+You may get access to latest features and bug fixes with the following commands which install the nightly build of GluonCV:
+
+```bash
+pip install gluoncv --pre --upgrade
+pip install torch==1.6.0 torchvision==0.7.0 # for cuda 10.2
+```
+
 
 # Docs 📖
 GluonCV documentation is available at [our website](https://gluon-cv.mxnet.io/index.html).
