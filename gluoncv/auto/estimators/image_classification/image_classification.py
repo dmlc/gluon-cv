@@ -409,6 +409,7 @@ class ImageClassificationEstimator(BaseEstimator):
         if fc_layer_found:
             self._feature_net.register_child(nn.Identity(), fc_name)
             super(gluon.Block, self._feature_net).__setattr__(fc_name, nn.Identity())
+            self.net.__setattr__(fc_name, fc_layer)
         else:
             raise RuntimeError('Unable to modify the last fc layer in network, (output, fc) expected...')
         return self._feature_net
