@@ -260,6 +260,13 @@ def compute_retrieval_metrics(dot_product):
     return report_dict, ranks
 
 
+def compare_metrics(comparison, best):
+    if best is None:
+        return True
+    threshold = 1e-4
+    rel_epsilon = threshold + 1.
+    return comparison > best * rel_epsilon
+
 def get_logging_formatter():
     return logging.Formatter("%(asctime)s %(levelname)s %(message)s",
                              datefmt="%m%d %H%M%S")
