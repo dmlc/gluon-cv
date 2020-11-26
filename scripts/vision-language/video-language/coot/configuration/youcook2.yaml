@@ -9,15 +9,20 @@ DDP_CONFIG:
   AUTO_RANK_MATCH: True
   DIST_BACKEND: 'nccl'
   GPU: 0
-  DISTRIBUTED: True
+  DISTRIBUTED: False
 
 CONFIG:
+  MODEL:
+    NAME: 'MultiModalTransformer_COOT'
+    PRETRAINED: False
+    PRETRAINED_BASE: False
+
   TRAIN:
     EPOCH_NUM: 100
     BATCH_SIZE: 64
     LR: 0.0009
     MOMENTUM: 0.56
-    W_DECAY: 0
+    W_DECAY: 0.
     USE_WARMUP: True
     WARMUP_EPOCHS: 0
     PATIENCE: 5
@@ -30,9 +35,10 @@ CONFIG:
     BATCH_SIZE: 32
 
   COOT_DATA:
+    DATASET_NAME: 'youcook2'
     DATA_PATH: '/mnt/efs/fs1/workspace/datasets/coot_data/youcook2'
     FEATURE: 'howto100m'
-    TRAIN_SPLIT: 'train'
+    TRAIN_SPLIT: 'val' #'train'
     VALIDATION_SPLIT: 'val'
     MAX_FRAMES: 80
     FEATURE_DIM: 512
@@ -67,11 +73,28 @@ CONFIG:
             atn_ctx_num_heads: 8
             pooler: avg
         text_pooler:
-            name: same
-            same_as: net_video_pooler
+            name: atn
+            output_dim: 384
+            input_fc: true
+            input_fc_output_dim: 384
+            num_layers: 1
+            num_heads: 8
+            dropout: 0.05
+            use_context: false
+            pooler: atn
+            atn_pool_dim: 768
+            atn_pool_heads: 2
         text_sequencer:
-            name: same
-            same_as: net_video_sequencer
+            name: atn
+            output_dim: 384
+            input_fc: false
+            num_layers: 1
+            num_heads: 8
+            dropout: 0.05
+            use_context: true
+            atn_ctx_num_layers: 1
+            atn_ctx_num_heads: 8
+            pooler: avg
         text_encoder:
             feature_dim: 1536
   LOG:

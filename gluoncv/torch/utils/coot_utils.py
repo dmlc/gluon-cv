@@ -21,6 +21,7 @@ EVALHEADER = "Retriev | R@1   | R@5   | R@10  | R@50  | MeanR |  MedR |    Sum"
 
 
 def create_dataloader_path(data_root,
+                           dataset_name='youcook2',
                            text_feature_name='default',
                            video_feature_name='howto_h100m'):
     """create the path to meta file and features
@@ -48,6 +49,7 @@ def create_dataloader_path(data_root,
                      "text_lens_{}.json".format(text_feature_name)))
 
     return {
+        "dataset_name": dataset_name,
         "meta_data": meta_data_path,
         "video_feats": video_feat_path,
         "language_feats": language_feat_path,

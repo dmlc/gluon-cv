@@ -10,8 +10,8 @@ from timeit import default_timer as timer
 import torch
 from torch.nn import functional as F
 
-from torch.utils import coot_utils
-from torch.utils.coot_utils import unpack_data
+from . import coot_utils
+from .coot_utils import unpack_data
 from .utils import AverageMeter, accuracy
 
 
@@ -199,7 +199,7 @@ def test_classification(model, test_loader, criterion, cfg, file):
             f.write(line)
 
 
-def train_coot(base_iter, model, dataloader, epoch, constrastive_loss, cmc_loss, optimizer, cfg, writer=None, logger):
+def train_coot(base_iter, model, dataloader, epoch, constrastive_loss, cmc_loss, optimizer, cfg, writer, logger):
     max_step = len(dataloader)
     timer_start_train = timer()
     model.train()

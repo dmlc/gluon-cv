@@ -46,9 +46,9 @@ _C.CONFIG.TRAIN.LR = 0.01
 # Momentum.
 _C.CONFIG.TRAIN.MOMENTUM = 0.9
 # Adam Beta 2
-_C.CONFIG.TRAIN.ADAM.BETA2 = 0.98
+_C.CONFIG.TRAIN.ADAM_BETA2 = 0.98
 # Adam eps
-_C.CONFIG.TRAIN.ADAM.EPS = 1.5e-09
+_C.CONFIG.TRAIN.ADAM_EPS = 1.5e-09
 # L2 regularization.
 _C.CONFIG.TRAIN.W_DECAY = 1e-4
 # Learning rate policy
@@ -162,7 +162,7 @@ _C.CONFIG.LOG.DISPLAY_FREQ = 1
 # ---------------------------------------------------------------------------- #
 
 _C.CONFIG.COOT_DATA = CN(new_allowed=True)
-
+_C.CONFIG.COOT_DATA.DATASET_NAME = 'youcook2'
 _C.CONFIG.COOT_DATA.FEATURE = 'howto100m'
 _C.CONFIG.COOT_DATA.FEATURE_DIM = 512
 _C.CONFIG.COOT_DATA.VIDEO_PRELOAD = True
@@ -179,29 +179,29 @@ _C.CONFIG.COOT_MODEL.NAME = 'COOT-MultiModalTransformer-d384'
 _C.CONFIG.COOT_MODEL.MODEL_CONFIG = CN(new_allowed=True)
 
 _C.CONFIG.COOT_MODEL.MODEL_CONFIG.video_pooler = CN(new_allowed=True)
-_C.CONFIG.COOT_MODEL.MODEL_CONFIG.video_pooler.name = atn
+_C.CONFIG.COOT_MODEL.MODEL_CONFIG.video_pooler.name = 'atn'
 _C.CONFIG.COOT_MODEL.MODEL_CONFIG.video_pooler.output_dim = 384
-_C.CONFIG.COOT_MODEL.MODEL_CONFIG.video_pooler.input_fc = true
+_C.CONFIG.COOT_MODEL.MODEL_CONFIG.video_pooler.input_fc = True
 _C.CONFIG.COOT_MODEL.MODEL_CONFIG.video_pooler.input_fc_output_dim = 384
 _C.CONFIG.COOT_MODEL.MODEL_CONFIG.video_pooler.num_layers = 1
 _C.CONFIG.COOT_MODEL.MODEL_CONFIG.video_pooler.num_heads = 8
 _C.CONFIG.COOT_MODEL.MODEL_CONFIG.video_pooler.dropout = 0.05
-_C.CONFIG.COOT_MODEL.MODEL_CONFIG.video_pooler.use_context = false
-_C.CONFIG.COOT_MODEL.MODEL_CONFIG.video_pooler.pooler = atn
+_C.CONFIG.COOT_MODEL.MODEL_CONFIG.video_pooler.use_context = False
+_C.CONFIG.COOT_MODEL.MODEL_CONFIG.video_pooler.pooler = 'atn'
 _C.CONFIG.COOT_MODEL.MODEL_CONFIG.video_pooler.atn_pool_dim = 768
 _C.CONFIG.COOT_MODEL.MODEL_CONFIG.video_pooler.atn_pool_heads = 2
 
 _C.CONFIG.COOT_MODEL.MODEL_CONFIG.video_sequencer = CN(new_allowed=True)
-_C.CONFIG.COOT_MODEL.MODEL_CONFIG.video_sequencer.name = atn
+_C.CONFIG.COOT_MODEL.MODEL_CONFIG.video_sequencer.name = 'atn'
 _C.CONFIG.COOT_MODEL.MODEL_CONFIG.video_sequencer.output_dim = 384
-_C.CONFIG.COOT_MODEL.MODEL_CONFIG.video_sequencer.input_fc = false
+_C.CONFIG.COOT_MODEL.MODEL_CONFIG.video_sequencer.input_fc = False
 _C.CONFIG.COOT_MODEL.MODEL_CONFIG.video_sequencer.num_layers = 1
 _C.CONFIG.COOT_MODEL.MODEL_CONFIG.video_sequencer.num_heads = 8
 _C.CONFIG.COOT_MODEL.MODEL_CONFIG.video_sequencer.dropout = 0.05
-_C.CONFIG.COOT_MODEL.MODEL_CONFIG.video_sequencer.use_context = true
+_C.CONFIG.COOT_MODEL.MODEL_CONFIG.video_sequencer.use_context = True
 _C.CONFIG.COOT_MODEL.MODEL_CONFIG.video_sequencer.atn_ctx_num_layers = 1
 _C.CONFIG.COOT_MODEL.MODEL_CONFIG.video_sequencer.atn_ctx_num_heads = 8
-_C.CONFIG.COOT_MODEL.MODEL_CONFIG.video_sequencer.pooler = avg
+_C.CONFIG.COOT_MODEL.MODEL_CONFIG.video_sequencer.pooler = 'avg'
 
 _C.CONFIG.COOT_MODEL.MODEL_CONFIG.text_pooler = CN(new_allowed=True)
 _C.CONFIG.COOT_MODEL.MODEL_CONFIG.text_pooler.name = 'same'

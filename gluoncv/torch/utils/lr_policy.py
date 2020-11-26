@@ -72,7 +72,7 @@ class GradualWarmupScheduler(_LRScheduler):
             self.step_ReduceLROnPlateau(metrics, epoch)
 
 class ReduceLROnPlateauWarmup(ReduceLROnPlateau):
-    def __init__(self, optimizer: Optimizer, warmup_epochs, **kwargs):
+    def __init__(self, optimizer, warmup_epochs, **kwargs):
         self.warmup_epochs = warmup_epochs
         super().__init__(optimizer, **kwargs)
         self.base_lrs = []

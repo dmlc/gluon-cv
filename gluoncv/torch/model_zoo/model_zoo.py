@@ -55,7 +55,7 @@ _models = {
     'tpn_resnet101_f16s4_kinetics400': tpn_resnet101_f16s4_kinetics400,
     'tpn_resnet101_f32s2_kinetics400': tpn_resnet101_f32s2_kinetics400,
     'tpn_resnet50_f32s2_custom': tpn_resnet50_f32s2_custom,
-    'MultiModalTransformer_COOT': MultiModalTransformer,
+    'multimodaltransformer_coot': MultiModalTransformer,
 }
 
 

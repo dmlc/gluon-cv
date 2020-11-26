@@ -99,20 +99,22 @@ class VideoDatasetFeatures(data.Dataset):
         self.max_frames = max_frames
         self.is_train = is_train
         meta_file = dataset_path_dict["meta_data"]
+        
         self.vids_dict = json.load(meta_file.open("rt", encoding="utf8"),
                                    object_pairs_hook=OrderedDict)
         self.ids = [key for key, val in self.vids_dict.items(
         ) if val["split"] == self.split]
         print("init dataset {} split {} length {} ".format(dataset_path_dict["dataset_name"], split, len(self)))
 
-        if dataset_path_dict["dataset_name"] == "lsmdc16":
-            self.preproc_par_fn = preprocess_bert_paragraph
+        if dataset_path_dict["dataset_name"]  == "activitynet":
             self.text_data = BertTextFeatureLoader(
-                dataset_path_dict, self.ids, preload_text_feat)
-            self.vid_data = Youcook2VideoFeatureLoader(
-                dataset_path_dict, self.ids, preload_vid_feat)
+                dataset_path, self.ids, dataset_features,
+                preload_text_feat)
+            self.preproc_par_fn = self.preprocess_bert_paragraph
+            self.vid_data = ActivityNetVideoFeatureLoader(
+                dataset_path, self.ids, preload_vid_feat)
         elif dataset_path_dict["dataset_name"] == "youcook2":
-            self.preproc_par_fn = preprocess_bert_paragraph
+            self.preproc_par_fn = self.preprocess_bert_paragraph
             self.text_data = BertTextFeatureLoader(
                 dataset_path_dict, self.ids, preload_text_feat)
             self.vid_data = Youcook2VideoFeatureLoader(
@@ -357,10 +359,10 @@ def create_datasets(
         preload_text_feat, 0)
         return val_set
     train_set = VideoDatasetFeatures(dataset_path_dict,
-        cfg.dataset.train_split, cfg.dataset.max_frames, True,
-        preload_vid_feat, preload_text_feat, cfg.dataset.frames_noise)
+        cfg.CONFIG.COOT_DATA.TRAIN_SPLIT, cfg.CONFIG.COOT_DATA.MAX_FRAMES, True,
+        preload_vid_feat, preload_text_feat, False)
     val_set = VideoDatasetFeatures(dataset_path_dict,
-        cfg.dataset.val_split, cfg.dataset.max_frames, False, preload_vid_feat,
+        cfg.CONFIG.COOT_DATA.VALIDATION_SPLIT, cfg.CONFIG.COOT_DATA.MAX_FRAMES, False, preload_vid_feat,
         preload_text_feat, 0)
     return train_set, val_set
 
