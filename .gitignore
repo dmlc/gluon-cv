@@ -117,3 +117,4 @@ ENV/
 *.jpeg*
 .idea/*
 *.sh
+/logs/
