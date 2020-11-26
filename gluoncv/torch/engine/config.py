@@ -157,6 +157,63 @@ _C.CONFIG.LOG.SAVE_FREQ = 1
 _C.CONFIG.LOG.DISPLAY_FREQ = 1
 
 
+# ---------------------------------------------------------------------------- #
+# Video-Language: COOT CONFIG
+# ---------------------------------------------------------------------------- #
+
+_C.CONFIG.COOT_DATA = CN(new_allowed=True)
+
+_C.CONFIG.COOT_DATA.FEATURE = 'howto100m'
+_C.CONFIG.COOT_DATA.FEATURE_DIM = 512
+_C.CONFIG.COOT_DATA.VIDEO_PRELOAD = True
+_C.CONFIG.COOT_DATA.TEXT_PRELOAD = True
+_C.CONFIG.COOT_DATA.DATA_PATH = ''
+_C.CONFIG.COOT_DATA.TRAIN_SPLIT = 'train'
+_C.CONFIG.COOT_DATA.VALIDATION_SPLIT = 'val'
+_C.CONFIG.COOT_DATA.MAX_FRAMES = 80
+_C.CONFIG.COOT_DATA.WORD_EMB = 'bert'
+
+
+_C.CONFIG.COOT_MODEL = CN(new_allowed=True)
+_C.CONFIG.COOT_MODEL.NAME = 'COOT-MultiModalTransformer-d384'
+_C.CONFIG.COOT_MODEL.MODEL_CONFIG = CN(new_allowed=True)
+
+_C.CONFIG.COOT_MODEL.MODEL_CONFIG.video_pooler = CN(new_allowed=True)
+_C.CONFIG.COOT_MODEL.MODEL_CONFIG.video_pooler.name = atn
+_C.CONFIG.COOT_MODEL.MODEL_CONFIG.video_pooler.output_dim = 384
+_C.CONFIG.COOT_MODEL.MODEL_CONFIG.video_pooler.input_fc = true
+_C.CONFIG.COOT_MODEL.MODEL_CONFIG.video_pooler.input_fc_output_dim = 384
+_C.CONFIG.COOT_MODEL.MODEL_CONFIG.video_pooler.num_layers = 1
+_C.CONFIG.COOT_MODEL.MODEL_CONFIG.video_pooler.num_heads = 8
+_C.CONFIG.COOT_MODEL.MODEL_CONFIG.video_pooler.dropout = 0.05
+_C.CONFIG.COOT_MODEL.MODEL_CONFIG.video_pooler.use_context = false
+_C.CONFIG.COOT_MODEL.MODEL_CONFIG.video_pooler.pooler = atn
+_C.CONFIG.COOT_MODEL.MODEL_CONFIG.video_pooler.atn_pool_dim = 768
+_C.CONFIG.COOT_MODEL.MODEL_CONFIG.video_pooler.atn_pool_heads = 2
+
+_C.CONFIG.COOT_MODEL.MODEL_CONFIG.video_sequencer = CN(new_allowed=True)
+_C.CONFIG.COOT_MODEL.MODEL_CONFIG.video_sequencer.name = atn
+_C.CONFIG.COOT_MODEL.MODEL_CONFIG.video_sequencer.output_dim = 384
+_C.CONFIG.COOT_MODEL.MODEL_CONFIG.video_sequencer.input_fc = false
+_C.CONFIG.COOT_MODEL.MODEL_CONFIG.video_sequencer.num_layers = 1
+_C.CONFIG.COOT_MODEL.MODEL_CONFIG.video_sequencer.num_heads = 8
+_C.CONFIG.COOT_MODEL.MODEL_CONFIG.video_sequencer.dropout = 0.05
+_C.CONFIG.COOT_MODEL.MODEL_CONFIG.video_sequencer.use_context = true
+_C.CONFIG.COOT_MODEL.MODEL_CONFIG.video_sequencer.atn_ctx_num_layers = 1
+_C.CONFIG.COOT_MODEL.MODEL_CONFIG.video_sequencer.atn_ctx_num_heads = 8
+_C.CONFIG.COOT_MODEL.MODEL_CONFIG.video_sequencer.pooler = avg
+
+_C.CONFIG.COOT_MODEL.MODEL_CONFIG.text_pooler = CN(new_allowed=True)
+_C.CONFIG.COOT_MODEL.MODEL_CONFIG.text_pooler.name = 'same'
+_C.CONFIG.COOT_MODEL.MODEL_CONFIG.text_pooler.same_as = 'net_video_pooler'
+
+_C.CONFIG.COOT_MODEL.MODEL_CONFIG.text_sequencer = CN(new_allowed=True)
+_C.CONFIG.COOT_MODEL.MODEL_CONFIG.text_sequencer.name = 'same'
+_C.CONFIG.COOT_MODEL.MODEL_CONFIG.text_sequencer.same_as = 'net_video_sequencer'
+
+_C.CONFIG.COOT_MODEL.MODEL_CONFIG.text_encoder = CN(new_allowed=True)
+_C.CONFIG.COOT_MODEL.MODEL_CONFIG.text_encoder.feature_dim = 1536
+
 def get_cfg_defaults():
     """Get a yacs CfgNode object with default values for your project."""
     return _C.clone()

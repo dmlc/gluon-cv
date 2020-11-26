@@ -17,7 +17,7 @@ from gluoncv.torch.utils.utils import build_log_dir
 from gluoncv.torch.utils.lr_policy import ReduceLROnPlateau
 from gluoncv.torch.utils.optimizer import RAdam
 from gluoncv.torch.utils.loss import MaxMarginRankingLoss, CycleConsistencyCootLoss
-from gluoncv.torch.utils.coot_utils import get_logger, close_logger, compare_metrics
+from gluoncv.torch.utils.coot_utils import get_logger, close_logger, compare_metrics, create_dataloader_path
 
 def main_worker(cfg):
     # create tensorboard and logs
@@ -34,13 +34,13 @@ def main_worker(cfg):
     model = deploy_model(model, cfg)
 
     # create dataset and dataloader
-    train_loader, val_loader, train_sampler, val_sampler, mg_sampler = build_dataloader(
-        cfg)
+    # train_loader, val_loader, train_sampler, val_sampler, mg_sampler = build_dataloader(
+        # cfg)
 
-    data_path_dict = create_dataloader_path(args.dataroot, args.group_k, configuration.dataset.name, video_feature_name=args.modality)
+    data_path_dict = create_dataloader_path(cfg.CONFIG.DATA.TRAIN_DATA_PATH, video_feature_name=cfg.CONFIG.COOT.FEATURE)
     
-    train_set, val_set = create_datasets(data_path_dict, cfg, args.preload_vid,
-                                         not args.no_preload_text)
+    train_set, val_set = create_datasets(data_path_dict, cfg, cfg.CONFIG.COOT.VIDEO_PRELOAD,
+                                         cfg.CONFIG.COOT.TEXT_PRELOAD)
     train_loader, val_loader = create_loaders(train_set, val_set,
                                               cfg.CONFIG.TRAIN.BATCH_SIZE,
                                               cfg.CONFIG.DATA.NUM_WORKERS)
