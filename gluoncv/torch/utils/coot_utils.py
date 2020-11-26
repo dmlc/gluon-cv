@@ -21,15 +21,12 @@ EVALHEADER = "Retriev | R@1   | R@5   | R@10  | R@50  | MeanR |  MedR |    Sum"
 
 
 def create_dataloader_path(data_root,
-                           shot_per_group,
-                           dataset_name,
                            text_feature_name='default',
                            video_feature_name='howto_h100m'):
     """create the path to meta file and features
 
     Args:
         data_root ([PATH]): [Path to the data folder]
-        shot_per_group ([Int]): [number of shots (clips) per group (video)]
 
     Returns:
         [Dict]: [path to meta data and video/language features]
@@ -37,16 +34,16 @@ def create_dataloader_path(data_root,
 
     meta_data_path = Path(
         os.path.join(data_root, "meta",
-                     "meta_group{}.json".format(shot_per_group)))
+                     "meta.json"))
     video_feat_path = Path(
-        os.path.join(data_root, "group{}".format(shot_per_group),
+        os.path.join(data_root, 
                      "video_features", "{}.h5".format(video_feature_name)))
     language_feat_path = Path(
-        os.path.join(data_root, "group{}".format(shot_per_group),
+        os.path.join(data_root,
                      "language_features",
                      "text_{}.h5".format(text_feature_name)))
     meta_text_len_path = Path(
-        os.path.join(data_root, "group{}".format(shot_per_group),
+        os.path.join(data_root,
                      "language_features",
                      "text_lens_{}.json".format(text_feature_name)))
 
@@ -55,7 +52,6 @@ def create_dataloader_path(data_root,
         "video_feats": video_feat_path,
         "language_feats": language_feat_path,
         "meta_text_len": meta_text_len_path,
-        "dataset_name": dataset_name
     }
 
 

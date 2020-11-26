@@ -1,58 +1,84 @@
-training:
-    random_seed: null
-    batch_size: 64
-    num_epochs: 100
-    det_best_field: val_clip_score_at_1
-    compute_clip_retrieval: true
-    loss_cycle_cons: 0.001
-net_video_pooler:
-    name: atn
-    output_dim: 384
-    input_fc: true
-    input_fc_output_dim: 384
-    num_layers: 1
-    num_heads: 8
-    dropout: 0.05
-    use_context: false
-    pooler: atn
-    atn_pool_dim: 768
-    atn_pool_heads: 2
-net_video_sequencer:
-    name: atn
-    output_dim: 384
-    input_fc: false
-    num_layers: 1
-    num_heads: 8
-    dropout: 0.05
-    use_context: true
-    atn_ctx_num_layers: 1
-    atn_ctx_num_heads: 8
-    pooler: avg
-net_text_pooler:
-    name: same
-    same_as: net_video_pooler
-net_text_sequencer:
-    name: same
-    same_as: net_video_sequencer
-text_encoder:
-    feature_dim: 1536
-dataset:
-    name: youcook2
-    features: 100m
-    train_split: train
-    val_split: val
-    max_frames: 80
-    feature_dim: 512
-    frames_noise: 0
-    word_emb: bert
-optimizer:
-    name: radam
-    lr: 0.0009
-    weight_decay: 0
-    momentum: 0.56
-    adam_beta2: 0.98
-    adam_eps: 1.5e-09
-scheduler:
-    patience: 5
-    cooldown: 3
-    warmup: 0
+
+DDP_CONFIG:
+  WORLD_SIZE: 1
+  WORLD_RANK: 0
+  GPU_WORLD_SIZE: 8
+  GPU_WORLD_RANK: 0
+  DIST_URL: 'tcp://172.31.72.195:23456'
+  WOLRD_URLS: ['172.31.72.195']
+  AUTO_RANK_MATCH: True
+  DIST_BACKEND: 'nccl'
+  GPU: 0
+  DISTRIBUTED: True
+
+CONFIG:
+  TRAIN:
+    EPOCH_NUM: 100
+    BATCH_SIZE: 64
+    LR: 0.0009
+    MOMENTUM: 0.56
+    W_DECAY: 0
+    USE_WARMUP: True
+    WARMUP_EPOCHS: 0
+    PATIENCE: 5
+    COOLDOWN: 3
+    LR_POLICY: 'LR_Warmup'
+    RESUME_EPOCH: -1
+
+  VAL:
+    FREQ: 1
+    BATCH_SIZE: 32
+
+  COOT_DATA:
+    DATA_PATH: '/home/ubuntu/data/coot/'
+    FEATURE: 'howto100m'
+    TRAIN_SPLIT: 'train'
+    VALIDATION_SPLIT: 'val'
+    MAX_FRAMES: 80
+    FEATURE_DIM: 512
+    WORD_EMB: 'bert'
+    VIDEO_PRELOAD: True
+    TEXT_PRELOAD: True
+
+  COOT_MODEL:
+    NAME: 'COOT-MultiModalTransformer-d384'
+    MODEL_CONFIG:
+        video_pooler:
+            name: atn
+            output_dim: 384
+            input_fc: true
+            input_fc_output_dim: 384
+            num_layers: 1
+            num_heads: 8
+            dropout: 0.05
+            use_context: false
+            pooler: atn
+            atn_pool_dim: 768
+            atn_pool_heads: 2
+        video_sequencer:
+            name: atn
+            output_dim: 384
+            input_fc: false
+            num_layers: 1
+            num_heads: 8
+            dropout: 0.05
+            use_context: true
+            atn_ctx_num_layers: 1
+            atn_ctx_num_heads: 8
+            pooler: avg
+        text_pooler:
+            name: same
+            same_as: net_video_pooler
+        text_sequencer:
+            name: same
+            same_as: net_video_sequencer
+        text_encoder:
+            feature_dim: 1536
+  LOG:
+    BASE_PATH: './logs/coot'
+    LOG_DIR: 'tb_log'
+    SAVE_DIR: 'checkpoints'
+    EVAL_DIR: './logs/coot/eval'
+    SAVE_FREQ: 2
+
+
