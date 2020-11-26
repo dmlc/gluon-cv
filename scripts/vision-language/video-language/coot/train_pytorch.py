@@ -14,7 +14,7 @@ from gluoncv.torch.utils.task_utils import train_coot, validate_coot
 from gluoncv.torch.engine.config import get_cfg_defaults
 from gluoncv.torch.engine.launch import spawn_workers
 from gluoncv.torch.utils.utils import build_log_dir
-from gluoncv.torch.utils.lr_policy import ReduceLROnPlateau
+from gluoncv.torch.utils.lr_policy import ReduceLROnPlateau, ReduceLROnPlateauWarmup
 from gluoncv.torch.utils.optimizer import RAdam
 from gluoncv.torch.utils.loss import MaxMarginRankingLoss, CycleConsistencyCootLoss
 from gluoncv.torch.utils.coot_utils import get_logger, close_logger, compare_metrics, create_dataloader_path
@@ -64,7 +64,7 @@ def main_worker(cfg):
             last_epoch=cfg.CONFIG.TRAIN.RESUME_EPOCH)
 
     elif cfg.CONFIG.TRAIN.LR_POLICY == 'LR_Warmup':
-        scheduler = ReduceLROnPlateau(optimizer,
+        scheduler = ReduceLROnPlateauWarmup(optimizer,
                                       cfg.CONFIG.TRAIN.WARMUP_EPOCHS,
                                       mode="max",
                                       patience=cfg.CONFIG.TRAIN.PATIENCE,
@@ -82,8 +82,8 @@ def main_worker(cfg):
     #         total_epoch=cfg.CONFIG.TRAIN.WARMUP_EPOCHS,
     #         after_scheduler=scheduler)
 
-    criterion_cycleconsistency = CycleConsistencyCootLoss.cuda()
-    criterion_alignment = MaxMarginRankingLoss(True)
+    criterion_cycleconsistency = CycleConsistencyCootLoss(num_samples=1, use_cuda=True) 
+    criterion_alignment = MaxMarginRankingLoss(use_cuda=True)
 
 
     base_iter = 0
@@ -137,7 +137,7 @@ def main_worker(cfg):
 
         if epoch % cfg.CONFIG.LOG.SAVE_FREQ == 0:
             if cfg.DDP_CONFIG.GPU_WORLD_RANK == 0 or cfg.DDP_CONFIG.DISTRIBUTED == False:
-                save_model(model, optimizer, epoch, cfg)
+                model.save_model(optimizer, epoch, cfg)
 
         # check if model did not improve for too long
         term_after = 15

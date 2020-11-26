@@ -1,5 +1,6 @@
 from collections import OrderedDict
 from easydict import EasyDict
+import os
 import numpy as np
 import torch
 from torch import nn
@@ -174,8 +175,18 @@ class MultiModalTransformer:
                 model.load_state_dict(state_dict)
             i += 1 # we do this intentionally
             
-
-    def save_checkpoint(self, ckpt: str):
+    
+    def save_model(self, optimizer, epoch, cfg):
+        """
+        Save trained model weights.
+        """
+        model_save_dir = os.path.join(cfg.CONFIG.LOG.BASE_PATH,
+                                    cfg.CONFIG.LOG.EXP_NAME,
+                                    cfg.CONFIG.LOG.SAVE_DIR)
+        if not os.path.exists(model_save_dir):
+            os.makedirs(model_save_dir)
+        ckpt_name = "f{}_s{}_ckpt_epoch{}.pth".format(cfg.CONFIG.DATA.CLIP_LEN, cfg.CONFIG.DATA.FRAME_RATE, epoch)
+        checkpoint = os.path.join(model_save_dir, ckpt_name)
         model_states = []
         for m in self.model_list:
             state_dict = m.state_dict()
@@ -188,7 +199,13 @@ class MultiModalTransformer:
                 model_states.append(new_state_dict)
             else:
                 model_states.append(state_dict)
-        torch.save(model_states, str(ckpt))
+        state = {
+        'epoch': epoch + 1,
+        'state_dict': model_states,
+        'best_acc1': None,
+        'optimizer': optimizer.state_dict(),
+    }
+        torch.save(state, checkpoint)
 
 
 class LayerNormalization(nn.Module):

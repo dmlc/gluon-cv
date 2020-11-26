@@ -38,7 +38,7 @@ CONFIG:
     DATASET_NAME: 'youcook2'
     DATA_PATH: '/mnt/efs/fs1/workspace/datasets/coot_data/youcook2'
     FEATURE: 'howto100m'
-    TRAIN_SPLIT: 'val' #'train'
+    TRAIN_SPLIT: 'train'
     VALIDATION_SPLIT: 'val'
     MAX_FRAMES: 80
     FEATURE_DIM: 512

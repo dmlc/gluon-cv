@@ -13,6 +13,7 @@ from torch.nn import functional as F
 from . import coot_utils
 from .coot_utils import unpack_data
 from .utils import AverageMeter, accuracy
+from gluoncv.torch.utils.coot_utils import compute_constrastive_loss, compute_cmc_loss
 
 
 def train_classification(base_iter, model, dataloader, epoch, criterion,
@@ -199,7 +200,7 @@ def test_classification(model, test_loader, criterion, cfg, file):
             f.write(line)
 
 
-def train_coot(base_iter, model, dataloader, epoch, constrastive_loss, cmc_loss, optimizer, cfg, writer, logger):
+def train_coot(base_iter, model, dataloader, epoch, constrastive_loss, cmc_loss, optimizer, cfg, writer, logger, use_cuda=True):
     max_step = len(dataloader)
     timer_start_train = timer()
     model.train()
@@ -223,10 +224,10 @@ def train_coot(base_iter, model, dataloader, epoch, constrastive_loss, cmc_loss,
             sent_emb_mask, sent_emb_lens) = model.encode_paragraph(
                 par_cap_vectors, par_cap_mask, par_cap_len, sent_num,
                 sent_cap_vectors, sent_cap_mask, sent_cap_len)
-        loss = constrastive_loss(
+        loss = compute_constrastive_loss(constrastive_loss,
             vid_emb, par_emb, clip_emb, sent_emb, vid_context,
             par_context)
-        loss += cmc_loss(clip_emb_reshape, clip_emb_mask,
+        loss += compute_cmc_loss(cmc_loss, 0.01, clip_emb_reshape, clip_emb_mask,
                                         clip_emb_lens, sent_emb_reshape,
                                         sent_emb_mask, sent_emb_lens)
 
@@ -248,8 +249,8 @@ def train_coot(base_iter, model, dataloader, epoch, constrastive_loss, cmc_loss,
     
     time_total = timer() - timer_start_train
     logger.info(
-        "Training {} epochs took {:.3f}s / {:.3f}s/ep val".format(
-            epoch, time_total, time_total / epoch))
+        "Training epoch {} took {:.3f}s ".format(
+            epoch, time_total))
 
     writer.add_scalar('train_loss_iteration', loss, base_iter)
     writer.add_scalar('train_batch_size_iteration', vid_frames.size(0), base_iter)
@@ -258,7 +259,7 @@ def train_coot(base_iter, model, dataloader, epoch, constrastive_loss, cmc_loss,
     return base_iter
 
 
-def validate_coot(model, val_loader, epoch, constrastive_loss, cmc_loss, cfg, writer, logger, use_cuda):
+def validate_coot(model, val_loader, epoch, constrastive_loss, cmc_loss, cfg, writer, logger, use_cuda=True):
     model.eval()
     max_step = len(val_loader)
 
@@ -285,9 +286,9 @@ def validate_coot(model, val_loader, epoch, constrastive_loss, cmc_loss, cfg, wr
             sent_emb_lens) = model.encode_paragraph(
                 par_cap_vectors, par_cap_mask, par_cap_len, sent_num,
                 sent_cap_vectors, sent_cap_mask, sent_cap_len)
-        loss = constrastive_loss(
+        loss = compute_constrastive_loss(constrastive_loss,
             vid_emb, par_emb, clip_emb, sent_emb, vid_context, par_context)
-        loss += cmc_loss(
+        loss += compute_cmc_loss(cmc_loss, 0.01,
             clip_emb_reshape, clip_emb_mask, clip_emb_lens,
             sent_emb_reshape, sent_emb_mask, sent_emb_lens)
 
@@ -323,8 +324,6 @@ def validate_coot(model, val_loader, epoch, constrastive_loss, cmc_loss, cfg, wr
     logger.info(coot_utils.EVALHEADER)
     logger.info(coot_utils.retrieval_results_to_str(p2v_res, "Par2Vid"))
     logger.info(coot_utils.retrieval_results_to_str(v2p_res, "Vid2Par"))
-    logger.info(f"Retrieval done: {log_dir} "
-                        f"{len(vid_emb_list)} Items.")
 
     # clip sentence retrieval
     clip_emb_list = F.normalize(clip_emb_list).numpy()
@@ -339,12 +338,12 @@ def validate_coot(model, val_loader, epoch, constrastive_loss, cmc_loss, cfg, wr
     logger.info(coot_utils.retrieval_results_to_str(s2c_res, "Sen2Shot"))
     logger.info(coot_utils.retrieval_results_to_str(c2s_res, "Shot2Sen"))
     
-    writer.add_scalar('val_loss_epoch', np.mean(loss), epoch)
+    writer.add_scalar('val_loss_epoch', loss, epoch)
     writer.add_scalar('val_R1_Sentence2Clip_epoch', s2c_res["r1"], epoch)
     writer.add_scalar('val_R5_Sentence2Clip_acc_epoch', s2c_res["r5"], epoch)
     writer.add_scalar('val_R10_Sentence2Clip_acc_epoch', s2c_res["r10"], epoch)
 
-    writer.add_scalar('val_loss_epoch', np.mean(loss), epoch)
+    writer.add_scalar('val_loss_epoch', loss, epoch)
     writer.add_scalar('val_R1_Clip2Sentence_epoch', c2s_res["r1"], epoch)
     writer.add_scalar('val_R5_Clip2Sentence_acc_epoch', c2s_res["r5"], epoch)
     writer.add_scalar('val_R10_Clip2Sentence_acc_epoch', c2s_res["r10"], epoch)
