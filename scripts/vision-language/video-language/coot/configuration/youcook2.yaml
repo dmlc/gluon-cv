@@ -30,7 +30,7 @@ CONFIG:
     BATCH_SIZE: 32
 
   COOT_DATA:
-    DATA_PATH: '/home/ubuntu/data/coot/'
+    DATA_PATH: '/mnt/efs/fs1/workspace/datasets/coot_data/youcook2'
     FEATURE: 'howto100m'
     TRAIN_SPLIT: 'train'
     VALIDATION_SPLIT: 'val'

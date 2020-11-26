@@ -157,7 +157,7 @@ def main_worker(cfg):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description='Train video action recognition models.')
+        description='Train Coot model.')
     parser.add_argument('--config-file', type=str, help='path to config file.')
     args = parser.parse_args()
 
