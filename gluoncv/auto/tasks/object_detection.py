@@ -6,6 +6,7 @@ import logging
 import uuid
 import pprint
 import json
+import pickle
 from typing import Union, Tuple
 
 from autocfg import dataclass
@@ -25,7 +26,7 @@ from .dataset import ObjectDetectionDataset
 __all__ = ['ObjectDetection']
 
 @dataclass
-class LightConfig:
+class LiteConfig:
     transfer : Union[None, str, ag.Space] = ag.Categorical('ssd_512_mobilenet1.0_coco', 'yolo3_mobilenet1.0_coco')
     lr : Union[ag.Space, float] = 1e-3
     num_trials : int = 1
@@ -170,7 +171,7 @@ class ObjectDetection(BaseTask):
         if not config:
             if gpu_count < 1:
                 self._logger.info('No GPU detected/allowed, using most conservative search space.')
-                config = LightConfig()
+                config = LiteConfig()
             else:
                 config = DefaultConfig()
             config = config.asdict()
@@ -179,7 +180,7 @@ class ObjectDetection(BaseTask):
                 ngpus_per_trial = config.get('ngpus_per_trial', gpu_count)
                 if ngpus_per_trial < 1:
                     self._logger.info('No GPU detected/allowed, using most conservative search space.')
-                    default_config = LightConfig()
+                    default_config = LiteConfig()
                 else:
                     default_config = DefaultConfig()
                 config = default_config.merge(config, allow_new_key=True).asdict()

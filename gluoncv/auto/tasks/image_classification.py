@@ -6,6 +6,7 @@ import uuid
 import time
 import pprint
 import json
+import pickle
 from typing import Union, Tuple
 
 from autocfg import dataclass
@@ -26,7 +27,7 @@ from .dataset import ImageClassificationDataset
 __all__ = ['ImageClassification']
 
 @dataclass
-class LightConfig:
+class LiteConfig:
     model : Union[str, ag.Space] = ag.Categorical('resnet18_v1b', 'mobilenetv3_small')
     lr : Union[ag.Space, float] = 1e-2
     num_trials : int = 1
@@ -119,7 +120,7 @@ class ImageClassification(BaseTask):
         if not config:
             if gpu_count < 1:
                 self._logger.info('No GPU detected/allowed, using most conservative search space.')
-                config = LightConfig()
+                config = LiteConfig()
             else:
                 config = DefaultConfig()
             config = config.asdict()
@@ -128,7 +129,7 @@ class ImageClassification(BaseTask):
                 ngpus_per_trial = config.get('ngpus_per_trial', gpu_count)
                 if ngpus_per_trial < 1:
                     self._logger.info('No GPU detected/allowed, using most conservative search space.')
-                    default_config = LightConfig()
+                    default_config = LiteConfig()
                 else:
                     default_config = DefaultConfig()
                 config = default_config.merge(config, allow_new_key=True).asdict()
