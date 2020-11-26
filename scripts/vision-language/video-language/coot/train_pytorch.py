@@ -34,19 +34,17 @@ def main_worker(cfg):
     model = deploy_model(model, cfg)
 
     # create dataset and dataloader
-
-    data_path_dict = create_dataloader_path(cfg.CONFIG.DATA.TRAIN_DATA_PATH, video_feature_name=cfg.CONFIG.COOT_DATA.FEATURE)
+    data_path_dict = create_dataloader_path(cfg.CONFIG.COOT_DATA.DATA_PATH, cfg.CONFIG.COOT_DATA.DATASET_NAME, video_feature_name=cfg.CONFIG.COOT_DATA.FEATURE)
     
     train_set, val_set = create_datasets(data_path_dict, cfg, cfg.CONFIG.COOT_DATA.VIDEO_PRELOAD,
                                          cfg.CONFIG.COOT_DATA.TEXT_PRELOAD)
     train_loader, val_loader = create_loaders(train_set, val_set,
                                               cfg.CONFIG.TRAIN.BATCH_SIZE,
                                               cfg.CONFIG.DATA.NUM_WORKERS)
-
     optimizer = RAdam(model.get_params(),
                           lr=cfg.CONFIG.TRAIN.LR,
-                          betas=(cfg.CONFIG.TRAIN.MOMENTUM, cfg.CONFIG.TRAIN.ADAM.BETA2),
-                          eps=cfg.CONFIG.TRAIN.ADAM.EPS,
+                          betas=(cfg.CONFIG.TRAIN.MOMENTUM, cfg.CONFIG.TRAIN.ADAM_BETA2),
+                          eps=cfg.CONFIG.TRAIN.ADAM_EPS,
                           weight_decay=cfg.CONFIG.TRAIN.W_DECAY)
 
     if cfg.CONFIG.MODEL.LOAD:
@@ -160,7 +158,7 @@ if __name__ == '__main__':
         description='Train Coot model.')
     parser.add_argument('--config-file', type=str, help='path to config file.')
     args = parser.parse_args()
-
     cfg = get_cfg_defaults()
     cfg.merge_from_file(args.config_file)
-    spawn_workers(main_worker, cfg)
+    # spawn_workers(main_worker, cfg)
+    main_worker(cfg)
