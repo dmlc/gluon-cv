@@ -34,8 +34,6 @@ def main_worker(cfg):
     model = deploy_model(model, cfg)
 
     # create dataset and dataloader
-    # train_loader, val_loader, train_sampler, val_sampler, mg_sampler = build_dataloader(
-        # cfg)
 
     data_path_dict = create_dataloader_path(cfg.CONFIG.DATA.TRAIN_DATA_PATH, video_feature_name=cfg.CONFIG.COOT_DATA.FEATURE)
     
@@ -44,10 +42,6 @@ def main_worker(cfg):
     train_loader, val_loader = create_loaders(train_set, val_set,
                                               cfg.CONFIG.TRAIN.BATCH_SIZE,
                                               cfg.CONFIG.DATA.NUM_WORKERS)
-    # optimizer = torch.optim.SGD(model.parameters(),
-    #                             lr=cfg.CONFIG.TRAIN.LR,
-    #                             momentum=cfg.CONFIG.TRAIN.MOMENTUM,
-    #                             weight_decay=cfg.CONFIG.TRAIN.W_DECAY)
 
     optimizer = RAdam(model.get_params(),
                           lr=cfg.CONFIG.TRAIN.LR,
