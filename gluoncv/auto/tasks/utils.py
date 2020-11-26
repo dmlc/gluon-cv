@@ -164,7 +164,7 @@ def auto_suggest(config, estimator, logger):
     else:
         suggested_estimator = [SSDEstimator, YOLOv3Estimator, CenterNetEstimator]
 
-    config['lr'] = config.get('lr', ag.Categorical(1e-2, 5e-3, 1e-3, 5e-4, 1e-4))
+    # config['lr'] = config.get('lr', ag.Categorical(1e-2, 5e-3, 1e-3, 5e-4, 1e-4))
 
     # estimator setting
     if estimator is None:

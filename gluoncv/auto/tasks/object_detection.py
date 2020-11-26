@@ -5,6 +5,7 @@ import copy
 import logging
 import uuid
 import pprint
+import json
 from typing import Union, Tuple
 
 from autocfg import dataclass
@@ -25,25 +26,26 @@ __all__ = ['ObjectDetection']
 
 @dataclass
 class LightConfig:
-    transfer : Union[str, ag.Space] = ag.Categorical('ssd_512_mobilenet1.0_coco', 'yolo3_mobilenet1.0_coco')
+    transfer : Union[None, str, ag.Space] = ag.Categorical('ssd_512_mobilenet1.0_coco', 'yolo3_mobilenet1.0_coco')
     lr : Union[ag.Space, float] = 1e-3
     num_trials : int = 1
-    epochs : int = 5
+    epochs : Union[ag.Space, int] = 5
     nthreads_per_trial : int = 32
     ngpus_per_trial : int = 0
-    time_limits : int = 3600
+    time_limits : int = 60 * 60 * 24
     search_strategy : str = 'random'
     dist_ip_addrs : Union[None, list, Tuple] = None
 
 @dataclass
 class DefaultConfig:
-    transfer : Union[ag.Space, str] = ag.Categorical('yolo3_darknet53_coco', 'ssd_512_resnet50_v1_voc')
+    transfer : Union[None, ag.Space, str] = ag.Categorical('ssd_512_resnet50_v1_coco', 'yolo3_darknet53_coco',
+                                                           'faster_rcnn_resnet50_v1b_coco', 'center_net_resnet50_v1b_coco')
     lr : Union[ag.Space, float] = ag.Categorical(1e-3, 5e-3)
     num_trials : int = 3
-    epochs : int = 10
+    epochs : Union[ag.Space, int] = 10
     nthreads_per_trial : int = 128
     ngpus_per_trial : int = 8
-    time_limits : int = 3600
+    time_limits : int = 60 * 60 * 24
     search_strategy : str = 'random'
     dist_ip_addrs : Union[None, list, Tuple] = None
 
@@ -55,6 +57,60 @@ def _train_object_detection(args, reporter):
     ----------
     args: <class 'autogluon.utils.edict.EasyDict'>
     """
+    # choose hyperparameters based on pretrained model in transfer learning
+    if args.get('transfer', None):
+        # choose estimator
+        if args.transfer.startswith('ssd'):
+            args.estimator = SSDEstimator
+        elif args.transfer.startswith('yolo3'):
+            args.estimator = YOLOv3Estimator
+        elif args.transfer.startswith('faster_rcnn'):
+            args.estimator = FasterRCNNEstimator
+        elif args.transfer.startswith('center_net'):
+            args.estimator = CenterNetEstimator
+        # choose backbone network
+        transfer_list = args.transfer.split('_')
+        if transfer_list[0] == 'yolo3':
+            transfer_list.pop(0)
+            transfer_list.pop(-1)
+        else:
+            transfer_list.pop(0)
+            transfer_list.pop(0)
+            transfer_list.pop(-1)
+        args.backbone = '_'.join(transfer_list)
+        if args.backbone.startswith('mobilenet'):
+            args.backbone.replace('_', '.')
+
+    # pruning for batch size
+    # if args.get('batch_size', None):
+    #     if args.estimator == FasterRCNNEstimator and args.batch_size not in [4, 8]:
+    #         logging.info('Estimator and batch size are not matched, this trial is skipped.')
+    #         return
+    #     elif args.estimator != FasterRCNNEstimator and args.batch_size in [4, 8]:
+    #         logging.info('Estimator and batch size are not matched, this trial is skipped.')
+    #         return
+
+    # pruning for backbone network
+    # if args.get('backbone', None):
+    #     if args.estimator == SSDEstimator and \
+    #             args.backbone not in ['vgg16_atrous', 'resnet18_v1', 'resnet50_v1',
+    #                                   'resnet101_v2', 'resnet152_v2', 'resnet34_v1b']:
+    #         logging.info('Estimator and backbone network are not matched, this trial is skipped.')
+    #         return
+    #     elif args.estimator == YOLOv3Estimator and \
+    #             args.backbone not in ['darknet53']:
+    #         logging.info('Estimator and backbone network are not matched, this trial is skipped.')
+    #         return
+    #     elif args.estimator == FasterRCNNEstimator and \
+    #             args.backbone not in ['resnet50_v1b', 'resnet101_v1d',
+    #                                   'resnest50', 'resnest101', 'resnest269']:
+    #         logging.info('Estimator and backbone network are not matched, this trial is skipped.')
+    #         return
+    #     elif args.estimator == CenterNetEstimator and \
+    #             args.backbone not in ['resnet18_v1b', 'resnet50_v1b', 'resnet101_v1b', 'dla34']:
+    #         logging.info('Estimator and backbone network are not matched, this trial is skipped.')
+    #         return
+
     # train, val data
     train_data = args.pop('train_data')
     val_data = args.pop('val_data')
@@ -67,6 +123,14 @@ def _train_object_detection(args, reporter):
         estimator = estimator_cls(args, reporter=reporter)
         # training
         result = estimator.fit(train_data=train_data, val_data=val_data)
+        # save config and result
+        trial_log = {}
+        trial_log.update(args)
+        trial_log.update(result)
+        json_str = json.dumps(trial_log)
+        with open('detection_' + 'dataset_' + args['dataset'] + '_' + str(uuid.uuid4()) + '.json', 'w') as json_file:
+            json_file.write(json_str)
+        logging.info('Config and result in this trial have been saved.')
     # pylint: disable=bare-except
     except:
         import traceback
@@ -138,10 +202,10 @@ class ObjectDetection(BaseTask):
         # additional configs
         config['num_workers'] = nthreads_per_trial
         config['gpus'] = [int(i) for i in range(ngpus_per_trial)]
-        if config['gpus']:
-            config['batch_size'] = config.get('batch_size', 8) * len(config['gpus'])
-            self._logger.info('Increase batch size to %d based on the number of gpus %d',
-                              config['batch_size'], len(config['gpus']))
+        # if config['gpus']:
+        #     config['batch_size'] = config.get('batch_size', 8) * len(config['gpus'])
+        #     self._logger.info('Increase batch size to %d based on the number of gpus %d',
+        #                       config['batch_size'], len(config['gpus']))
         config['seed'] = config.get('seed', np.random.randint(32,767))
         self._config = config
 
@@ -206,12 +270,8 @@ class ObjectDetection(BaseTask):
         # automatically suggest some hyperparameters based on the dataset statistics(experimental)
         if not self._config.get('transfer', None):
             estimator = self._config.get('estimator', None)
-            if estimator is None:
-                estimator = [SSDEstimator, FasterRCNNEstimator, YOLOv3Estimator, CenterNetEstimator]
-            self._config['estimator'] = ag.Categorical(*estimator)
             self._config['train_dataset'] = train_data
-            if self._config.get('auto_suggest', True):
-                auto_suggest(self._config, estimator, self._logger)
+            auto_suggest(self._config, estimator, self._logger)
             self._config.pop('train_dataset')
 
         # register args

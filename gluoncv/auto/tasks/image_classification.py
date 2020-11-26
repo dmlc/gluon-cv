@@ -5,6 +5,7 @@ import copy
 import uuid
 import time
 import pprint
+import json
 from typing import Union, Tuple
 
 from autocfg import dataclass
@@ -29,11 +30,11 @@ class LightConfig:
     model : Union[str, ag.Space] = ag.Categorical('resnet18_v1b', 'mobilenetv3_small')
     lr : Union[ag.Space, float] = 1e-2
     num_trials : int = 1
-    epochs : int = 5
-    batch_size : int = 8
+    epochs : Union[ag.Space, int] = 5
+    batch_size : Union[ag.Space, int] = 8
     nthreads_per_trial : int = 32
     ngpus_per_trial : int = 0
-    time_limits : int = 3600
+    time_limits : int = 60 * 60 * 24
     search_strategy : str = 'random'
     dist_ip_addrs : Union[None, list, Tuple] = None
 
@@ -42,11 +43,11 @@ class DefaultConfig:
     model : Union[ag.Space, str] = ag.Categorical('resnet50_v1b', 'resnest50')
     lr : Union[ag.Space, float] = ag.Categorical(1e-2, 5e-2)
     num_trials : int = 3
-    epochs : int = 15
-    batch_size : int = 16
+    epochs : Union[ag.Space, int] = 15
+    batch_size : Union[ag.Space, int] = 16
     nthreads_per_trial : int = 128
     ngpus_per_trial : int = 8
-    time_limits : int = 3600
+    time_limits : int = 60 * 60 * 24
     search_strategy : str = 'random'
     dist_ip_addrs : Union[None, list, Tuple] = None
 
@@ -69,6 +70,14 @@ def _train_image_classification(args, reporter):
         estimator = estimator_cls(args, reporter=reporter)
         # training
         result = estimator.fit(train_data=train_data, val_data=val_data)
+        # save config and result
+        trial_log = {}
+        trial_log.update(args)
+        trial_log.update(result)
+        json_str = json.dumps(trial_log)
+        with open('classification_' + 'dataset_' + args['dataset'] + '_' + str(uuid.uuid4()) + '.json', 'w') as json_file:
+            json_file.write(json_str)
+        logging.info('Config and result in this trial have been saved.')
     # pylint: disable=bare-except
     except:
         import traceback
@@ -143,10 +152,10 @@ class ImageClassification(BaseTask):
         # additional configs
         config['num_workers'] = nthreads_per_trial
         config['gpus'] = [int(i) for i in range(ngpus_per_trial)]
-        if config['gpus']:
-            config['batch_size'] = config.get('batch_size', 8) * len(config['gpus'])
-            self._logger.info('Increase batch size to %d based on the number of gpus %d',
-                              config['batch_size'], len(config['gpus']))
+        # if config['gpus']:
+        #     config['batch_size'] = config.get('batch_size', 8) * len(config['gpus'])
+        #     self._logger.info('Increase batch size to %d based on the number of gpus %d',
+        #                       config['batch_size'], len(config['gpus']))
         config['seed'] = config.get('seed', np.random.randint(32,767))
         self._config = config
 
@@ -212,6 +221,11 @@ class ImageClassification(BaseTask):
         estimator = self._config.get('estimator', None)
         if estimator is None:
             estimator = [ImageClassificationEstimator]
+        elif isinstance(estimator, (tuple, list)):
+            pass
+        else:
+            assert issubclass(estimator, BaseEstimator)
+            estimator = [estimator]
         self._config['estimator'] = ag.Categorical(*estimator)
 
         # register args

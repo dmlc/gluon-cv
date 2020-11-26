@@ -119,7 +119,7 @@ class SSD(HybridBlock):
             num_layers = len(features) + len(num_filters) + int(global_pool)
         assert len(sizes) == num_layers + 1
         sizes = list(zip(sizes[:-1], sizes[1:]))
-        assert isinstance(ratios, list), "Must provide ratios as list or list of list"
+        assert isinstance(ratios, (tuple, list)), "Must provide ratios as tuple or list"
         if not isinstance(ratios[0], (tuple, list)):
             ratios = ratios * num_layers  # propagate to all layers if use same ratio
         assert num_layers == len(sizes) == len(ratios), \
