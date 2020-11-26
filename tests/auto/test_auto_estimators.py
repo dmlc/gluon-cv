@@ -35,13 +35,19 @@ def test_image_classification_estimator():
     evaluate_result = est.evaluate(IMAGE_CLASS_TEST)
     feature = est.predict_feature(IMAGE_CLASS_TEST)
 
-def test_image_classification_estimator_custom_net():
+def test_image_classification_estimator_custom_net_optimizer():
     from gluoncv.auto.estimators import ImageClassificationEstimator
     from gluoncv.model_zoo import get_model
+    from mxnet.optimizer import Adam
     net = get_model('resnet18_v1')
-    est = ImageClassificationEstimator({'train': {'epochs': 1, 'batch_size': 8}, 'gpus': list(range(get_gpu_count()))}, net=net)
+    optim = Adam(learning_rate=0.01, wd=1e-3)
+    est = ImageClassificationEstimator({'train': {'epochs': 1, 'batch_size': 8}, 'gpus': list(range(get_gpu_count()))},
+        net=net, optimizer=optim)
     res = est.fit(IMAGE_CLASS_DATASET)
     assert res.get('valid_acc', 0) > 0
+    feat = est.predict_feature(IMAGE_CLASS_TEST)
+    est.save('test_image_classification.pkl')
+    est = ImageClassificationEstimator.load('test_image_classification.pkl')
     test_result = est.predict(IMAGE_CLASS_TEST)
     evaluate_result = est.evaluate(IMAGE_CLASS_TEST)
     feature = est.predict_feature(IMAGE_CLASS_TEST)

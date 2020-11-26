@@ -1,4 +1,5 @@
 """Transforms described in https://arxiv.org/abs/1512.02325."""
+# pylint: disable=not-callable
 from __future__ import absolute_import
 import numpy as np
 import mxnet as mx
@@ -133,13 +134,27 @@ class SSDDefaultTrainTransform(object):
         self._anchors = anchors
         self._mean = mean
         self._std = std
+        self._internal_target_generator = None
+        self._iou_thresh = iou_thresh
+        self._box_norm = box_norm
+        self._kwargs = kwargs
+        self._anchors_none = False
         if anchors is None:
+            self._anchors_none = True
             return
 
+    @property
+    def _target_generator(self):
         # since we do not have predictions yet, so we ignore sampling here
-        from ....model_zoo.ssd.target import SSDTargetGenerator
-        self._target_generator = SSDTargetGenerator(
-            iou_thresh=iou_thresh, stds=box_norm, negative_mining_ratio=-1, **kwargs)
+        if self._internal_target_generator is None:
+            if self._anchors_none:
+                return None
+            from ....model_zoo.ssd.target import SSDTargetGenerator
+            self._internal_target_generator = SSDTargetGenerator(
+                iou_thresh=self._iou_thresh, stds=self._box_norm, negative_mining_ratio=-1, **self._kwargs)
+            return self._internal_target_generator
+        else:
+            return self._internal_target_generator
 
     def __call__(self, src, label):
         """Apply transform to training image/label."""
@@ -237,13 +252,16 @@ class SSDDALIPipeline(dali.Pipeline):
     dataset_reader: float
         Partial pipeline object, which __call__ function has to return
         (images, bboxes, labels) DALI EdgeReference tuple.
+    seed: int
+        Random seed. Default value is -1, which corresponds to no seed.
     """
     def __init__(self, num_workers, device_id, batch_size, data_shape,
-                 anchors, dataset_reader):
+                 anchors, dataset_reader, seed=-1):
         super(SSDDALIPipeline, self).__init__(
             batch_size=batch_size,
             device_id=device_id,
-            num_threads=num_workers)
+            num_threads=num_workers,
+            seed=seed)
 
         self.dataset_reader = dataset_reader
 

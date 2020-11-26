@@ -47,7 +47,6 @@ Select your preferences and run the install command.
   .. admonition:: Prerequisites:
 
      - Requires `pip >= 9. <https://pip.pypa.io/en/stable/installing/>`_.
-       Both Python 2 and Python 3 are supported.
 
      .. container:: nightly
 
@@ -61,15 +60,26 @@ Select your preferences and run the install command.
 
            .. code-block:: bash
 
-              pip install --upgrade mxnet gluoncv
+              # for mxnet
+              pip install --upgrade mxnet
+              # for pytorch
+              pip install torch==1.6.0+cpu torchvision==0.7.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
+
+              pip install --upgrade gluoncv
 
         .. container:: cuda
 
            .. code-block:: bash
 
-              # Here we assume CUDA 10.0 is installed. You can change the number
+              # Here we assume CUDA 10.2 is installed. You can change the number
               # according to your own CUDA version.
-              pip install --upgrade mxnet-cu100 gluoncv
+
+              # for mxnet
+              pip install --upgrade mxnet-cu102
+              # for pytorch
+              pip install torch==1.6.0 torchvision==0.7.0
+
+              pip install --upgrade gluoncv
 
         .. container:: mkl-dnn
 
@@ -81,9 +91,9 @@ Select your preferences and run the install command.
 
            .. code-block:: bash
 
-              # Here we assume CUDA 10.0 is installed. You can change the number
+              # Here we assume CUDA 10.2 is installed. You can change the number
               # according to your own CUDA version.
-              pip install --upgrade mxnet-cu100mkl gluoncv
+              pip install --upgrade mxnet-cu102mkl gluoncv
 
      .. container:: nightly
 
@@ -91,15 +101,23 @@ Select your preferences and run the install command.
 
            .. code-block:: bash
 
-              pip install --pre --upgrade gluoncv
+              # for mxnet
               pip install --upgrade mxnet -f https://dist.mxnet.io/python/all
+              # for pytorch
+              pip install --pre torch torchvision torchaudio -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
+
+              pip install --pre --upgrade gluoncv
 
         .. container:: cuda
 
            .. code-block:: bash
 
+              # mxnet
+              pip install --upgrade mxnet-cu102 -f https://dist.mxnet.io/python/all
+              # pytorch
+              pip install --pre torch torchvision torchaudio -f https://download.pytorch.org/whl/nightly/cu102/torch_nightly.html
+
               pip install --pre --upgrade gluoncv
-              pip install --upgrade mxnet-cu100 -f https://dist.mxnet.io/python/all
 
         .. container:: mkl-dnn
 
@@ -113,7 +131,7 @@ Select your preferences and run the install command.
            .. code-block:: bash
 
                pip install --pre --upgrade gluoncv
-               pip install --upgrade mxnet-cu100mkl -f https://dist.mxnet.io/python/all
+               pip install --upgrade mxnet-cu102mkl -f https://dist.mxnet.io/python/all
 
      .. container:: source
 
@@ -121,7 +139,11 @@ Select your preferences and run the install command.
 
            .. code-block:: bash
 
+              # mxnet
               pip install --upgrade mxnet -f https://dist.mxnet.io/python/all
+              # pytorch
+              pip install --pre torch torchvision torchaudio -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
+
               git clone https://github.com/dmlc/gluon-cv
               cd gluon-cv && python setup.py install --user
 
@@ -129,7 +151,11 @@ Select your preferences and run the install command.
 
            .. code-block:: bash
 
+              # mxnet
               pip install --upgrade mxnet-cu100 -f https://dist.mxnet.io/python/all
+              # pytorch
+              pip install --pre torch torchvision torchaudio -f https://download.pytorch.org/whl/nightly/cu102/torch_nightly.html
+
               git clone https://github.com/dmlc/gluon-cv
               cd gluon-cv && python setup.py install --user
 
@@ -145,6 +171,6 @@ Select your preferences and run the install command.
 
            .. code-block:: bash
 
-               pip install --upgrade mxnet-cu100mkl -f https://dist.mxnet.io/python/all
+               pip install --upgrade mxnet-cu102mkl -f https://dist.mxnet.io/python/all
                git clone https://github.com/dmlc/gluon-cv
                cd gluon-cv && python setup.py install --user
