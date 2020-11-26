@@ -69,7 +69,7 @@ def _train_object_detection(args, reporter):
             args.estimator = FasterRCNNEstimator
         elif args.transfer.startswith('center_net'):
             args.estimator = CenterNetEstimator
-        # choose backbone network
+        # choose base network
         transfer_list = args.transfer.split('_')
         if transfer_list[0] == 'yolo3':
             transfer_list.pop(0)
@@ -78,9 +78,9 @@ def _train_object_detection(args, reporter):
             transfer_list.pop(0)
             transfer_list.pop(0)
             transfer_list.pop(-1)
-        args.backbone = '_'.join(transfer_list)
-        if args.backbone.startswith('mobilenet'):
-            args.backbone.replace('_', '.')
+        args.base_network = '_'.join(transfer_list)
+        if args.base_network.startswith('mobilenet'):
+            args.base_network.replace('_', '.')
 
     # pruning for batch size
     # if args.get('batch_size', None):
@@ -91,25 +91,25 @@ def _train_object_detection(args, reporter):
     #         logging.info('Estimator and batch size are not matched, this trial is skipped.')
     #         return
 
-    # pruning for backbone network
-    # if args.get('backbone', None):
+    # pruning for base network
+    # if args.get('base_network', None):
     #     if args.estimator == SSDEstimator and \
-    #             args.backbone not in ['vgg16_atrous', 'resnet18_v1', 'resnet50_v1',
-    #                                   'resnet101_v2', 'resnet152_v2', 'resnet34_v1b']:
-    #         logging.info('Estimator and backbone network are not matched, this trial is skipped.')
+    #             args.base_network not in ['vgg16_atrous', 'resnet18_v1', 'resnet50_v1',
+    #                                       'resnet101_v2', 'resnet152_v2', 'resnet34_v1b']:
+    #         logging.info('Estimator and base network are not matched, this trial is skipped.')
     #         return
     #     elif args.estimator == YOLOv3Estimator and \
-    #             args.backbone not in ['darknet53']:
-    #         logging.info('Estimator and backbone network are not matched, this trial is skipped.')
+    #             args.base_network not in ['darknet53']:
+    #         logging.info('Estimator and base network are not matched, this trial is skipped.')
     #         return
     #     elif args.estimator == FasterRCNNEstimator and \
-    #             args.backbone not in ['resnet50_v1b', 'resnet101_v1d',
-    #                                   'resnest50', 'resnest101', 'resnest269']:
-    #         logging.info('Estimator and backbone network are not matched, this trial is skipped.')
+    #             args.base_network not in ['resnet50_v1b', 'resnet101_v1d',
+    #                                       'resnest50', 'resnest101', 'resnest269']:
+    #         logging.info('Estimator and base network are not matched, this trial is skipped.')
     #         return
     #     elif args.estimator == CenterNetEstimator and \
-    #             args.backbone not in ['resnet18_v1b', 'resnet50_v1b', 'resnet101_v1b', 'dla34']:
-    #         logging.info('Estimator and backbone network are not matched, this trial is skipped.')
+    #             args.base_network not in ['resnet18_v1b', 'resnet50_v1b', 'resnet101_v1b', 'dla34']:
+    #         logging.info('Estimator and base network are not matched, this trial is skipped.')
     #         return
 
     # train, val data
