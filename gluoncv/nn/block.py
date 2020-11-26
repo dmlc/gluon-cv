@@ -6,7 +6,7 @@ from mxnet import initializer
 from mxnet.gluon import nn, contrib
 from mxnet.gluon.nn import BatchNorm, HybridBlock
 
-__all__ = ['BatchNormCudnnOff', 'Consensus', 'ReLU6', 'HardSigmoid', 'HardSwish']
+__all__ = ['BatchNormCudnnOff', 'Consensus', 'ReLU6', 'HardSigmoid', 'HardSwish', 'Identity']
 
 class BatchNormCudnnOff(BatchNorm):
     """Batch normalization layer without CUDNN. It is a temporary solution.
@@ -163,4 +163,20 @@ class DUC(HybridBlock):
         x = self.bn(x)
         x = self.relu(x)
         x = self.pixel_shuffle(x)
+        return x
+
+class Identity(HybridBlock):
+    """Block that passes through the input directly.
+    This block can be used in conjunction with HybridConcatenate
+    block for residual connection.
+    Example::
+        net = HybridConcatenate()
+        net.add(nn.Dense(10, activation='relu'))
+        net.add(nn.Dense(20))
+        net.add(Identity())
+    """
+    def __init__(self):
+        super(Identity, self).__init__()
+
+    def hybrid_forward(self, F, x):
         return x

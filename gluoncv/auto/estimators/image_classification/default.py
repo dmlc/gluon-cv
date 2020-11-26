@@ -3,6 +3,7 @@
 from typing import Union, Tuple
 from autocfg import dataclass, field
 
+
 @dataclass
 class ImageClassification:
     model : str = 'resnet50_v1'

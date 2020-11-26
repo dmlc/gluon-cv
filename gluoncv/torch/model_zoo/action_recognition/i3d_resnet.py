@@ -13,7 +13,7 @@ from .non_local import build_nonlocal_block
 __all__ = ['I3D_ResNetV1', 'i3d_resnet50_v1_kinetics400', 'i3d_resnet101_v1_kinetics400',
            'i3d_nl5_resnet50_v1_kinetics400', 'i3d_nl10_resnet50_v1_kinetics400',
            'i3d_nl5_resnet101_v1_kinetics400', 'i3d_nl10_resnet101_v1_kinetics400',
-           'i3d_resnet50_v1_sthsthv2']
+           'i3d_resnet50_v1_sthsthv2', 'i3d_resnet50_v1_custom']
 
 
 def conv3x3x3(in_planes, out_planes, spatial_stride=1, temporal_stride=1, dilation=1):
@@ -490,7 +490,7 @@ class I3D_ResNetV1(nn.Module):
                         down_bn.running_var.data.copy_(
                             R2Dlayers[s]._modules[str(k)].downsample._modules['1'].running_var.data)
                     count += 1
-        print("I3D weights inflated from pretrained C2D.")
+            print("I3D weights inflated from pretrained C2D.")
 
     def forward(self, x):
         bs, _, _, _, _ = x.shape
@@ -504,6 +504,10 @@ class I3D_ResNetV1(nn.Module):
         # spatial temporal average
         pooled_feat = self.st_avg(x)
         x = pooled_feat.view(bs, -1)
+
+        if self.feat_ext:
+            return x
+
         x = self.head(x)
         return x
 
@@ -678,4 +682,32 @@ def i3d_resnet50_v1_sthsthv2(cfg):
         from ..model_store import get_model_file
         model.load_state_dict(torch.load(get_model_file('i3d_resnet50_v1_sthsthv2',
                                                         tag=cfg.CONFIG.MODEL.PRETRAINED)))
+    return model
+
+
+def i3d_resnet50_v1_custom(cfg):
+    model = I3D_ResNetV1(num_classes=cfg.CONFIG.DATA.NUM_CLASSES,
+                         depth=50,
+                         pretrained=cfg.CONFIG.MODEL.PRETRAINED,
+                         pretrained_base=cfg.CONFIG.MODEL.PRETRAINED_BASE,
+                         feat_ext=cfg.CONFIG.INFERENCE.FEAT,
+                         num_segment=cfg.CONFIG.DATA.NUM_SEGMENT,
+                         num_crop=cfg.CONFIG.DATA.NUM_CROP,
+                         out_indices=[3],
+                         inflate_freq=((1, 1, 1), (1, 0, 1, 0), (1, 0, 1, 0, 1, 0), (0, 1, 0)),
+                         bn_eval=cfg.CONFIG.MODEL.BN_EVAL,
+                         partial_bn=cfg.CONFIG.MODEL.PARTIAL_BN,
+                         bn_frozen=cfg.CONFIG.MODEL.BN_FROZEN)
+
+    if cfg.CONFIG.MODEL.PRETRAINED:
+        from ..model_store import get_model_file
+        state_dict = torch.load(get_model_file('i3d_resnet50_v1_kinetics400', tag=cfg.CONFIG.MODEL.PRETRAINED))
+        for k in list(state_dict.keys()):
+            # retain only backbone up to before the classification layer
+            if k.startswith('fc') or k.startswith('head'):
+                del state_dict[k]
+
+        msg = model.load_state_dict(state_dict, strict=False)
+        assert set(msg.missing_keys) == {'fc.weight', 'fc.bias', 'head.1.weight', 'head.1.bias'}
+        print("=> Initialized from an I3D model pretrained on Kinetcis400 dataset")
     return model

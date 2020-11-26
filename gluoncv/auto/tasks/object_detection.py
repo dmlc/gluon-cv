@@ -139,9 +139,9 @@ def _train_object_detection(args, reporter):
                 'time': time.time() - tic, 'train_map': -1, 'valid_map': -1}
 
     # TODO: checkpointing needs to be done in a better way
-    unique_checkpoint = 'train_object_detection_' + str(uuid.uuid4()) + '.pkl'
-    estimator.save(unique_checkpoint)
-    result.update({'model_checkpoint': unique_checkpoint})
+    # unique_checkpoint = 'train_object_detection_' + str(uuid.uuid4()) + '.pkl'
+    # estimator.save(unique_checkpoint)
+    result.update({'model_checkpoint': pickle.dumps(estimator)})
     return result
 
 class ObjectDetection(BaseTask):
@@ -199,6 +199,22 @@ class ObjectDetection(BaseTask):
         else:
             raise ValueError('Please specify `nthreads_per_trial` and `ngpus_per_trial` '
                              'given that dist workers are available')
+
+        # fix estimator-transfer relationship
+        estimator = config.get('estimator', None)
+        transfer = config.get('transfer', None)
+        if estimator is not None and transfer is not None:
+            if isinstance(transfer, ag.Space):
+                transfer = transfer.data
+            if isinstance(transfer, str):
+                transfer = [transfer]
+            transfer = [t for t in transfer if estimator in t]
+            if not transfer:
+                raise ValueError(f'No matching `transfer` model for {estimator}')
+            if len(transfer) == 1:
+                config['transfer'] = transfer[0]
+            else:
+                config['transfer'] = ag.Categorical(**transfer)
 
         # additional configs
         config['num_workers'] = nthreads_per_trial
@@ -317,10 +333,9 @@ class ObjectDetection(BaseTask):
         model_checkpoint = results.get('model_checkpoint', None)
         if model_checkpoint is None:
             raise RuntimeError(f'Unexpected error happened during fit: {pprint.pformat(results, indent=2)}')
-        estimator = self.load(results['model_checkpoint'])
+        estimator = pickle.loads(results['model_checkpoint'])
         return estimator
 
-    @property
     def fit_summary(self):
         return copy.copy(self._fit_summary)
 

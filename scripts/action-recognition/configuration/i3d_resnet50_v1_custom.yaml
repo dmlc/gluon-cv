@@ -1,0 +1,55 @@
+# i3d_resnet50_v1_custom
+
+DDP_CONFIG:
+  WORLD_SIZE: 1
+  WORLD_RANK: 0
+  GPU_WORLD_SIZE: 8
+  GPU_WORLD_RANK: 0
+  DIST_URL: 'tcp://172.31.72.252:23456'
+  WOLRD_URLS: ['172.31.72.252']
+  AUTO_RANK_MATCH: True
+  DIST_BACKEND: 'nccl'
+  GPU: 0
+  DISTRIBUTED: True
+
+CONFIG:
+  TRAIN:
+    EPOCH_NUM: 100
+    BATCH_SIZE: 8
+    LR: 0.01
+    MOMENTUM: 0.9
+    W_DECAY: 1e-5
+    LR_POLICY: 'Step'
+    USE_WARMUP: False
+    LR_MILESTONE: [40, 80]
+    STEP: 0.1
+
+  VAL:
+    FREQ: 2
+    BATCH_SIZE: 8
+
+  DATA:
+    TRAIN_ANNO_PATH: '/home/ubuntu/data/sthsthv2/sthsthv2_train.txt'
+    VAL_ANNO_PATH: '/home/ubuntu/data/sthsthv2/sthsthv2_val.txt'
+    TRAIN_DATA_PATH: '/home/ubuntu/data/sthsthv2/20bn-something-something-v2/'
+    VAL_DATA_PATH:  '/home/ubuntu/data/sthsthv2/20bn-something-something-v2/'
+    NUM_CLASSES: 174
+    CLIP_LEN: 32
+    FRAME_RATE: 2
+    NUM_SEGMENT: 1
+    NUM_CROP: 1
+    TEST_NUM_SEGMENT: 10
+    TEST_NUM_CROP: 3
+    MULTIGRID: False
+    KEEP_ASPECT_RATIO: False
+
+  MODEL:
+    NAME: 'i3d_resnet50_v1_custom'
+    PRETRAINED: True    # Default True, use a backbone pretrained on K400. If set to False, the model is just inflated from 2D ImageNet weights.
+
+  LOG:
+    BASE_PATH: './logs/i3d_resnet50_v1_custom'
+    LOG_DIR: 'tb_log'
+    SAVE_DIR: 'checkpoints'
+    EVAL_DIR: './logs/i3d_resnet50_v1_custom/eval'
+    SAVE_FREQ: 2

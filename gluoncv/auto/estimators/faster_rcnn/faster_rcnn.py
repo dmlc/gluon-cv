@@ -1,5 +1,5 @@
 """Faster RCNN Estimator."""
-# pylint: disable=logging-not-lazy
+# pylint: disable=logging-not-lazy,abstract-method
 import os
 import time
 

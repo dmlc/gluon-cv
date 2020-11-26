@@ -1,0 +1,36 @@
+# slowfast_4x16_resnet50_kinetics400
+
+DDP_CONFIG:
+  WORLD_SIZE: 1
+  WORLD_RANK: 0
+  GPU_WORLD_SIZE: 8
+  GPU_WORLD_RANK: 0
+  DIST_URL: 'tcp://172.31.72.195:23456'
+  WOLRD_URLS: ['172.31.72.195']
+  AUTO_RANK_MATCH: True
+  DIST_BACKEND: 'nccl'
+  GPU: 0
+  DISTRIBUTED: True
+
+CONFIG:
+  INFERENCE:
+    FEAT: True
+
+  DATA:
+    VAL_ANNO_PATH: '/home/ubuntu/data/kinetics400/k400_val.txt'
+    VAL_DATA_PATH:  '/home/ubuntu/data/kinetics400/val_256/'
+    NUM_CLASSES: 400
+    CLIP_LEN: 32
+    FRAME_RATE: 2
+    NUM_SEGMENT: 1
+    NUM_CROP: 1
+    MULTIGRID: False
+    KEEP_ASPECT_RATIO: False
+
+  MODEL:
+    NAME: 'slowfast_4x16_resnet50_kinetics400'
+    PRETRAINED: False
+
+  LOG:
+    BASE_PATH: './logs/slowfast_4x16_resnet50_kinetics400'
+    SAVE_DIR: 'features'

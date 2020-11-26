@@ -1,0 +1,40 @@
+# r2plus1d_v1_resnet50_kinetics400
+
+DDP_CONFIG:
+  WORLD_SIZE: 1
+  WORLD_RANK: 0
+  GPU_WORLD_SIZE: 8
+  GPU_WORLD_RANK: 0
+  DIST_URL: 'tcp://172.31.72.195:23456'
+  WOLRD_URLS: ['172.31.72.195']
+  AUTO_RANK_MATCH: True
+  DIST_BACKEND: 'nccl'
+  GPU: 0
+  DISTRIBUTED: True
+
+CONFIG:
+  INFERENCE:
+    FEAT: True
+
+  DATA:
+    VAL_ANNO_PATH: '/home/ubuntu/data/kinetics400/k400_val.txt'
+    VAL_DATA_PATH:  '/home/ubuntu/data/kinetics400/val_256/'
+    NUM_CLASSES: 400
+    CLIP_LEN: 16
+    FRAME_RATE: 2
+    NUM_SEGMENT: 1
+    NUM_CROP: 1
+    MULTIGRID: False
+    KEEP_ASPECT_RATIO: False
+    CROP_SIZE: 112
+    SHORT_SIDE_SIZE: 128
+    NEW_HEIGHT: 128
+    NEW_WIDTH: 171
+
+  MODEL:
+    NAME: 'r2plus1d_v1_resnet50_kinetics400'
+    PRETRAINED: True
+
+  LOG:
+    BASE_PATH: './logs/r2plus1d_v1_resnet50_kinetics400'
+    SAVE_DIR: 'features'

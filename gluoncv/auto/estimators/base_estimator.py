@@ -179,7 +179,21 @@ class BaseEstimator:
         """
         return self._predict(x)
 
+    def predict_feature(self, x):
+        """Predict intermediate features using this estimator.
+
+        Parameters
+        ----------
+        x : str, pd.DataFrame or ndarray
+            The input, can be str(filepath), pd.DataFrame with 'image' column, or raw ndarray input.
+
+        """
+        return self._predict_feature(x)
+
     def _predict(self, x):
+        raise NotImplementedError
+
+    def _predict_feature(self, x):
         raise NotImplementedError
 
     def _fit(self, train_data, val_data):
@@ -228,6 +242,7 @@ class BaseEstimator:
         try:
             import mxnet as mx
             d.pop('async_net', None)
+            d.pop('_feature_net', None)
             net = d.get('net', None)
             if isinstance(net, mx.gluon.HybridBlock):
                 with temporary_filename() as tfile:

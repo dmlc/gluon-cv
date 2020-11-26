@@ -1,2 +1,2 @@
 Name,Method,pixAcc,mIoU,Command,log
-icnet_resnet50_mhpv1,ICNet [5]_,89.5,40.4,`shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/icnet_resnet50_mhpv1.sh>`_,`log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/icnet_resnet50_mhpv1.log>`_
+icnet_resnet50_mhpv1,ICNet [5]_,90.5,44.5,`shell script <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/icnet_resnet50_mhpv1.sh>`_,`log <https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/logs/segmentation/icnet_resnet50_mhpv1.log>`_

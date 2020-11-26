@@ -191,6 +191,17 @@ def test_action_recognition_tpn_models():
     _test_model_list(models, use_cuda, x, pretrained=True, num_classes=400)
 
 
+def test_action_recognition_csn_models():
+    use_cuda = True
+    if torch.cuda.device_count() == 0:
+        use_cuda = False
+
+    models = ['ircsn_v2_resnet152_f32s2_kinetics400']
+    x = torch.rand(2, 3, 32, 224, 224)
+    _test_model_list(models, use_cuda, x, pretrained=False, num_classes=400)
+    _test_model_list(models, use_cuda, x, pretrained=True, num_classes=400)
+
+
 if __name__ == '__main__':
     import nose
 

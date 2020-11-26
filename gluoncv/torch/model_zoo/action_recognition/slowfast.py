@@ -12,7 +12,7 @@ from torch.nn import BatchNorm3d
 __all__ = ['SlowFast', 'slowfast_4x16_resnet50_kinetics400', 'slowfast_8x8_resnet50_kinetics400',
            'slowfast_4x16_resnet101_kinetics400', 'slowfast_8x8_resnet101_kinetics400',
            'slowfast_16x8_resnet101_kinetics400', 'slowfast_16x8_resnet101_50_50_kinetics400',
-           'slowfast_16x8_resnet50_sthsthv2']
+           'slowfast_16x8_resnet50_sthsthv2', 'slowfast_4x16_resnet50_custom']
 
 
 class Bottleneck(nn.Module):
@@ -614,4 +614,40 @@ def slowfast_16x8_resnet50_sthsthv2(cfg):
         from ..model_store import get_model_file
         model.load_state_dict(torch.load(get_model_file('slowfast_16x8_resnet50_sthsthv2',
                                                         tag=cfg.CONFIG.MODEL.PRETRAINED)))
+    return model
+
+
+def slowfast_4x16_resnet50_custom(cfg):
+    model = SlowFast(num_classes=cfg.CONFIG.DATA.NUM_CLASSES,
+                     layers=[3, 4, 6, 3],
+                     pretrained=cfg.CONFIG.MODEL.PRETRAINED,
+                     pretrained_base=cfg.CONFIG.MODEL.PRETRAINED_BASE,
+                     feat_ext=cfg.CONFIG.INFERENCE.FEAT,
+                     num_segment=cfg.CONFIG.DATA.NUM_SEGMENT,
+                     num_crop=cfg.CONFIG.DATA.NUM_CROP,
+                     alpha=8,
+                     beta_inv=8,
+                     fusion_conv_channel_ratio=2,
+                     fusion_kernel_size=5,
+                     width_per_group=64,
+                     num_groups=1,
+                     slow_temporal_stride=16,
+                     fast_temporal_stride=2,
+                     slow_frames=4,
+                     fast_frames=32,
+                     bn_eval=cfg.CONFIG.MODEL.BN_EVAL,
+                     partial_bn=cfg.CONFIG.MODEL.PARTIAL_BN,
+                     bn_frozen=cfg.CONFIG.MODEL.BN_FROZEN)
+
+    if cfg.CONFIG.MODEL.PRETRAINED:
+        from ..model_store import get_model_file
+        state_dict = torch.load(get_model_file('slowfast_4x16_resnet50_kinetics400', tag=cfg.CONFIG.MODEL.PRETRAINED))
+        for k in list(state_dict.keys()):
+            # retain only backbone up to before the classification layer
+            if k.startswith('fc'):
+                del state_dict[k]
+
+        msg = model.load_state_dict(state_dict, strict=False)
+        assert set(msg.missing_keys) == {'fc.weight', 'fc.bias'}
+        print("=> initialized from a SlowFast4x16 model pretrained on Kinetcis400 dataset")
     return model

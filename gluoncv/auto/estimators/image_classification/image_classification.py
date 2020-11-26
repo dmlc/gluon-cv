@@ -3,11 +3,13 @@
 import time
 import os
 import math
+import copy
 
 import pandas as pd
 import numpy as np
 import mxnet as mx
 from mxnet import gluon, nd
+from mxnet.optimizer import Optimizer
 from mxnet import autograd as ag
 from mxnet.gluon.data.vision import transforms
 from ....data.transforms.presets.imagenet import transform_eval
@@ -34,11 +36,26 @@ class ImageClassificationEstimator(BaseEstimator):
         Optional logger for this estimator, can be `None` when default setting is used.
     reporter : callable
         The reporter for metric checkpointing.
+    net : mx.gluon.Block
+        The custom network. If defined, the model name in config will be ignored so your
+        custom network will be used for training rather than pulling it from model zoo.
     """
-    def __init__(self, config, logger=None, reporter=None):
+    def __init__(self, config, logger=None, reporter=None, net=None, optimizer=None):
         super(ImageClassificationEstimator, self).__init__(config, logger, reporter=reporter, name=None)
         self.last_train = None
         self.input_size = self._cfg.train.input_size
+        self._feature_net = None
+        if net is not None:
+            assert isinstance(net, gluon.Block), f"given custom network {type(net)}, `gluon.Block` expected"
+            try:
+                # to avoid cuda initialization error, we keep network copies in cpu
+                net.collect_params().reset_ctx(mx.cpu())
+            except ValueError:
+                pass
+        self._custom_net = net
+        if optimizer is not None:
+            assert isinstance(optimizer, Optimizer)
+        self._optimizer = optimizer
 
     def _fit(self, train_data, val_data):
         self._best_acc = 0
@@ -200,18 +217,25 @@ class ImageClassificationEstimator(BaseEstimator):
         self.ctx = self.ctx if self.ctx else [mx.cpu()]
 
         # network
-        model_name = self._cfg.img_cls.model.lower()
-        input_size = self.input_size
-        if 'inception' in model_name or 'googlenet' in model_name:
-            self.input_size = 299
-        elif 'resnest101' in model_name:
-            self.input_size = 256
-        elif 'resnest200' in model_name:
-            self.input_size = 320
-        elif 'resnest269' in model_name:
-            self.input_size = 416
-        elif 'cifar' in model_name:
-            self.input_size = 28
+        if self._custom_net is None:
+            model_name = self._cfg.img_cls.model.lower()
+            input_size = self.input_size
+            if 'inception' in model_name or 'googlenet' in model_name:
+                self.input_size = 299
+            elif 'resnest101' in model_name:
+                self.input_size = 256
+            elif 'resnest200' in model_name:
+                self.input_size = 320
+            elif 'resnest269' in model_name:
+                self.input_size = 416
+            elif 'cifar' in model_name:
+                self.input_size = 28
+        else:
+            self._logger.debug('Custom network specified, ignore the model name in config...')
+            self.net = copy.deepcopy(self._custom_net)
+            model_name = ''
+            self.input_size = input_size = self._cfg.train.input_size
+
 
         if input_size != self.input_size:
             self._logger.info(f'Change input size to {self.input_size}, given model type: {model_name}')
@@ -230,8 +254,9 @@ class ImageClassificationEstimator(BaseEstimator):
         if self._cfg.img_cls.last_gamma:
             kwargs['last_gamma'] = True
 
-        self.net = get_model(model_name, **kwargs)
-        if self._cfg.img_cls.use_pretrained:
+        if model_name:
+            self.net = get_model(model_name, **kwargs)
+        if model_name and self._cfg.img_cls.use_pretrained:
             # reset last fully connected layer
             fc_layer_found = False
             for fc_name in ('output', 'fc'):
@@ -303,13 +328,17 @@ class ImageClassificationEstimator(BaseEstimator):
                         step_factor=lr_decay, power=2)
         ])
 
-        optimizer = 'nag'
-        optimizer_params = {'wd': self._cfg.train.wd,
-                            'momentum': self._cfg.train.momentum,
-                            'lr_scheduler': lr_scheduler}
-        if self._cfg.train.dtype != 'float32':
-            optimizer_params['multi_precision'] = True
-        self.trainer = gluon.Trainer(self.net.collect_params(), optimizer, optimizer_params)
+        if self._optimizer is None:
+            optimizer = 'nag'
+            optimizer_params = {'wd': self._cfg.train.wd,
+                                'momentum': self._cfg.train.momentum,
+                                'lr_scheduler': lr_scheduler}
+            if self._cfg.train.dtype != 'float32':
+                optimizer_params['multi_precision'] = True
+            self.trainer = gluon.Trainer(self.net.collect_params(), optimizer, optimizer_params)
+        else:
+            optimizer = self._optimizer
+            self.trainer = gluon.Trainer(self.net.collect_params(), optimizer)
 
     def _evaluate(self, val_data):
         """Test on validation dataset."""
@@ -354,6 +383,8 @@ class ImageClassificationEstimator(BaseEstimator):
                 y['image'] = x
                 return y
             return pd.concat([_predict_merge(xx) for xx in x['image']]).reset_index(drop=True)
+        elif isinstance(x, (list, tuple)):
+            return pd.concat([self._predict(xx) for xx in x]).reset_index(drop=True)
         else:
             raise ValueError('Input is not supported: {}'.format(type(x)))
         x = x.as_in_context(self.ctx[0])
@@ -362,4 +393,46 @@ class ImageClassificationEstimator(BaseEstimator):
         ind = nd.topk(pred, k=topK)[0].astype('int').asnumpy().flatten()
         probs = mx.nd.softmax(pred)[0].asnumpy().flatten()
         df = pd.DataFrame([{'class': self.classes[ind[i]], 'score': probs[ind[i]], 'id': ind[i]} for i in range(topK)])
+        return df
+
+    def _get_feature_net(self):
+        """Get the network slice for feature extraction only"""
+        if hasattr(self, '_feature_net') and self._feature_net is not None:
+            return self._feature_net
+        self._feature_net = copy.copy(self.net)
+        fc_layer_found = False
+        for fc_name in ('output', 'fc'):
+            fc_layer = getattr(self._feature_net, fc_name, None)
+            if fc_layer is not None:
+                fc_layer_found = True
+                break
+        if fc_layer_found:
+            self._feature_net.register_child(nn.Identity(), fc_name)
+            super(gluon.Block, self._feature_net).__setattr__(fc_name, nn.Identity())
+            self.net.__setattr__(fc_name, fc_layer)
+        else:
+            raise RuntimeError('Unable to modify the last fc layer in network, (output, fc) expected...')
+        return self._feature_net
+
+    def _predict_feature(self, x):
+        resize = int(math.ceil(self.input_size / self._cfg.train.crop_ratio))
+        if isinstance(x, str):
+            x = transform_eval(mx.image.imread(x), resize_short=resize, crop_size=self.input_size)
+        elif isinstance(x, mx.nd.NDArray):
+            x = transform_eval(x, resize_short=resize, crop_size=self.input_size)
+        elif isinstance(x, pd.DataFrame):
+            assert 'image' in x.columns, "Expect column `image` for input images"
+            def _predict_merge(x):
+                y = self._predict_feature(x)
+                y['image'] = x
+                return y
+            return pd.concat([_predict_merge(xx) for xx in x['image']]).reset_index(drop=True)
+        elif isinstance(x, (list, tuple)):
+            return pd.concat([self._predict_feature(xx) for xx in x]).reset_index(drop=True)
+        else:
+            raise ValueError('Input is not supported: {}'.format(type(x)))
+        x = x.as_in_context(self.ctx[0])
+        feat_net = self._get_feature_net()
+        feat = feat_net(x)[0].asnumpy().flatten()
+        df = pd.DataFrame({'image_feature': [feat]})
         return df

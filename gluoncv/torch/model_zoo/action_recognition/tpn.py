@@ -14,7 +14,8 @@ import torch.nn.functional as F
 
 __all__ = ['TPN', 'TPNet', 'tpn_resnet50_f8s8_kinetics400', 'tpn_resnet50_f16s4_kinetics400',
            'tpn_resnet50_f32s2_kinetics400', 'tpn_resnet101_f8s8_kinetics400',
-           'tpn_resnet101_f16s4_kinetics400', 'tpn_resnet101_f32s2_kinetics400']
+           'tpn_resnet101_f16s4_kinetics400', 'tpn_resnet101_f32s2_kinetics400',
+           'tpn_resnet50_f32s2_custom']
 
 
 def conv3x3x3(in_planes, out_planes, spatial_stride=1, temporal_stride=1, dilation=1):
@@ -576,6 +577,7 @@ class TPNet(nn.Module):
                  num_classes=400,
                  pretrained=None,
                  pretrained_base=True,
+                 feat_ext=False,
                  num_stages=4,
                  spatial_strides=(1, 2, 2, 2),
                  temporal_strides=(1, 1, 1, 1),
@@ -624,6 +626,7 @@ class TPNet(nn.Module):
         self.bn_frozen = bn_frozen
         self.partial_bn = partial_bn
         self.with_cp = with_cp
+        self.feat_ext = feat_ext
 
         self.dropout_ratio = dropout_ratio
 
@@ -693,6 +696,10 @@ class TPNet(nn.Module):
         if self.dropout is not None:
             x = self.dropout(x)
         x = x.view(x.size(0), -1)
+
+        if self.feat_ext:
+            return x
+
         out = self.fc(x)
         return out
 
@@ -737,6 +744,7 @@ def tpn_resnet50_f8s8_kinetics400(cfg):
                   num_classes=cfg.CONFIG.DATA.NUM_CLASSES,
                   pretrained=cfg.CONFIG.MODEL.PRETRAINED,
                   pretrained_base=cfg.CONFIG.MODEL.PRETRAINED_BASE,
+                  feat_ext=cfg.CONFIG.INFERENCE.FEAT,
                   bn_eval=cfg.CONFIG.MODEL.BN_EVAL,
                   partial_bn=cfg.CONFIG.MODEL.PARTIAL_BN,
                   bn_frozen=cfg.CONFIG.MODEL.BN_FROZEN)
@@ -788,6 +796,7 @@ def tpn_resnet50_f16s4_kinetics400(cfg):
                   num_classes=cfg.CONFIG.DATA.NUM_CLASSES,
                   pretrained=cfg.CONFIG.MODEL.PRETRAINED,
                   pretrained_base=cfg.CONFIG.MODEL.PRETRAINED_BASE,
+                  feat_ext=cfg.CONFIG.INFERENCE.FEAT,
                   bn_eval=cfg.CONFIG.MODEL.BN_EVAL,
                   partial_bn=cfg.CONFIG.MODEL.PARTIAL_BN,
                   bn_frozen=cfg.CONFIG.MODEL.BN_FROZEN)
@@ -839,6 +848,7 @@ def tpn_resnet50_f32s2_kinetics400(cfg):
                   num_classes=cfg.CONFIG.DATA.NUM_CLASSES,
                   pretrained=cfg.CONFIG.MODEL.PRETRAINED,
                   pretrained_base=cfg.CONFIG.MODEL.PRETRAINED_BASE,
+                  feat_ext=cfg.CONFIG.INFERENCE.FEAT,
                   bn_eval=cfg.CONFIG.MODEL.BN_EVAL,
                   partial_bn=cfg.CONFIG.MODEL.PARTIAL_BN,
                   bn_frozen=cfg.CONFIG.MODEL.BN_FROZEN)
@@ -890,6 +900,7 @@ def tpn_resnet101_f8s8_kinetics400(cfg):
                   num_classes=cfg.CONFIG.DATA.NUM_CLASSES,
                   pretrained=cfg.CONFIG.MODEL.PRETRAINED,
                   pretrained_base=cfg.CONFIG.MODEL.PRETRAINED_BASE,
+                  feat_ext=cfg.CONFIG.INFERENCE.FEAT,
                   bn_eval=cfg.CONFIG.MODEL.BN_EVAL,
                   partial_bn=cfg.CONFIG.MODEL.PARTIAL_BN,
                   bn_frozen=cfg.CONFIG.MODEL.BN_FROZEN)
@@ -941,6 +952,7 @@ def tpn_resnet101_f16s4_kinetics400(cfg):
                   num_classes=cfg.CONFIG.DATA.NUM_CLASSES,
                   pretrained=cfg.CONFIG.MODEL.PRETRAINED,
                   pretrained_base=cfg.CONFIG.MODEL.PRETRAINED_BASE,
+                  feat_ext=cfg.CONFIG.INFERENCE.FEAT,
                   bn_eval=cfg.CONFIG.MODEL.BN_EVAL,
                   partial_bn=cfg.CONFIG.MODEL.PARTIAL_BN,
                   bn_frozen=cfg.CONFIG.MODEL.BN_FROZEN)
@@ -992,6 +1004,7 @@ def tpn_resnet101_f32s2_kinetics400(cfg):
                   num_classes=cfg.CONFIG.DATA.NUM_CLASSES,
                   pretrained=cfg.CONFIG.MODEL.PRETRAINED,
                   pretrained_base=cfg.CONFIG.MODEL.PRETRAINED_BASE,
+                  feat_ext=cfg.CONFIG.INFERENCE.FEAT,
                   bn_eval=cfg.CONFIG.MODEL.BN_EVAL,
                   partial_bn=cfg.CONFIG.MODEL.PARTIAL_BN,
                   bn_frozen=cfg.CONFIG.MODEL.BN_FROZEN)
@@ -1000,4 +1013,63 @@ def tpn_resnet101_f32s2_kinetics400(cfg):
         from ..model_store import get_model_file
         model.load_state_dict(torch.load(get_model_file('tpn_resnet101_f32s2_kinetics400',
                                                         tag=cfg.CONFIG.MODEL.PRETRAINED)))
+    return model
+
+
+def tpn_resnet50_f32s2_custom(cfg):
+    neck = TPN(in_channels=[1024, 2048],
+               out_channels=1024,
+               spatial_modulation_config=dict(
+                   inplanes=[1024, 2048],
+                   planes=2048, ),
+               temporal_modulation_config=dict(
+                   scales=(32, 32),
+                   param=dict(
+                       inplanes=-1,
+                       planes=-1,
+                       downsample_scale=-1,
+                   )),
+               upsampling_config=dict(
+                   scale=(1, 1, 1),
+               ),
+               downsampling_config=dict(
+                   scales=(1, 1, 1),
+                   param=dict(
+                       inplanes=-1,
+                       planes=-1,
+                       downsample_scale=-1,
+                   )),
+               level_fusion_config=dict(
+                   in_channels=[1024, 1024],
+                   mid_channels=[1024, 1024],
+                   out_channels=2048,
+                   ds_scales=[(1, 1, 1), (1, 1, 1)],
+               ),
+               aux_head_config=dict(
+                   inplanes=-1,
+                   planes=cfg.CONFIG.DATA.NUM_CLASSES,
+                   loss_weight=0.5
+               ))
+
+    model = TPNet(depth=50,
+                  TPN_neck=neck,
+                  num_classes=cfg.CONFIG.DATA.NUM_CLASSES,
+                  pretrained=cfg.CONFIG.MODEL.PRETRAINED,
+                  pretrained_base=cfg.CONFIG.MODEL.PRETRAINED_BASE,
+                  feat_ext=cfg.CONFIG.INFERENCE.FEAT,
+                  bn_eval=cfg.CONFIG.MODEL.BN_EVAL,
+                  partial_bn=cfg.CONFIG.MODEL.PARTIAL_BN,
+                  bn_frozen=cfg.CONFIG.MODEL.BN_FROZEN)
+
+    if cfg.CONFIG.MODEL.PRETRAINED:
+        from ..model_store import get_model_file
+        state_dict = torch.load(get_model_file('tpn_resnet50_f32s2_kinetics400', tag=cfg.CONFIG.MODEL.PRETRAINED))
+        for k in list(state_dict.keys()):
+            # retain only backbone up to before the classification layer
+            if k.startswith('fc'):
+                del state_dict[k]
+
+        msg = model.load_state_dict(state_dict, strict=False)
+        assert set(msg.missing_keys) == {'fc.weight', 'fc.bias'}
+        print("=> initialized from a SlowFast4x16 model pretrained on Kinetcis400 dataset")
     return model

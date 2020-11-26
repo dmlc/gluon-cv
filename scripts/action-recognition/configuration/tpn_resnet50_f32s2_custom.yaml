@@ -1,0 +1,55 @@
+# tpn_resnet50_f32s2_custom
+
+DDP_CONFIG:
+  WORLD_SIZE: 1
+  WORLD_RANK: 0
+  GPU_WORLD_SIZE: 8
+  GPU_WORLD_RANK: 0
+  DIST_URL: 'tcp://172.31.72.252:23456'
+  WOLRD_URLS: ['172.31.72.252']
+  AUTO_RANK_MATCH: True
+  DIST_BACKEND: 'nccl'
+  GPU: 0
+  DISTRIBUTED: True
+
+CONFIG:
+  TRAIN:
+    EPOCH_NUM: 150
+    BATCH_SIZE: 8
+    LR: 0.01
+    LR_POLICY: 'Step'
+    MOMENTUM: 0.9
+    W_DECAY: 1e-5
+    USE_WARMUP: False
+    LR_MILESTONE: [75, 125]
+    STEP: 0.1
+
+  VAL:
+    FREQ: 2
+    BATCH_SIZE: 8
+
+  DATA:
+    TRAIN_ANNO_PATH: '/home/ubuntu/data/kinetics400/k400_train.txt'
+    VAL_ANNO_PATH: '/home/ubuntu/data/kinetics400/k400_val.txt'
+    TRAIN_DATA_PATH: '/home/ubuntu/data/kinetics400/train_256/'
+    VAL_DATA_PATH:  '/home/ubuntu/data/kinetics400/val_256/'
+    NUM_CLASSES: 400
+    CLIP_LEN: 32
+    FRAME_RATE: 2
+    NUM_SEGMENT: 1
+    NUM_CROP: 1
+    TEST_NUM_SEGMENT: 10
+    TEST_NUM_CROP: 3
+    MULTIGRID: False
+    KEEP_ASPECT_RATIO: False
+
+  MODEL:
+    NAME: 'tpn_resnet50_f32s2_custom'
+    PRETRAINED: True
+
+  LOG:
+    BASE_PATH: './logs/tpn_resnet50_f32s2_custom'
+    LOG_DIR: 'tb_log'
+    SAVE_DIR: 'checkpoints'
+    EVAL_DIR: './logs/tpn_resnet50_f32s2_custom/eval'
+    SAVE_FREQ: 2

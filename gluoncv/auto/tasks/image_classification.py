@@ -1,9 +1,9 @@
 """Auto pipeline for image classification task"""
 # pylint: disable=bad-whitespace,missing-class-docstring
-import logging
-import copy
-import uuid
 import time
+import copy
+import logging
+import uuid
 import pprint
 import json
 import pickle
@@ -68,7 +68,11 @@ def _train_image_classification(args, reporter):
     tic = time.time()
     try:
         estimator_cls = args.pop('estimator', None)
-        estimator = estimator_cls(args, reporter=reporter)
+        assert estimator_cls == ImageClassificationEstimator
+        custom_net = args.pop('custom_net', None)
+        custom_optimizer = args.pop('custom_optimizer', None)
+        estimator = estimator_cls(args, reporter=reporter,
+                                  net=custom_net, optimizer=custom_optimizer)
         # training
         result = estimator.fit(train_data=train_data, val_data=val_data)
         # save config and result
@@ -86,9 +90,9 @@ def _train_image_classification(args, reporter):
                 'time': time.time() - tic, 'train_acc': -1, 'valid_acc': -1}
 
     # TODO: checkpointing needs to be done in a better way
-    unique_checkpoint = 'train_image_classification_' + str(uuid.uuid4()) + '.pkl'
-    estimator.save(unique_checkpoint)
-    result.update({'model_checkpoint': unique_checkpoint})
+    # unique_checkpoint = 'train_image_classification_' + str(uuid.uuid4()) + '.pkl'
+    # estimator.save(unique_checkpoint)
+    result.update({'model_checkpoint': pickle.dumps(estimator)})
     return result
 
 
@@ -101,7 +105,9 @@ class ImageClassification(BaseTask):
         The configurations, can be nested dict.
     logger : logging.Logger
         The desired logger object, use `None` for module specific logger with default setting.
-
+    net : mx.gluon.Block
+        The custom network. If defined, the model name in config will be ignored so your
+        custom network will be used for training rather than pulling it from model zoo.
     """
     Dataset = ImageClassificationDataset
 
@@ -271,10 +277,9 @@ class ImageClassification(BaseTask):
         model_checkpoint = results.get('model_checkpoint', None)
         if model_checkpoint is None:
             raise RuntimeError(f'Unexpected error happened during fit: {pprint.pformat(results, indent=2)}')
-        estimator = self.load(results['model_checkpoint'])
+        estimator = pickle.loads(results['model_checkpoint'])
         return estimator
 
-    @property
     def fit_summary(self):
         return copy.copy(self._fit_summary)
 

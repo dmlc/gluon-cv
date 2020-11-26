@@ -4,7 +4,6 @@ A Closer Look at Spatiotemporal Convolutions for Action Recognition
 CVPR 2018, https://arxiv.org/abs/1711.11248
 Large-scale weakly-supervised pre-training for video action recognition
 CVPR 2019, https://arxiv.org/abs/1905.00561
-
 """
 import torch
 import torch.nn as nn
@@ -112,11 +111,13 @@ class ResNet_R2plus1Dv2(nn.Module):
                  block,
                  block_nums,
                  num_classes=400,
+                 feat_ext=False,
                  use_affine=True):
 
         self.use_affine = use_affine
         self.in_planes = 64
         self.num_classes = num_classes
+        self.feat_ext = feat_ext
 
         super(ResNet_R2plus1Dv2, self).__init__()
         self.conv1_middle = nn.Conv3d(
@@ -234,8 +235,11 @@ class ResNet_R2plus1Dv2(nn.Module):
 
         x = self.avgpool(x)
         x = x.view(bs, -1)
-        logits = self.out_fc(x)
 
+        if self.feat_ext:
+            return x
+
+        logits = self.out_fc(x)
         return logits
 
 
@@ -243,6 +247,7 @@ def r2plus1d_v2_resnet152_kinetics400(cfg):
     model = ResNet_R2plus1Dv2(Bottleneck_R2plus1Dv2,
                               num_classes=cfg.CONFIG.DATA.NUM_CLASSES,
                               block_nums=[3, 8, 36, 3],
+                              feat_ext=cfg.CONFIG.INFERENCE.FEAT,
                               use_affine=cfg.CONFIG.MODEL.USE_AFFINE)
 
     if cfg.CONFIG.MODEL.PRETRAINED:

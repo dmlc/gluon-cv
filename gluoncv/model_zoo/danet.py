@@ -90,16 +90,16 @@ class DANetHead(HybridBlock):
         self.conv52.add(nn.Activation('relu'))
 
         self.conv6 = nn.HybridSequential()
-        self.conv6.add(nn.Conv2D(in_channels=512, channels=out_channels, kernel_size=1))
         self.conv6.add(nn.Dropout(0.1))
+        self.conv6.add(nn.Conv2D(in_channels=512, channels=out_channels, kernel_size=1))
 
         self.conv7 = nn.HybridSequential()
-        self.conv7.add(nn.Conv2D(in_channels=512, channels=out_channels, kernel_size=1))
         self.conv7.add(nn.Dropout(0.1))
+        self.conv7.add(nn.Conv2D(in_channels=512, channels=out_channels, kernel_size=1))
 
         self.conv8 = nn.HybridSequential()
-        self.conv8.add(nn.Conv2D(in_channels=512, channels=out_channels, kernel_size=1))
         self.conv8.add(nn.Dropout(0.1))
+        self.conv8.add(nn.Conv2D(in_channels=512, channels=out_channels, kernel_size=1))
 
     def hybrid_forward(self, F, x):
         feat1 = self.conv5a(x)
