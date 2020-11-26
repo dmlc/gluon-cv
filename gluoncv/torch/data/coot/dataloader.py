@@ -122,19 +122,6 @@ class VideoDatasetFeatures(data.Dataset):
         else:
             raise NotImplementedError
 
-    def preprocess_bert_paragraph(self,
-            paragraph: List[str]) -> List[List[str]]:
-        new_paragraph = []
-        for i, sentence in enumerate(paragraph):
-            new_sentence = []
-            if i == 0:
-                new_sentence.append("[CLS]")
-            preproc_sentence = preprocess_bert_sentence(sentence)
-            for word in preproc_sentence:
-                new_sentence.append(word.strip())
-            new_paragraph.append(new_sentence)
-        return new_paragraph
-
 
     def preprocess_bert_sentence(self, sentence_str: str) -> List[str]:
         if sentence_str[-1] == ".":
@@ -144,6 +131,20 @@ class VideoDatasetFeatures(data.Dataset):
         sentence_str = re.sub(r"\s+", " ", sentence_str).strip()
         words = sentence_str.split(" ")
         return words
+
+    def preprocess_bert_paragraph(self,
+            paragraph: List[str]) -> List[List[str]]:
+        new_paragraph = []
+        for i, sentence in enumerate(paragraph):
+            new_sentence = []
+            if i == 0:
+                new_sentence.append("[CLS]")
+            preproc_sentence = self.preprocess_bert_sentence(sentence)
+            for word in preproc_sentence:
+                new_sentence.append(word.strip())
+            new_paragraph.append(new_sentence)
+        return new_paragraph
+
 
     def get_frames_from_video(
             self, vid_id, indices=None, num_frames=None):

@@ -15,6 +15,7 @@ import numpy as np
 import torch
 import torch.backends.cudnn as cudnn
 from torch import cuda
+import torch.nn.functional as F
 
 EVALKEYS = ["r1", "r5", "r10", "r50", "medr", "meanr", "sum"]
 EVALHEADER = "Retriev | R@1   | R@5   | R@10  | R@50  | MeanR |  MedR |    Sum"
@@ -329,3 +330,28 @@ def unpack_data(data_dict, use_cuda):
                   "sent_num", "sent_cap_vectors", "sent_cap_mask",
                   "sent_cap_len")
     ]
+
+def compute_constrastive_loss(contrastive_loss, vid_emb, par_emb, clip_emb,
+                                sent_emb, vid_context, par_context):
+    vid_context_norm = F.normalize(vid_context)
+    clip_emb_norm = F.normalize(clip_emb)
+    vid_emb_norm = F.normalize(vid_emb)
+    par_context_norm = F.normalize(par_context)
+    sent_emb_norm = F.normalize(sent_emb)
+    par_emb_norm = F.normalize(par_emb)
+
+
+    loss = contrastive_loss(vid_emb_norm, par_emb_norm)
+    loss += contrastive_loss(clip_emb_norm, sent_emb_norm)
+    loss += contrastive_loss(vid_context_norm, par_context_norm)
+    loss += (contrastive_loss(vid_emb_norm, vid_emb_norm) + contrastive_loss(par_emb_norm, par_emb_norm))/2
+    loss += (contrastive_loss(clip_emb_norm, clip_emb_norm) + contrastive_loss(sent_emb_norm, sent_emb_norm))/2
+    return loss
+
+def compute_cmc_loss(cyc_consistency_loss, loss_weight, clip_emb_reshape, clip_emb_mask, clip_emb_lens,
+                    sent_emb_reshape, sent_emb_mask, sent_emb_lens):
+        clip_clip_loss, sent_sent_loss = cyc_consistency_loss(
+            clip_emb_reshape, clip_emb_mask, clip_emb_lens,
+            sent_emb_reshape, sent_emb_mask, sent_emb_lens)
+        loss = loss_weight * (clip_clip_loss + sent_sent_loss)
+        return loss

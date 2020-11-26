@@ -81,7 +81,7 @@ class CycleConsistencyCootLoss(nn.Module):
         return torch.mean((c - s)**2, dim=-1)
 
     def _compute_mean_distance_negative_l2(self, c, s):
-        return -compute_mean_distance_l2(c, s)
+        return -self._compute_mean_distance_l2(c, s)
 
     def forward(self, clip_emb, clip_mask, clip_lens, sentence_emb,
                 sentence_mask, sentence_lens):
