@@ -8,7 +8,7 @@ from gluoncv.torch.utils.coot_utils import truncated_normal_fill
 
 
 class MultiModalTransformer:
-    def __init__(self, cfg: EasyDict, use_cuda: bool, use_multi_gpu: bool):
+    def __init__(self, cfg: EasyDict, use_cuda: bool = True, use_multi_gpu: bool = False):
         self.use_cuda = use_cuda
         self.use_multi_gpu = use_multi_gpu
         self.model_list = []
@@ -16,17 +16,17 @@ class MultiModalTransformer:
         self.cfg = cfg
         self.device = torch.device(
             "cuda" if torch.cuda.is_available() and use_cuda else "cpu")
-        self.video_pooler = Transformer(cfg.video_pooler,
-                                            cfg.dataset.feature_dim)
+        self.video_pooler = Transformer(cfg.COOT_MODEL.MODEL_CONFIG.video_pooler,
+                                            cfg.COOT_DATA.FEATURE_DIM)
         self.video_pooler = self._to_device_fn(self.video_pooler)
-        self.video_sequencer = Transformer(cfg.video_sequencer,
-                                               cfg.video_pooler.output_dim)
+        self.video_sequencer = Transformer(cfg.COOT_MODEL.MODEL_CONFIG.video_sequencer,
+                                               cfg.COOT_MODEL.MODEL_CONFIG.video_pooler.output_dim)
         self.video_sequencer = self._to_device_fn(self.video_sequencer)
-        self.text_pooler = Transformer(cfg.text_pooler,
-                                           cfg.text_encoder.feature_dim)
+        self.text_pooler = Transformer(cfg.COOT_MODEL.MODEL_CONFIG.text_pooler,
+                                           cfg.COOT_MODEL.MODEL_CONFIG.text_encoder.feature_dim)
         self.text_pooler = self._to_device_fn(self.text_pooler)
-        self.text_sequencer = Transformer(cfg.text_sequencer,
-                                              cfg.text_pooler.output_dim)
+        self.text_sequencer = Transformer(cfg.COOT_MODEL.MODEL_CONFIG.text_sequencer,
+                                              cfg.COOT_MODEL.MODEL_CONFIG.text_pooler.output_dim)
         self.text_sequencer = self._to_device_fn(self.text_sequencer)
         self.model_list = [
             self.video_pooler, self.video_sequencer,
@@ -38,12 +38,12 @@ class MultiModalTransformer:
         # compute video context
         vid_context = self.video_pooler(vid_frames, vid_frames_mask,
                                             vid_frames_len, None)
-        if self.cfg.video_sequencer.use_context:
-            if self.cfg.video_sequencer.name == "rnn":
+        if self.cfg.COOT_MODEL.MODEL_CONFIG.video_sequencer.use_context:
+            if self.cfg.COOT_MODEL.MODEL_CONFIG.video_sequencer.name == "rnn":
                 vid_context_hidden = vid_context.unsqueeze(0)
                 vid_context_hidden = vid_context_hidden.repeat(
-                    self.cfg.video_sequencer.num_layers, 1, 1)
-            elif self.cfg.video_sequencer.name == "atn":
+                    self.cfg.COOT_MODEL.MODEL_CONFIG.video_sequencer.num_layers, 1, 1)
+            elif self.cfg.COOT_MODEL.MODEL_CONFIG.video_sequencer.name == "atn":
                 vid_context_hidden = vid_context
             else:
                 raise NotImplementedError
@@ -55,7 +55,7 @@ class MultiModalTransformer:
                                          clip_frames_len, None)
         batch_size = len(clip_num)
         max_clip_len = torch.max(clip_num)
-        clip_feat_dim = self.cfg.video_pooler.output_dim
+        clip_feat_dim = self.cfg.COOT_MODEL.MODEL_CONFIG.video_pooler.output_dim
         clip_emb_reshape = torch.zeros(
             (batch_size, max_clip_len, clip_feat_dim))
         clip_emb_mask = torch.zeros((batch_size, max_clip_len))
@@ -88,12 +88,12 @@ class MultiModalTransformer:
                                            paragraph_caption_len, None)
 
         
-        if self.cfg.text_sequencer.use_context:
-            if self.cfg.text_sequencer.name == "rnn":
+        if self.cfg.COOT_MODEL.MODEL_CONFIG.text_sequencer.use_context:
+            if self.cfg.COOT_MODEL.MODEL_CONFIG.text_sequencer.name == "rnn":
                 paragraph_gru_hidden = paragraph_context.unsqueeze(0)
                 paragraph_gru_hidden = paragraph_gru_hidden.repeat(
-                    self.cfg.text_sequencer.num_layers, 1, 1)
-            elif self.cfg.text_sequencer.name == "atn":
+                    self.cfg.COOT_MODEL.MODEL_CONFIG.text_sequencer.num_layers, 1, 1)
+            elif self.cfg.COOT_MODEL.MODEL_CONFIG.text_sequencer.name == "atn":
                 paragraph_gru_hidden = paragraph_context
             else:
                 raise NotImplementedError
@@ -104,7 +104,7 @@ class MultiModalTransformer:
         sentence_emb = self.text_pooler(sentence_caption_vectors, sentence_caption_mask,
                                         sentence_caption_len, None)
         batch_size = len(sentence_num)
-        sentence_feat_dim = self.cfg.text_pooler.output_dim
+        sentence_feat_dim = self.cfg.COOT_MODEL.MODEL_CONFIG.text_pooler.output_dim
         max_sentence_len = torch.max(sentence_num)
         sentence_emb_reshape = torch.zeros(
             (batch_size, max_sentence_len, sentence_feat_dim))
