@@ -37,10 +37,10 @@ def main_worker(cfg):
     # train_loader, val_loader, train_sampler, val_sampler, mg_sampler = build_dataloader(
         # cfg)
 
-    data_path_dict = create_dataloader_path(cfg.CONFIG.DATA.TRAIN_DATA_PATH, video_feature_name=cfg.CONFIG.COOT.FEATURE)
+    data_path_dict = create_dataloader_path(cfg.CONFIG.DATA.TRAIN_DATA_PATH, video_feature_name=cfg.CONFIG.COOT_DATA.FEATURE)
     
-    train_set, val_set = create_datasets(data_path_dict, cfg, cfg.CONFIG.COOT.VIDEO_PRELOAD,
-                                         cfg.CONFIG.COOT.TEXT_PRELOAD)
+    train_set, val_set = create_datasets(data_path_dict, cfg, cfg.CONFIG.COOT_DATA.VIDEO_PRELOAD,
+                                         cfg.CONFIG.COOT_DATA.TEXT_PRELOAD)
     train_loader, val_loader = create_loaders(train_set, val_set,
                                               cfg.CONFIG.TRAIN.BATCH_SIZE,
                                               cfg.CONFIG.DATA.NUM_WORKERS)
