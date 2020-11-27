@@ -58,4 +58,4 @@ class CenterNetCfg:
     center_net : CenterNet = field(default_factory=CenterNet)
     train : TrainCfg = field(default_factory=TrainCfg)
     valid : ValidCfg = field(default_factory=ValidCfg)
-    gpus : Union[Tuple, list] = (0, 1, 2, 3, 4, 5, 6, 7)  # gpu individual ids, not necessarily consecutive
+    gpus : Union[Tuple, list] = (0, 1, 2, 3)  # gpu individual ids, not necessarily consecutive

@@ -10,7 +10,7 @@ from d8.image_classification import Dataset
 if __name__ == '__main__':
     # user defined arguments
     parser = argparse.ArgumentParser(description='benchmark for image classification')
-    parser.add_argument('--dataset', type=str, default='brain-tumor', help='dataset name')
+    parser.add_argument('--dataset', type=str, default='boat', help='dataset name')
     parser.add_argument('--num-trials', type=int, default=3, help='number of training trials')
     args = parser.parse_args()
     logging.info('user defined arguments: {}'.format(args))
