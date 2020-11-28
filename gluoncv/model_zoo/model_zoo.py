@@ -319,6 +319,7 @@ _models = {
     'resnet50_v1b_ucf101': resnet50_v1b_ucf101,
     'resnet50_v1b_hmdb51': resnet50_v1b_hmdb51,
     'resnet50_v1b_custom': resnet50_v1b_custom,
+    'resnet18_v1b_custom': resnet18_v1b_custom,
     'fcn_resnet101_voc_int8': fcn_resnet101_voc_int8,
     'fcn_resnet101_coco_int8': fcn_resnet101_coco_int8,
     'psp_resnet101_voc_int8': psp_resnet101_voc_int8,
