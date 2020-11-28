@@ -1,3 +1,7 @@
+"""
+Loss functions used for training COOT model
+"""
+
 from torch import nn
 import torch
 
@@ -6,24 +10,23 @@ __all__ = ['MaxMarginRankingLoss', 'CycleConsistencyCootLoss']
 
 class MaxMarginRankingLoss(nn.Module):
     """MaxMarginRanking loss used in COOT paper (Eq. 1): https://arxiv.org/abs/2011.00597
-
-
     Inputs:
         - x_embedding: the embedding tensor for a modality with shape (Batch x feature_dimension).
         - y_embedding: the embedding tensor for another input modality with same shape of x_embedding.
-          i.e. in COOT paper x_embedding could be video features and y_embedding language features. 
+          i.e. in COOT paper x_embedding could be video features and y_embedding language features.
         - margin: constant margin in eq. 1 of COOT paper.
     Outputs:
         - **loss**: loss tensor with shape (batch_size,).
     """
     def __init__(self, use_cuda: bool, margin: float = 0.2):
-        super(MaxMarginRankingLoss, self).__init__()
+        super().__init__()
         self.margin = margin
         self.sim = self._cosine_sim
         self.use_cuda = use_cuda
 
-    def _cosine_sim(self, x1, x2):
-        return x1.mm(x2.t())
+    def _cosine_sim(self, embedding_x1, embedding_x2):
+        """ calculate cosine similarity"""
+        return embedding_x1.mm(embedding_x2.t())
 
     def forward(self, x_embedding, y_embedding):
         scores = self.sim(x_embedding,
@@ -53,7 +56,7 @@ class CycleConsistencyCootLoss(nn.Module):
 
     Args:
         clip_emb: Embeddings of clips
-        clip_mask: Mask 
+        clip_mask: Mask
         clip_lens: Number of clips per each video
         sentence_emb: Embeddings of sentences
         sentence_mask: Mask for input language
@@ -65,7 +68,7 @@ class CycleConsistencyCootLoss(nn.Module):
 
     """
     def __init__(self, num_samples=-1, use_cuda=True):
-        super(CycleConsistencyCootLoss, self).__init__()
+        super().__init__()
         self.num_samples = num_samples
         self.use_cuda = use_cuda
         self.num_samples_tensor = (torch.ones(1) * self.num_samples)
@@ -85,6 +88,8 @@ class CycleConsistencyCootLoss(nn.Module):
 
     def forward(self, clip_emb, clip_mask, clip_lens, sentence_emb,
                 sentence_mask, sentence_lens):
+        """ calculate the loss"""
+
         clip_max_len, _ = torch.max(clip_lens, dim=-1)
         sentence_max_len, _ = torch.max(sentence_lens, dim=-1)
         clip_sentence_nn, _, _ = self._get_soft_nn(clip_emb, clip_mask,
@@ -136,12 +141,11 @@ class CycleConsistencyCootLoss(nn.Module):
         if self.num_samples != -1:
             n_samp = torch.min(emb_lens, self.num_samples_tensor)
             total_loss = 0
-            for batch, (c_loss, c_mask,
+            for _, (c_loss, c_mask,
                         c_nsamp) in enumerate(zip(l_seq, emb_mask, n_samp)):
                 idx = torch.multinomial(c_mask, int(c_nsamp))
                 total_loss += c_loss[idx].mean()
-            return (total_loss / batch_size)
+            return total_loss / batch_size
 
         else:
-
             return (l_seq.sum(dim=-1) / emb_lens).mean(dim=-1)

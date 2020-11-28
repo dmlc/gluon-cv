@@ -227,7 +227,7 @@ def train_coot(base_iter,
         model: COOT model
         dataloader
         epoch: current epoch number
-        constrastive_loss: MaxMargingRanking loss 
+        constrastive_loss: MaxMargingRanking loss
         cmc_loss: Cross-modal cycle-consistensy loss
         optimizer
         writer: tensorboard writer
@@ -311,7 +311,7 @@ def validate_coot(model,
         model: COOT model
         dataloader
         epoch: current epoch number
-        constrastive_loss: MaxMargingRanking loss 
+        constrastive_loss: MaxMargingRanking loss
         cmc_loss: Cross-modal cycle-consistensy loss
         writer: tensorboard writer
         logger

@@ -90,9 +90,11 @@ class GradualWarmupScheduler(_LRScheduler):
 
 
 class ReduceLROnPlateauWarmup(ReduceLROnPlateau):
+    """ Reduce LR on plateau """
     def __init__(self, optimizer, warmup_epochs, **kwargs):
         self.warmup_epochs = warmup_epochs
         super().__init__(optimizer, **kwargs)
+        self.last_epoch = 0
         self.base_lrs = []
         for group in optimizer.param_groups:
             self.base_lrs.append(group["lr"])

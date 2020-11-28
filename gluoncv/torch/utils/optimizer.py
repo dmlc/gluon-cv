@@ -1,3 +1,6 @@
+"""
+optimizer RADAM
+"""
 import math
 
 import torch
@@ -5,6 +8,8 @@ from torch.optim.optimizer import Optimizer
 
 
 class RAdam(Optimizer):
+    """RADam optimizer
+    """
     def __init__(self,
                  params,
                  lr=1e-3,
@@ -39,9 +44,11 @@ class RAdam(Optimizer):
         super(RAdam, self).__init__(params, defaults)
 
     def __setstate__(self, state):
+        "set state"
         super(RAdam, self).__setstate__(state)
 
     def step(self, closure=None):
+        """ step gradiend"""
         loss = None
         if closure is not None:
             loss = closure()
