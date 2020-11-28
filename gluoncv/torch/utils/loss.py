@@ -29,6 +29,8 @@ class MaxMarginRankingLoss(nn.Module):
         return embedding_x1.mm(embedding_x2.t())
 
     def forward(self, x_embedding, y_embedding):
+        """ calculate marxmargin ranking loss"""
+
         scores = self.sim(x_embedding,
                           y_embedding)  # calculate the cosine similarity
         diagonal = scores.diag().view(
@@ -142,7 +144,7 @@ class CycleConsistencyCootLoss(nn.Module):
             n_samp = torch.min(emb_lens, self.num_samples_tensor)
             total_loss = 0
             for _, (c_loss, c_mask,
-                        c_nsamp) in enumerate(zip(l_seq, emb_mask, n_samp)):
+                    c_nsamp) in enumerate(zip(l_seq, emb_mask, n_samp)):
                 idx = torch.multinomial(c_mask, int(c_nsamp))
                 total_loss += c_loss[idx].mean()
             return total_loss / batch_size
