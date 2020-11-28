@@ -1,15 +1,15 @@
-import csv
+"""
+Utility functions for COOT model
+"""
 import ctypes
 import datetime
-from easydict import EasyDict
 import logging
 import multiprocessing as mp
 import os
+from pathlib import Path
 import random
 import sys
-from pathlib import Path
-from typing import Union, Tuple, Dict
-import yaml
+from typing import Tuple, Dict
 
 import numpy as np
 import torch
@@ -34,19 +34,15 @@ def create_dataloader_path(data_root,
         [Dict]: [path to meta data and video/language features]
     """
 
-    meta_data_path = Path(
-        os.path.join(data_root, "meta",
-                     "meta.json"))
+    meta_data_path = Path(os.path.join(data_root, "meta", "meta.json"))
     video_feat_path = Path(
-        os.path.join(data_root, 
-                     "video_features", "{}.h5".format(video_feature_name)))
+        os.path.join(data_root, "video_features",
+                     "{}.h5".format(video_feature_name)))
     language_feat_path = Path(
-        os.path.join(data_root,
-                     "language_features",
+        os.path.join(data_root, "language_features",
                      "text_{}.h5".format(text_feature_name)))
     meta_text_len_path = Path(
-        os.path.join(data_root,
-                     "language_features",
+        os.path.join(data_root, "language_features",
                      "text_lens_{}.json".format(text_feature_name)))
 
     return {
@@ -59,6 +55,8 @@ def create_dataloader_path(data_root,
 
 
 def get_csv_header_keys(compute_clip_retrieval):
+    """ get CSV header keys"""
+
     metric_keys = ["ep", "time"]
     prefixes = ["v", "p"]
     if compute_clip_retrieval:
@@ -69,40 +67,8 @@ def get_csv_header_keys(compute_clip_retrieval):
     return metric_keys
 
 
-def print_csv_results(csv_file: str, cfg: EasyDict, print_fn=print):
-    metric_keys = get_csv_header_keys(cfg.training.compute_clip_retrieval)
-    with Path(csv_file).open("rt", encoding="utf8") as fh:
-        reader = csv.DictReader(fh, metric_keys)
-        line_data = [line for line in reader][1:]
-        for line in line_data:
-            for key, val in line.items():
-                line[key] = float(val)
-    if cfg.training.det_best_field == "val_score_at_1":
-        relevant_field = [line["v-r1"] + line["p-r1"] for line in line_data]
-    elif cfg.training.det_best_field == "val_clip_score_at_1":
-        relevant_field = [line["c-r1"] + line["s-r1"] for line in line_data]
-    else:
-        raise NotImplementedError
-    best_epoch = np.argmax(relevant_field)
-
-    def get_res(search_key):
-        results = {}
-        for key_, val_ in line_data[best_epoch].items():
-            if key_[:2] == f"{search_key}-":
-                results[key_[2:]] = float(val_)
-        return results
-
-    print_fn(f"Total epochs {len(line_data)}. "
-             f"Results from best epoch {best_epoch}:")
-    print_fn(EVALHEADER)
-    print_fn(retrieval_results_to_str(get_res("p"), "Par2Vid"))
-    print_fn(retrieval_results_to_str(get_res("v"), "Vid2Par"))
-    if cfg.training.compute_clip_retrieval:
-        print_fn(retrieval_results_to_str(get_res("s"), "Sen2Cli"))
-        print_fn(retrieval_results_to_str(get_res("c"), "Cli2Sen"))
-
-
 def expand_segment(num_frames, num_target_frames, start_frame, stop_frame):
+    """ expand the segment"""
     num_frames_seg = stop_frame - start_frame + 1
     changes = False
     if num_target_frames > num_frames:
@@ -125,6 +91,7 @@ def expand_segment(num_frames, num_target_frames, start_frame, stop_frame):
 
 
 def set_seed(seed: int) -> None:
+    """ set seed"""
     torch.manual_seed(seed)
     cuda.manual_seed(seed)
     cuda.manual_seed_all(seed)
@@ -134,34 +101,8 @@ def set_seed(seed: int) -> None:
     cudnn.deterministic = True
 
 
-def load_config(file: Union[str, Path]) -> EasyDict:
-    with Path(file).open("rt", encoding="utf8") as fh:
-        config = yaml.load(fh, Loader=yaml.Loader)
-    cfg = EasyDict(config)
-    # model symmetry
-    for check_network in ["text_pooler", "text_sequencer"]:
-        if getattr(cfg, check_network).name == "same":
-            setattr(cfg, check_network,
-                    getattr(cfg,
-                            getattr(cfg, check_network).same_as))
-    return cfg
-
-
-def dump_config(cfg: EasyDict, file: Union[str, Path]) -> None:
-    with Path(file).open("wt", encoding="utf8") as fh:
-        yaml.dump(cfg, fh, Dumper=yaml.Dumper)
-
-
-def print_config(cfg: EasyDict, level=0) -> None:
-    for key, val in cfg.items():
-        if isinstance(val, EasyDict):
-            print("     " * level, str(key), sep="")
-            print_config(val, level=level + 1)
-        else:
-            print("    " * level, f"{key} - f{val} ({type(val)})", sep="")
-
-
 def make_shared_array(np_array: np.ndarray) -> mp.Array:
+    """ shared array"""
     flat_shape = int(np.prod(np_array.shape))
     shared_array_base = mp.Array(ctypes.c_float, flat_shape)
     shared_array = np.ctypeslib.as_array(shared_array_base.get_obj())
@@ -172,6 +113,7 @@ def make_shared_array(np_array: np.ndarray) -> mp.Array:
 
 def compute_indices(num_frames_orig: int, num_frames_target: int,
                     is_train: bool):
+    """ compute indices """
     def round_half_down(array: np.ndarray) -> np.ndarray:
         return np.ceil(array - 0.5)
 
@@ -207,6 +149,8 @@ def truncated_normal_fill(shape: Tuple[int],
                           mean: float = 0,
                           std: float = 1,
                           limit: float = 2) -> torch.Tensor:
+    """ truncate normal """
+
     num_examples = 8
     tmp = torch.empty(shape + (num_examples, )).normal_()
     valid = (tmp < limit) & (tmp > -limit)
@@ -215,16 +159,19 @@ def truncated_normal_fill(shape: Tuple[int],
 
 
 def retrieval_results_to_str(results: Dict[str, float], name: str):
+    """ retrieval results string """
     return ("{:7s} | {:.3f} | {:.3f} | {:.3f} | {:.3f} | {:5.1f} | "
             "{:5.1f} | {:6.3f}").format(name, *[results[a] for a in EVALKEYS])
 
 
 def compute_retr_vid_to_par(video_feat, cap_feat):
+    """ compute similarity scores video to paragraph """
     similarity_scores = np.dot(video_feat, cap_feat.T)
     return compute_retrieval_metrics(similarity_scores)
 
 
 def compute_retr_par_to_vid(video_feat, cap_feat):
+    """ compute similarity scores paragraph to video """
     similarity_scores = np.dot(cap_feat, video_feat.T)
     return compute_retrieval_metrics(similarity_scores)
 
@@ -260,24 +207,32 @@ def compute_retrieval_metrics(dot_product):
 
 
 def compare_metrics(comparison, best):
+    """ compare metrics """
+
     if best is None:
         return True
     threshold = 1e-4
     rel_epsilon = threshold + 1.
     return comparison > best * rel_epsilon
 
+
 def get_logging_formatter():
+    """ logging formatter """
     return logging.Formatter("%(asctime)s %(levelname)s %(message)s",
                              datefmt="%m%d %H%M%S")
 
 
 def get_timestamp_for_filename():
-    ts = str(datetime.datetime.now()).split(".")[0].replace(" ", "_")
-    ts = ts.replace(":", "_").replace("-", "_")
-    return ts
+    """ timestamp"""
+
+    time_split = str(datetime.datetime.now()).split(".")[0].replace(" ", "_")
+    time_split = time_split.replace(":", "_").replace("-", "_")
+    return time_split
 
 
 def get_logger_without_file(name, log_level="INFO") -> logging.Logger:
+    """ gett basic logger"""
+
     logger = logging.getLogger(name)
     logger.setLevel(log_level)
     strm_hdlr = logging.StreamHandler(sys.stdout)
@@ -286,11 +241,13 @@ def get_logger_without_file(name, log_level="INFO") -> logging.Logger:
     return logger
 
 
-def get_logger(logdir,
-               name,
-               filename="run",
-               log_level="INFO",
+def get_logger(logdir, name, filename="run", log_level="INFO",
                log_file=True) -> logging.Logger:
+    """Get logger
+
+    Returns:
+        logger
+    """
     logger = logging.getLogger(name)
     logger.setLevel(log_level)
     formatter = get_logging_formatter()
@@ -310,13 +267,18 @@ def get_logger(logdir,
 
 
 def close_logger(logger: logging.Logger):
-    x = list(logger.handlers)
-    for i in x:
+    """ close logger """
+
+    log_handle_list = list(logger.handlers)
+    for i in log_handle_list:
         logger.removeHandler(i)
         i.flush()
         i.close()
 
+
 def unpack_data(data_dict, use_cuda):
+    """unpack data
+    """
     def to_device(x):
         if use_cuda and isinstance(x, torch.Tensor):
             return x.cuda(non_blocking=True)
@@ -331,8 +293,24 @@ def unpack_data(data_dict, use_cuda):
                   "sent_cap_len")
     ]
 
+
 def compute_constrastive_loss(contrastive_loss, vid_emb, par_emb, clip_emb,
-                                sent_emb, vid_context, par_context):
+                              sent_emb, vid_context, par_context):
+    """Normalize embeddings and calculate alignment loss in different levels:
+     Video-paragraph, clip-sentence, global context
+
+    Args:
+        contrastive_loss (loss function): MaxMargingRanking loss
+        vid_emb (tensor): video embeddings with shape batch*dim
+        par_emb (tensor): paragraph embeddings with shape batch*dim
+        clip_emb (tensor): clip embeddings
+        sent_emb (tensor): sentence embeddings
+        vid_context (tensor): video global context
+        par_context (tensor): paragraph global context
+
+    Returns:
+        total loss
+    """
     vid_context_norm = F.normalize(vid_context)
     clip_emb_norm = F.normalize(clip_emb)
     vid_emb_norm = F.normalize(vid_emb)
@@ -340,18 +318,36 @@ def compute_constrastive_loss(contrastive_loss, vid_emb, par_emb, clip_emb,
     sent_emb_norm = F.normalize(sent_emb)
     par_emb_norm = F.normalize(par_emb)
 
-
     loss = contrastive_loss(vid_emb_norm, par_emb_norm)
     loss += contrastive_loss(clip_emb_norm, sent_emb_norm)
     loss += contrastive_loss(vid_context_norm, par_context_norm)
-    loss += (contrastive_loss(vid_emb_norm, vid_emb_norm) + contrastive_loss(par_emb_norm, par_emb_norm))/2
-    loss += (contrastive_loss(clip_emb_norm, clip_emb_norm) + contrastive_loss(sent_emb_norm, sent_emb_norm))/2
+    loss += (contrastive_loss(vid_emb_norm, vid_emb_norm) +
+             contrastive_loss(par_emb_norm, par_emb_norm)) / 2
+    loss += (contrastive_loss(clip_emb_norm, clip_emb_norm) +
+             contrastive_loss(sent_emb_norm, sent_emb_norm)) / 2
     return loss
 
-def compute_cmc_loss(cyc_consistency_loss, loss_weight, clip_emb_reshape, clip_emb_mask, clip_emb_lens,
-                    sent_emb_reshape, sent_emb_mask, sent_emb_lens):
-        clip_clip_loss, sent_sent_loss = cyc_consistency_loss(
-            clip_emb_reshape, clip_emb_mask, clip_emb_lens,
-            sent_emb_reshape, sent_emb_mask, sent_emb_lens)
-        loss = loss_weight * (clip_clip_loss + sent_sent_loss)
-        return loss
+
+def compute_cmc_loss(cyc_consistency_loss, loss_weight, clip_emb_reshape,
+                     clip_emb_mask, clip_emb_lens, sent_emb_reshape,
+                     sent_emb_mask, sent_emb_lens):
+    """Calculate the total cycle consistency loss between video clips and paragraph sentences
+
+    Args:
+        cyc_consistency_loss (loss function): cycle consistency loss function
+        loss_weight (float): weight of loss
+        clip_emb_reshape
+        clip_emb_mask
+        clip_emb_lens
+        sent_emb_reshape
+        sent_emb_mask
+        sent_emb_lens
+
+    Returns:
+        total loss
+    """
+    clip_clip_loss, sent_sent_loss = cyc_consistency_loss(
+        clip_emb_reshape, clip_emb_mask, clip_emb_lens, sent_emb_reshape,
+        sent_emb_mask, sent_emb_lens)
+    loss = loss_weight * (clip_clip_loss + sent_sent_loss)
+    return loss
