@@ -706,9 +706,9 @@ def resnet50_v1b_custom(nclass=400, pretrained=False, pretrained_base=True,
 
 
 def resnet18_v1b_custom(nclass=400, pretrained=False, pretrained_base=True,
-                             use_tsn=False, partial_bn=False,use_kinetics_pretrain=True,
-                             num_segments=1, num_crop=1, root='~/.mxnet/models',
-                             ctx=mx.cpu(), **kwargs):
+                        use_tsn=False, partial_bn=False, use_kinetics_pretrain=True,
+                        num_segments=1, num_crop=1, root='~/.mxnet/models',
+                        ctx=mx.cpu(), **kwargs):
     r"""ResNet18 model trained on Kinetics400 dataset.
 
     Parameters
