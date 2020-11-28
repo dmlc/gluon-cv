@@ -49,54 +49,54 @@ CONFIG:
   COOT_MODEL:
     NAME: 'COOT-MultiModalTransformer-d384'
     MODEL_CONFIG:
-        video_pooler:
-            name: atn
-            output_dim: 384
-            input_fc: true
-            input_fc_output_dim: 384
-            num_layers: 1
-            num_heads: 8
-            dropout: 0.05
-            use_context: false
-            pooler: atn
-            atn_pool_dim: 768
-            atn_pool_heads: 2
-        video_sequencer:
-            name: atn
-            output_dim: 384
-            input_fc: false
-            num_layers: 1
-            num_heads: 8
-            dropout: 0.05
-            use_context: true
-            atn_ctx_num_layers: 1
-            atn_ctx_num_heads: 8
-            pooler: avg
-        text_pooler:
-            name: atn
-            output_dim: 384
-            input_fc: true
-            input_fc_output_dim: 384
-            num_layers: 1
-            num_heads: 8
-            dropout: 0.05
-            use_context: false
-            pooler: atn
-            atn_pool_dim: 768
-            atn_pool_heads: 2
-        text_sequencer:
-            name: atn
-            output_dim: 384
-            input_fc: false
-            num_layers: 1
-            num_heads: 8
-            dropout: 0.05
-            use_context: true
-            atn_ctx_num_layers: 1
-            atn_ctx_num_heads: 8
-            pooler: avg
-        text_encoder:
-            feature_dim: 1536
+        VIDEO_POOLER:
+            NAME: atn
+            OUTPUT_DIM: 384
+            INPUT_FC: true
+            INPUT_FC_OUTPUT_DIM: 384
+            NUM_LAYERS: 1
+            NUM_HEADS: 8
+            DROPOUT: 0.05
+            USE_CONTEXT: false
+            POOLER: atn
+            ATN_POOL_DIM: 768
+            ATN_POOL_HEADS: 2
+        VIDEO_SEQUENCER:
+            NAME: atn
+            OUTPUT_DIM: 384
+            INPUT_FC: false
+            NUM_LAYERS: 1
+            NUM_HEADS: 8
+            DROPOUT: 0.05
+            USE_CONTEXT: true
+            ATN_CTX_NUM_LAYERS: 1
+            ATN_CTX_NUM_HEADS: 8
+            POOLER: avg
+        TEXT_POOLER:
+            NAME: atn
+            OUTPUT_DIM: 384
+            INPUT_FC: true
+            INPUT_FC_OUTPUT_DIM: 384
+            NUM_LAYERS: 1
+            NUM_HEADS: 8
+            DROPOUT: 0.05
+            USE_CONTEXT: false
+            POOLER: atn
+            ATN_POOL_DIM: 768
+            ATN_POOL_HEADS: 2
+        TEXT_SEQUENCER:
+            NAME: atn
+            OUTPUT_DIM: 384
+            INPUT_FC: false
+            NUM_LAYERS: 1
+            NUM_HEADS: 8
+            DROPOUT: 0.05
+            USE_CONTEXT: true
+            ATN_CTX_NUM_LAYERS: 1
+            ATN_CTX_NUM_HEADS: 8
+            POOLER: avg
+        TEXT_ENCODER:
+            FEATURE_DIM: 1536
   LOG:
     BASE_PATH: './logs/coot'
     LOG_DIR: 'tb_log'

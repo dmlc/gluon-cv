@@ -9,7 +9,10 @@ from gluoncv.torch.utils.coot_utils import truncated_normal_fill
 
 
 class MultiModalTransformer:
-    def __init__(self, cfg: EasyDict, use_cuda: bool = True, use_multi_gpu: bool = False):
+    def __init__(self,
+                 cfg: EasyDict,
+                 use_cuda: bool = True,
+                 use_multi_gpu: bool = False):
         self.use_cuda = use_cuda
         self.use_multi_gpu = use_multi_gpu
         self.model_list = []
@@ -17,34 +20,39 @@ class MultiModalTransformer:
         self.cfg = cfg
         self.device = torch.device(
             "cuda" if torch.cuda.is_available() and use_cuda else "cpu")
-        self.video_pooler = Transformer(cfg.CONFIG.COOT_MODEL.MODEL_CONFIG.video_pooler,
-                                            cfg.CONFIG.COOT_DATA.FEATURE_DIM)
-        # self.video_pooler = self._to_device_fn(self.video_pooler)
-        self.video_sequencer = Transformer(cfg.CONFIG.COOT_MODEL.MODEL_CONFIG.video_sequencer,
-                                               cfg.CONFIG.COOT_MODEL.MODEL_CONFIG.video_pooler.output_dim)
-        # self.video_sequencer = self._to_device_fn(self.video_sequencer)
-        self.text_pooler = Transformer(cfg.CONFIG.COOT_MODEL.MODEL_CONFIG.text_pooler,
-                                           cfg.CONFIG.COOT_MODEL.MODEL_CONFIG.text_encoder.feature_dim)
-        # self.text_pooler = self._to_device_fn(self.text_pooler)
-        self.text_sequencer = Transformer(cfg.CONFIG.COOT_MODEL.MODEL_CONFIG.text_sequencer,
-                                              cfg.CONFIG.COOT_MODEL.MODEL_CONFIG.text_pooler.output_dim)
-        # self.text_sequencer = self._to_device_fn(self.text_sequencer)
+        self.video_pooler = Transformer(
+            cfg.CONFIG.COOT_MODEL.MODEL_CONFIG.VIDEO_POOLER,
+            cfg.CONFIG.COOT_DATA.FEATURE_DIM)
+
+        self.video_sequencer = Transformer(
+            cfg.CONFIG.COOT_MODEL.MODEL_CONFIG.VIDEO_SEQUENCER,
+            cfg.CONFIG.COOT_MODEL.MODEL_CONFIG.VIDEO_POOLER.OUTPUT_DIM)
+
+        self.text_pooler = Transformer(
+            cfg.CONFIG.COOT_MODEL.MODEL_CONFIG.TEXT_POOLER,
+            cfg.CONFIG.COOT_MODEL.MODEL_CONFIG.TEXT_ENCODER.FEATURE_DIM)
+
+        self.text_sequencer = Transformer(
+            cfg.CONFIG.COOT_MODEL.MODEL_CONFIG.TEXT_SEQUENCER,
+            cfg.CONFIG.COOT_MODEL.MODEL_CONFIG.TEXT_POOLER.OUTPUT_DIM)
+
         self.model_list = [
-            self.video_pooler, self.video_sequencer,
-            self.text_pooler, self.text_sequencer
+            self.video_pooler, self.video_sequencer, self.text_pooler,
+            self.text_sequencer
         ]
 
     def encode_video(self, vid_frames, vid_frames_mask, vid_frames_len,
                      clip_num, clip_frames, clip_frames_len, clip_frames_mask):
         # compute video context
         vid_context = self.video_pooler(vid_frames, vid_frames_mask,
-                                            vid_frames_len, None)
-        if self.cfg.CONFIG.COOT_MODEL.MODEL_CONFIG.video_sequencer.use_context:
-            if self.cfg.CONFIG.COOT_MODEL.MODEL_CONFIG.video_sequencer.name == "rnn":
+                                        vid_frames_len, None)
+        if self.cfg.CONFIG.COOT_MODEL.MODEL_CONFIG.VIDEO_SEQUENCER.USE_CONTEXT:
+            if self.cfg.CONFIG.COOT_MODEL.MODEL_CONFIG.VIDEO_SEQUENCER.NAME == "rnn":
                 vid_context_hidden = vid_context.unsqueeze(0)
                 vid_context_hidden = vid_context_hidden.repeat(
-                    self.cfg.CONFIG.COOT_MODEL.MODEL_CONFIG.video_sequencer.num_layers, 1, 1)
-            elif self.cfg.CONFIG.COOT_MODEL.MODEL_CONFIG.video_sequencer.name == "atn":
+                    self.cfg.CONFIG.COOT_MODEL.MODEL_CONFIG.VIDEO_SEQUENCER.
+                    NUM_LAYERS, 1, 1)
+            elif self.cfg.CONFIG.COOT_MODEL.MODEL_CONFIG.VIDEO_SEQUENCER.NAME == "atn":
                 vid_context_hidden = vid_context
             else:
                 raise NotImplementedError
@@ -53,10 +61,10 @@ class MultiModalTransformer:
 
         # compute clip embedding
         clip_emb = self.video_pooler(clip_frames, clip_frames_mask,
-                                         clip_frames_len, None)
+                                     clip_frames_len, None)
         batch_size = len(clip_num)
         max_clip_len = torch.max(clip_num)
-        clip_feat_dim = self.cfg.CONFIG.COOT_MODEL.MODEL_CONFIG.video_pooler.output_dim
+        clip_feat_dim = self.cfg.CONFIG.COOT_MODEL.MODEL_CONFIG.VIDEO_POOLER.OUTPUT_DIM
         clip_emb_reshape = torch.zeros(
             (batch_size, max_clip_len, clip_feat_dim))
         clip_emb_mask = torch.zeros((batch_size, max_clip_len))
@@ -75,26 +83,28 @@ class MultiModalTransformer:
 
         # compute video embedding
         vid_emb = self.video_sequencer(clip_emb_reshape, clip_emb_mask,
-                                           clip_num, vid_context_hidden)
+                                       clip_num, vid_context_hidden)
 
         #TODO: convert the return to an object class or maybe dictionary
         return (vid_emb, clip_emb, vid_context, clip_emb_reshape,
                 clip_emb_mask, clip_emb_lens)
 
-    def encode_paragraph(self, paragraph_caption_vectors, paragraph_caption_mask, paragraph_caption_len,
-                         sentence_num, sentence_caption_vectors, sentence_caption_mask,
-                         sentence_caption_len):
+    def encode_paragraph(self, paragraph_caption_vectors,
+                         paragraph_caption_mask, paragraph_caption_len,
+                         sentence_num, sentence_caption_vectors,
+                         sentence_caption_mask, sentence_caption_len):
         # compute paragraph context
-        paragraph_context = self.text_pooler(paragraph_caption_vectors, paragraph_caption_mask,
-                                           paragraph_caption_len, None)
+        paragraph_context = self.text_pooler(paragraph_caption_vectors,
+                                             paragraph_caption_mask,
+                                             paragraph_caption_len, None)
 
-        
-        if self.cfg.CONFIG.COOT_MODEL.MODEL_CONFIG.text_sequencer.use_context:
-            if self.cfg.CONFIG.COOT_MODEL.MODEL_CONFIG.text_sequencer.name == "rnn":
+        if self.cfg.CONFIG.COOT_MODEL.MODEL_CONFIG.TEXT_SEQUENCER.USE_CONTEXT:
+            if self.cfg.CONFIG.COOT_MODEL.MODEL_CONFIG.TEXT_SEQUENCER.NAME == "rnn":
                 paragraph_gru_hidden = paragraph_context.unsqueeze(0)
                 paragraph_gru_hidden = paragraph_gru_hidden.repeat(
-                    self.cfg.CONFIG.COOT_MODEL.MODEL_CONFIG.text_sequencer.num_layers, 1, 1)
-            elif self.cfg.CONFIG.COOT_MODEL.MODEL_CONFIG.text_sequencer.name == "atn":
+                    self.cfg.CONFIG.COOT_MODEL.MODEL_CONFIG.TEXT_SEQUENCER.
+                    NUM_LAYERS, 1, 1)
+            elif self.cfg.CONFIG.COOT_MODEL.MODEL_CONFIG.TEXT_SEQUENCER.NAME == "atn":
                 paragraph_gru_hidden = paragraph_context
             else:
                 raise NotImplementedError
@@ -102,10 +112,11 @@ class MultiModalTransformer:
             paragraph_gru_hidden = None
 
         # compute sentence embedding
-        sentence_emb = self.text_pooler(sentence_caption_vectors, sentence_caption_mask,
+        sentence_emb = self.text_pooler(sentence_caption_vectors,
+                                        sentence_caption_mask,
                                         sentence_caption_len, None)
         batch_size = len(sentence_num)
-        sentence_feat_dim = self.cfg.CONFIG.COOT_MODEL.MODEL_CONFIG.text_pooler.output_dim
+        sentence_feat_dim = self.cfg.CONFIG.COOT_MODEL.MODEL_CONFIG.TEXT_POOLER.OUTPUT_DIM
         max_sentence_len = torch.max(sentence_num)
         sentence_emb_reshape = torch.zeros(
             (batch_size, max_sentence_len, sentence_feat_dim))
@@ -124,16 +135,18 @@ class MultiModalTransformer:
             pointer += sentence_len
 
         # compute paragraph embedding
-        paragraph_emb = self.text_sequencer(sentence_emb_reshape, sentence_emb_mask,
-                                          sentence_num, paragraph_gru_hidden)
-        #TODO: convert the return to a object class or dictionary
-        return (paragraph_emb, sentence_emb, paragraph_context, sentence_emb_reshape,
-                sentence_emb_mask, sentence_emb_lens)
+        paragraph_emb = self.text_sequencer(sentence_emb_reshape,
+                                            sentence_emb_mask, sentence_num,
+                                            paragraph_gru_hidden)
+
+        return (paragraph_emb, sentence_emb, paragraph_context,
+                sentence_emb_reshape, sentence_emb_mask, sentence_emb_lens)
 
     def eval(self):
         for model in self.model_list:
             model.eval()
         torch.set_grad_enabled(False)
+
     def cuda(self, gpu):
         for model in self.model_list:
             self._to_device_fn(model, gpu)
@@ -173,19 +186,19 @@ class MultiModalTransformer:
                 model.load_state_dict(newer_state_dict)
             else:
                 model.load_state_dict(state_dict)
-            i += 1 # we do this intentionally
-            
-    
+            i += 1  # we do this intentionally
+
     def save_model(self, optimizer, epoch, cfg):
         """
         Save trained model weights.
         """
         model_save_dir = os.path.join(cfg.CONFIG.LOG.BASE_PATH,
-                                    cfg.CONFIG.LOG.EXP_NAME,
-                                    cfg.CONFIG.LOG.SAVE_DIR)
+                                      cfg.CONFIG.LOG.EXP_NAME,
+                                      cfg.CONFIG.LOG.SAVE_DIR)
         if not os.path.exists(model_save_dir):
             os.makedirs(model_save_dir)
-        ckpt_name = "f{}_s{}_ckpt_epoch{}.pth".format(cfg.CONFIG.DATA.CLIP_LEN, cfg.CONFIG.DATA.FRAME_RATE, epoch)
+        ckpt_name = "f{}_s{}_ckpt_epoch{}.pth".format(
+            cfg.CONFIG.DATA.CLIP_LEN, cfg.CONFIG.DATA.FRAME_RATE, epoch)
         checkpoint = os.path.join(model_save_dir, ckpt_name)
         model_states = []
         for m in self.model_list:
@@ -200,11 +213,11 @@ class MultiModalTransformer:
             else:
                 model_states.append(state_dict)
         state = {
-        'epoch': epoch + 1,
-        'state_dict': model_states,
-        'best_acc1': None,
-        'optimizer': optimizer.state_dict(),
-    }
+            'epoch': epoch + 1,
+            'state_dict': model_states,
+            'best_acc1': None,
+            'optimizer': optimizer.state_dict(),
+        }
         torch.save(state, checkpoint)
 
 
@@ -224,15 +237,15 @@ class LayerNormalization(nn.Module):
 
 
 def parse_pooler(input_dim, cfg: EasyDict) -> nn.Module:
-    if cfg.pooler == "atn":
-        return AtnPool(input_dim, cfg.atn_pool_dim, cfg.atn_pool_heads,
-                         cfg.dropout)
-    elif cfg.pooler == "avg":
+    if cfg.POOLER == "atn":
+        return AtnPool(input_dim, cfg.ATN_POOL_DIM, cfg.ATN_POOL_HEADS,
+                       cfg.DROPOUT)
+    elif cfg.POOLER == "avg":
         return AvgPool()
-    elif cfg.pooler == "max":
+    elif cfg.POOLER == "max":
         return MaxPool()
     else:
-        raise ValueError(f"unknown pooler {cfg.pooler}")
+        raise ValueError(f"unknown pooler {cfg.POOLER}")
 
 
 class Transformer(nn.Module):
@@ -243,23 +256,23 @@ class Transformer(nn.Module):
         self.input_fc = None
         input_dim = feature_dim
 
-        if cfg.input_fc:
+        if cfg.INPUT_FC:
             self.input_fc = nn.Sequential(
-                nn.Linear(feature_dim, cfg.input_fc_output_dim), nn.GELU())
-            input_dim = cfg.input_fc_output_dim
+                nn.Linear(feature_dim, cfg.INPUT_FC_OUTPUT_DIM), nn.GELU())
+            input_dim = cfg.INPUT_FC_OUTPUT_DIM
         self.embedding = PositionalEncoding(input_dim,
-                                            cfg.dropout,
+                                            cfg.DROPOUT,
                                             max_len=1000)
 
-        self.tf = TransformerEncoder(cfg.num_layers, input_dim, cfg.num_heads,
-                                     input_dim, cfg.dropout)
+        self.tf = TransformerEncoder(cfg.NUM_LAYERS, input_dim, cfg.NUM_HEADS,
+                                     input_dim, cfg.DROPOUT)
 
-        self.use_context = cfg.use_context
+        self.use_context = cfg.USE_CONTEXT
         if self.use_context:
-            self.tf_context = TransformerEncoder(cfg.atn_ctx_num_layers,
+            self.tf_context = TransformerEncoder(cfg.ATN_CTX_NUM_LAYERS,
                                                  input_dim,
-                                                 cfg.atn_ctx_num_heads,
-                                                 input_dim, cfg.dropout)
+                                                 cfg.ATN_CTX_NUM_HEADS,
+                                                 input_dim, cfg.DROPOUT)
 
         self.pooler = parse_pooler(input_dim, cfg)
 
@@ -304,13 +317,14 @@ class PositionalEncoding(nn.Module):
 
 
 class TransformerEncoder(nn.Module):
-    def __init__(self, layers_count, model_dim, heads_count, fc_dim, dropout_prob):
+    def __init__(self, layers_count, model_dim, heads_count, fc_dim,
+                 dropout_prob):
         super(TransformerEncoder, self).__init__()
         self.model_dim = model_dim
         assert layers_count > 0
         self.encoder_layers = nn.ModuleList([
-            TransformerEncoderLayer(model_dim, heads_count, fc_dim, dropout_prob)
-            for _ in range(layers_count)
+            TransformerEncoderLayer(model_dim, heads_count, fc_dim,
+                                    dropout_prob) for _ in range(layers_count)
         ])
 
     def forward(self, query, key, value, mask):
@@ -319,8 +333,8 @@ class TransformerEncoder(nn.Module):
         mask = (1 - mask.unsqueeze(1).expand(batch_size, query_len, key_len))
         mask = mask == 1
         sources = None
-        for encoder_layer in self.encoder_layers:
-            sources = encoder_layer(query, key, value, mask)
+
+        sources = self.encoder_layers[0](query, key, value, mask)
         return sources
 
 
@@ -328,9 +342,11 @@ class TransformerEncoderLayer(nn.Module):
     def __init__(self, model_dim, heads_count, fc_dim, dropout_prob):
         super(TransformerEncoderLayer, self).__init__()
         self.self_attention_layer = Sublayer(
-            MultiHeadAttention(heads_count, model_dim, dropout_prob), model_dim)
+            MultiHeadAttention(heads_count, model_dim, dropout_prob),
+            model_dim)
         self.pointwise_feedforward_layer = Sublayer(
-            PointwiseFeedForwardNetwork(fc_dim, model_dim, dropout_prob), model_dim)
+            PointwiseFeedForwardNetwork(fc_dim, model_dim, dropout_prob),
+            model_dim)
         self.dropout = nn.Dropout(dropout_prob)
 
     def forward(self, query, key, value, sources_mask):
@@ -423,10 +439,12 @@ class AvgPool(nn.Module):
         result = result_sum / len_div
         return result
 
+
 class MaxPool(nn.Module):
     def forward(self, features, mask, lengths):
-        result_max, _= torch.max(features, dim=1)
+        result_max, _ = torch.max(features, dim=1)
         return result_max
+
 
 class AtnPool(nn.Module):
     def __init__(self, d_input, d_attn, n_heads, dropout_prob):
@@ -437,7 +455,7 @@ class AtnPool(nn.Module):
 
         def _init(tensor_):
             tensor_.data = (truncated_normal_fill(tensor_.data.shape,
-                                                        std=0.01))
+                                                  std=0.01))
 
         w1_head = torch.zeros(n_heads, d_input, self.d_head)
         b1_head = torch.zeros(n_heads, self.d_head)
@@ -469,8 +487,7 @@ class AtnPool(nn.Module):
         return "\n".join(strs)
 
     def forward(self, features, mask, lengths):
-        # TODO: remove unused "lengths"
-        #_ = lengths
+
         batch_size, seq_len, input_dim = features.shape
         b1 = torch.matmul(features.unsqueeze(1),
                           self.genpool_w1_head.unsqueeze(0))
@@ -484,7 +501,8 @@ class AtnPool(nn.Module):
         smweights = self.softmax(b1 / self.softmax_temp)
         smweights = self.dropout3(smweights)
         smweights = smweights.transpose(1, 2).reshape(-1, seq_len, input_dim)
-        return (features * smweights).sum(dim=1) # pool features with attention weights
+        return (features * smweights).sum(
+            dim=1)  # pool features with attention weights
 
 
 def _init_weight(w, init_gain=1):

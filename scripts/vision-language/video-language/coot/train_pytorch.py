@@ -19,6 +19,7 @@ from gluoncv.torch.utils.optimizer import RAdam
 from gluoncv.torch.utils.loss import MaxMarginRankingLoss, CycleConsistencyCootLoss
 from gluoncv.torch.utils.coot_utils import get_logger, close_logger, compare_metrics, create_dataloader_path
 
+
 def main_worker(cfg):
     # create tensorboard and logs
     if cfg.DDP_CONFIG.GPU_WORLD_RANK == 0:
@@ -34,18 +35,23 @@ def main_worker(cfg):
     model = deploy_model(model, cfg)
 
     # create dataset and dataloader
-    data_path_dict = create_dataloader_path(cfg.CONFIG.COOT_DATA.DATA_PATH, cfg.CONFIG.COOT_DATA.DATASET_NAME, video_feature_name=cfg.CONFIG.COOT_DATA.FEATURE)
-    
-    train_set, val_set = create_datasets(data_path_dict, cfg, cfg.CONFIG.COOT_DATA.VIDEO_PRELOAD,
+    data_path_dict = create_dataloader_path(
+        cfg.CONFIG.COOT_DATA.DATA_PATH,
+        cfg.CONFIG.COOT_DATA.DATASET_NAME,
+        video_feature_name=cfg.CONFIG.COOT_DATA.FEATURE)
+
+    train_set, val_set = create_datasets(data_path_dict, cfg,
+                                         cfg.CONFIG.COOT_DATA.VIDEO_PRELOAD,
                                          cfg.CONFIG.COOT_DATA.TEXT_PRELOAD)
     train_loader, val_loader = create_loaders(train_set, val_set,
                                               cfg.CONFIG.TRAIN.BATCH_SIZE,
                                               cfg.CONFIG.DATA.NUM_WORKERS)
     optimizer = RAdam(model.get_params(),
-                          lr=cfg.CONFIG.TRAIN.LR,
-                          betas=(cfg.CONFIG.TRAIN.MOMENTUM, cfg.CONFIG.TRAIN.ADAM_BETA2),
-                          eps=cfg.CONFIG.TRAIN.ADAM_EPS,
-                          weight_decay=cfg.CONFIG.TRAIN.W_DECAY)
+                      lr=cfg.CONFIG.TRAIN.LR,
+                      betas=(cfg.CONFIG.TRAIN.MOMENTUM,
+                             cfg.CONFIG.TRAIN.ADAM_BETA2),
+                      eps=cfg.CONFIG.TRAIN.ADAM_EPS,
+                      weight_decay=cfg.CONFIG.TRAIN.W_DECAY)
 
     if cfg.CONFIG.MODEL.LOAD:
         model, _ = load_model(model, optimizer, cfg, load_fc=True)
@@ -65,53 +71,37 @@ def main_worker(cfg):
 
     elif cfg.CONFIG.TRAIN.LR_POLICY == 'LR_Warmup':
         scheduler = ReduceLROnPlateauWarmup(optimizer,
-                                      cfg.CONFIG.TRAIN.WARMUP_EPOCHS,
-                                      mode="max",
-                                      patience=cfg.CONFIG.TRAIN.PATIENCE,
-                                      cooldown=cfg.CONFIG.TRAIN.COOLDOWN)
+                                            cfg.CONFIG.TRAIN.WARMUP_EPOCHS,
+                                            mode="max",
+                                            patience=cfg.CONFIG.TRAIN.PATIENCE,
+                                            cooldown=cfg.CONFIG.TRAIN.COOLDOWN)
 
     else:
         print(
             'Learning rate schedule %s is not supported yet. Please use Step or Cosine.'
         )
 
-    # if cfg.CONFIG.TRAIN.USE_WARMUP:
-    #     scheduler_warmup = GradualWarmupScheduler(
-    #         optimizer,
-    #         multiplier=(cfg.CONFIG.TRAIN.WARMUP_END_LR / cfg.CONFIG.TRAIN.LR),
-    #         total_epoch=cfg.CONFIG.TRAIN.WARMUP_EPOCHS,
-    #         after_scheduler=scheduler)
-
-    criterion_cycleconsistency = CycleConsistencyCootLoss(num_samples=1, use_cuda=True) 
+    criterion_cycleconsistency = CycleConsistencyCootLoss(num_samples=1,
+                                                          use_cuda=True)
     criterion_alignment = MaxMarginRankingLoss(use_cuda=True)
-
 
     base_iter = 0
     det_best_field_best = 0
     for epoch in range(cfg.CONFIG.TRAIN.EPOCH_NUM):
-        # if cfg.DDP_CONFIG.DISTRIBUTED:
-        #     train_sampler.set_epoch(epoch)
 
         ## ======== Training step ===============
-        base_iter = train_coot(base_iter,
-                                         model,
-                                         train_loader,
-                                         epoch,
-                                         criterion_alignment, criterion_cycleconsistency,
-                                         optimizer,
-                                         cfg,
-                                         writer,
-                                         logger)
-
+        base_iter = train_coot(base_iter, model, train_loader, epoch,
+                               criterion_alignment, criterion_cycleconsistency,
+                               optimizer, writer, logger)
 
         ## ======= Validation step ================
         if epoch % cfg.CONFIG.VAL.FREQ == 0 or epoch == cfg.CONFIG.TRAIN.EPOCH_NUM - 1:
-            vid_metrics, clip_metrics = validate_coot(model, val_loader, epoch, criterion_alignment, criterion_cycleconsistency, cfg,
-                                      writer, logger, True)
+            vid_metrics, clip_metrics = validate_coot(
+                model, val_loader, epoch, criterion_alignment,
+                criterion_cycleconsistency, writer, logger, True)
 
         # Check if the performance of model is improving
-        logger.info(
-            "---------- Validating epoch {} ----------".format(epoch))
+        logger.info("---------- Validating epoch {} ----------".format(epoch))
         c2s_res, s2c_res, clip_best_at_1 = None, None, None
         if clip_metrics is not None:
             c2s_res, s2c_res, clip_best_at_1 = clip_metrics
@@ -119,21 +109,17 @@ def main_worker(cfg):
         # find field which determines is_best
         det_best_field_current = clip_best_at_1
 
-
         # check if best
-        is_best = compare_metrics(det_best_field_current,
-                                        det_best_field_best)
+        is_best = compare_metrics(det_best_field_current, det_best_field_best)
         if is_best:
             det_best_field_best = det_best_field_current
             best_epoch = epoch
 
         # step lr scheduler
         scheduler.step_rop(det_best_field_current, True)
-        logger.info(
-            f"ROP: model improved: {is_best}, "
-            f"value {det_best_field_current:.3f},"
-            f"new LR: {optimizer.param_groups[0]['lr']:5.3e}")
-
+        logger.info(f"ROP: model improved: {is_best}, "
+                    f"value {det_best_field_current:.3f},"
+                    f"new LR: {optimizer.param_groups[0]['lr']:5.3e}")
 
         if epoch % cfg.CONFIG.LOG.SAVE_FREQ == 0:
             if cfg.DDP_CONFIG.GPU_WORLD_RANK == 0 or cfg.DDP_CONFIG.DISTRIBUTED == False:
@@ -142,20 +128,18 @@ def main_worker(cfg):
         # check if model did not improve for too long
         term_after = 15
         if epoch - best_epoch > term_after:
-            logger.info(
-                f"NO improvements for {term_after} epochs (current "
-                f"{epoch} best {best_epoch}) STOP training.")
+            logger.info(f"NO improvements for {term_after} epochs (current "
+                        f"{epoch} best {best_epoch}) STOP training.")
             break
 
     if writer is not None:
         writer.close()
-    if logger is not None:   
+    if logger is not None:
         close_logger(logger)
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(
-        description='Train Coot model.')
+    parser = argparse.ArgumentParser(description='Train Coot model.')
     parser.add_argument('--config-file', type=str, help='path to config file.')
     args = parser.parse_args()
     cfg = get_cfg_defaults()

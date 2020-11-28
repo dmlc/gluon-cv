@@ -1,4 +1,3 @@
-
 import math
 
 import torch
@@ -13,9 +12,9 @@ class RAdam(Optimizer):
                  eps=1e-8,
                  weight_decay=0,
                  degenerated_to_sgd=True):
-        if not 0.0 <= lr:
+        if lr < 0.0:
             raise ValueError("Invalid learning rate: {}".format(lr))
-        if not 0.0 <= eps:
+        if eps < 0.0:
             raise ValueError("Invalid epsilon value: {}".format(eps))
         if not 0.0 <= betas[0] < 1.0:
             raise ValueError("Invalid beta parameter at index 0: {}".format(

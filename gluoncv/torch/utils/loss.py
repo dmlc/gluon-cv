@@ -87,16 +87,17 @@ class CycleConsistencyCootLoss(nn.Module):
                 sentence_mask, sentence_lens):
         clip_max_len, _ = torch.max(clip_lens, dim=-1)
         sentence_max_len, _ = torch.max(sentence_lens, dim=-1)
-        clip_sentence_nn, clip_alpha, clip_alpha_raw = self._get_soft_nn(
-            clip_emb, clip_mask, sentence_emb, sentence_mask)
-        clip_clip_nn, clip_beta, clip_beta_raw = self._get_soft_nn(
-            clip_sentence_nn, clip_mask, clip_emb, clip_mask)
+        clip_sentence_nn, _, _ = self._get_soft_nn(clip_emb, clip_mask,
+                                                   sentence_emb, sentence_mask)
+        _, clip_beta, _ = self._get_soft_nn(clip_sentence_nn, clip_mask,
+                                            clip_emb, clip_mask)
         clip_clip_loss = self._get_loss(clip_mask, clip_lens, clip_max_len,
                                         clip_beta)
-        sentence_clip_nn, sentence_alpha, sentence_alpha_raw = self._get_soft_nn(
-            sentence_emb, sentence_mask, clip_emb, clip_mask)
-        sentence_sentence_nn, sentence_beta, sentence_beta_raw = self._get_soft_nn(
-            sentence_clip_nn, sentence_mask, sentence_emb, sentence_mask)
+        sentence_clip_nn, _, _ = self._get_soft_nn(sentence_emb, sentence_mask,
+                                                   clip_emb, clip_mask)
+        _, sentence_beta, _ = self._get_soft_nn(sentence_clip_nn,
+                                                sentence_mask, sentence_emb,
+                                                sentence_mask)
         sentence_sentence_loss = self._get_loss(sentence_mask, sentence_lens,
                                                 sentence_max_len,
                                                 sentence_beta)
