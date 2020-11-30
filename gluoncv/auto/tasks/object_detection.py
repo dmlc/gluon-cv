@@ -40,8 +40,7 @@ class LiteConfig:
 @dataclass
 class DefaultConfig:
     transfer : Union[None, ag.Space, str] = ag.Categorical('ssd_512_resnet50_v1_coco', 'yolo3_darknet53_coco',
-                                                           'faster_rcnn_fpn_resnet50_v1b_coco',
-                                                           'center_net_resnet50_v1b_coco')
+                                                           'faster_rcnn_resnet50_v1b_coco', 'center_net_resnet50_v1b_coco')
     lr : Union[ag.Space, float] = ag.Categorical(1e-3, 5e-3)
     num_trials : int = 3
     epochs : Union[ag.Space, int] = 10

@@ -10,7 +10,7 @@ from d8.object_detection import Dataset
 if __name__ == '__main__':
     # user defined arguments
     parser = argparse.ArgumentParser(description='benchmark for object detection')
-    parser.add_argument('--dataset', type=str, default='sheep', help="dataset name")
+    parser.add_argument('--dataset', type=str, default='sheep', help='dataset name')
     parser.add_argument('--num-trials', type=int, default=3, help='number of training trials')
     args = parser.parse_args()
     logging.info('user defined arguments: {}'.format(args))
@@ -24,10 +24,10 @@ if __name__ == '__main__':
         #                                'resnet18_v1', 'resnet50_v1',
         #                                'resnet18_v1b', 'resnet50_v1b', 'resnet101_v1b',
         #                                'resnest50', 'resnest101'),
-        'transfer': ag.Categorical('ssd_512_resnet50_v1_coco',
+        'transfer': ag.Categorical('ssd_512_vgg16_atrous_coco', 'ssd_512_resnet50_v1_coco',
                                    'yolo3_darknet53_coco',
-                                   'faster_rcnn_fpn_resnet50_v1b_coco',
-                                   'center_net_resnet50_v1b_coco'),
+                                   'faster_rcnn_resnet50_v1b_coco', 'faster_rcnn_fpn_syncbn_resnest50_coco',
+                                   'center_net_resnet50_v1b_coco', 'center_net_dla34_coco'),
         'lr': ag.Real(1e-4, 1e-2, log=True),
         'batch_size': ag.Categorical(4, 8, 16, 32),
         'momentum': ag.Real(0.85, 0.95),
