@@ -9,7 +9,7 @@ __all__ = ['resnet18_v1b_sthsthv2', 'resnet34_v1b_sthsthv2', 'resnet50_v1b_sthst
            'resnet101_v1b_sthsthv2', 'resnet152_v1b_sthsthv2', 'resnet18_v1b_kinetics400',
            'resnet34_v1b_kinetics400', 'resnet50_v1b_kinetics400', 'resnet101_v1b_kinetics400',
            'resnet152_v1b_kinetics400', 'resnet50_v1b_ucf101', 'resnet50_v1b_hmdb51',
-           'resnet50_v1b_custom']
+           'resnet50_v1b_custom', 'resnet18_v1b_custom']
 
 class ActionRecResNetV1b(HybridBlock):
     r"""ResNet models for video action recognition
