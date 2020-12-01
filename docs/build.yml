@@ -1,4 +1,8 @@
 name: gluon_vision_docs
+channels:
+  - pytorch
+  - conda-forge
+  - defaults
 dependencies:
 - python=3.7
 - sphinx>=1.5.5
@@ -7,6 +11,8 @@ dependencies:
 - matplotlib
 - sphinx_rtd_theme
 - pip=20.2
+- pytorch=1.6.0
+- torchvision=0.7.0
 - pip:
   - https://github.com/mli/mx-theme/tarball/0.3.1
   - sphinx-gallery
