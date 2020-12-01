@@ -33,7 +33,7 @@ class LiteConfig:
     epochs : Union[ag.Space, int] = 5
     nthreads_per_trial : int = 32
     ngpus_per_trial : int = 0
-    time_limits : int = 60 * 60 * 24
+    time_limits : int = 7 * 24 * 60 * 60  # 7 days
     search_strategy : str = 'random'
     dist_ip_addrs : Union[None, list, Tuple] = None
 
@@ -46,7 +46,7 @@ class DefaultConfig:
     epochs : Union[ag.Space, int] = 10
     nthreads_per_trial : int = 128
     ngpus_per_trial : int = 8
-    time_limits : int = 60 * 60 * 24
+    time_limits : int = 7 * 24 * 60 * 60  # 7 days
     search_strategy : str = 'random'
     dist_ip_addrs : Union[None, list, Tuple] = None
 
