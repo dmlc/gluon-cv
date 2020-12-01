@@ -67,6 +67,7 @@ The following commands install the stable version of GluonCV and MXNet:
 
 ```bash
 pip install gluoncv --upgrade
+# native
 pip install -U --pre mxnet -f https://dist.mxnet.io/python/mkl
 # cuda 10.2
 pip install -U --pre mxnet -f https://dist.mxnet.io/python/cu102mkl
@@ -80,6 +81,7 @@ You may get access to latest features and bug fixes with the following commands 
 
 ```bash
 pip install gluoncv --pre --upgrade
+# native
 pip install -U --pre mxnet -f https://dist.mxnet.io/python/mkl
 # cuda 10.2
 pip install -U --pre mxnet -f https://dist.mxnet.io/python/cu102mkl
@@ -97,6 +99,8 @@ The following commands install the stable version of GluonCV and PyTorch:
 
 ```bash
 pip install gluoncv --upgrade
+# native
+pip install torch==1.6.0+cpu torchvision==0.7.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
 # cuda 10.2
 pip install torch==1.6.0 torchvision==0.7.0
 ```
@@ -111,7 +115,10 @@ You may get access to latest features and bug fixes with the following commands 
 
 ```bash
 pip install gluoncv --pre --upgrade
-pip install torch==1.6.0 torchvision==0.7.0 # for cuda 10.2
+# native
+pip install --pre torch torchvision torchaudio -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
+# cuda 10.2
+pip install --pre torch torchvision torchaudio -f https://download.pytorch.org/whl/nightly/cu102/torch_nightly.html
 ```
 
 

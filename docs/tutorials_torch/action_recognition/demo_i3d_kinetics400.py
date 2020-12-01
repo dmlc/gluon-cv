@@ -75,6 +75,7 @@ config_file = '../../../scripts/action-recognition/configuration/i3d_resnet50_v1
 cfg = get_cfg_defaults()
 cfg.merge_from_file(config_file)
 model = get_model(cfg)
+model.eval()
 print('%s model is successfully loaded.' % cfg.CONFIG.MODEL.NAME)
 
 

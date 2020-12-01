@@ -12,7 +12,8 @@ and they often lack documentation for this feature.
 Besides, there is not much information/tutorial online on how to perform distributed training for deep video models.
 
 Hence, we provide a simple tutorial here to demonstrate how to use our DistributedDataParallel (DDP) framework to perform
-efficient distributed training.
+efficient distributed training. Note that, even in a single instance with multiple GPUs,
+DDP should be used and is much more efficient that vanilla dataparallel.
 
 
 """
@@ -76,23 +77,28 @@ efficient distributed training.
 # In terms of code change, you only need to modify the `DDP_CONFIG` part in the yaml configuration file.
 # For example, in our case we have 2 nodes, then change `WORLD_SIZE` to 2.
 # `WOLRD_URLS` contains all machines' IP used for training (only support LAN IP for now), you can put their IP addresses in the list.
+
 # If `AUTO_RANK_MATCH` is True, the launcher will automatically assign a world rank number to each machine in `WOLRD_URLS`,
 # and consider the first machine as the root. Please make sure to use root's IP for `DIST_URL`.
 # If `AUTO_RANK_MATCH` is False, you need to manually set a ranking number to each instance.
 # The instance assigned with `rank=0` will be considered as the root machine.
+# We suggest always enable `AUTO_RANK_MATCH`.
 
+################################################################
 # Once it is done, you can kickstart the training on each machine.
-# Simply run `train_ddp_pytorch.py/test_ddp_pytorch.py` with the desire configuration file on each instance.
-# The log will only be shown on the root instance by default.
+# Simply run `train_ddp_pytorch.py/test_ddp_pytorch.py` with the desire configuration file on each instance, e.g.,
+# ::
+#
+#     python train_ddp_pytorch.py --config-file XXX.yaml
+#
 # If you are using multiple instances for training, we suggest you start running on the root instance firstly
 # and then start the code on other instances.
+# The log will only be shown on the root instance by default.
 
-
-"""
-.. note::
-
-    We have integrated dataloader and training/testing loop in our DDP framework.
-    If you want to try out our model zoo on your dataset/usecase, please see previous tutorial on how to finetune.
-    If you have your new video model, you can just add it to the model zoo and enjoy the speed up brought by our DDP framework.
+################################################################
+# In the end, we want to point out that we have integrated dataloader and training/testing loop in our DDP framework.
+# If you simply want to try out our model zoo on your dataset/usecase, please see previous tutorial on how to finetune.
+# If you have your new video model, you can add it to the model zoo (e.g., a single .py file) and enjoy the speed up brought by our DDP framework.
+# You don't need to handle the multiprocess dataloading and the underlying distributed training setup.
 
 """
