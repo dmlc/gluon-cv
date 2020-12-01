@@ -33,6 +33,12 @@ Action Recognition
 
         How to compute FLOPS, number of parameters, latency and fps of a video model
 
+    .. card::
+        :title: DistributedDataParallel (DDP) framework
+        :link: ../build/examples_torch_action_recognition/ddp_pytorch.html
+
+        How to use our DistributedDataParallel framework
+
 
 .. toctree::
     :hidden:

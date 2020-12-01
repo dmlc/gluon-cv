@@ -71,7 +71,7 @@ print('Video data is downloaded and preprocessed.')
 # Next, we load a pre-trained I3D model. Make sure to change the ``pretrained`` in the configuration file to True.
 
 
-config_file = './scripts/action-recognition/configuration/i3d_resnet50_v1_kinetics400.yaml'
+config_file = '../../../scripts/action-recognition/configuration/i3d_resnet50_v1_kinetics400.yaml'
 cfg = get_cfg_defaults()
 cfg.merge_from_file(config_file)
 model = get_model(cfg)
