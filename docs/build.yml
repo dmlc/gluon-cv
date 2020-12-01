@@ -30,3 +30,4 @@ dependencies:
   - cython
   - pycocotools
   - autocfg
+  - yacs
