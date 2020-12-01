@@ -101,6 +101,9 @@ RUN pip3 install --no-cache --upgrade \
 # Install MXNet
 RUN pip3 install --no-cache --upgrade mxnet-cu102==1.7.0
 
+# Install PyTorch
+RUN pip3 install torch==1.6.0 torchvision==0.7.0
+
 RUN mkdir -p ${WORKDIR}/notebook
 RUN mkdir -p ${WORKDIR}/data
 RUN mkdir -p /.init
