@@ -33,7 +33,7 @@ from .senet import *
 # from .ssd import *
 # from .vgg import *
 # from .xception import *
-# from .yolo import *
+from .yolo import *
 # from .alpha_pose import *
 # from .action_recognition import *
 # from .center_net import *
