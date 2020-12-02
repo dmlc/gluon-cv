@@ -77,12 +77,26 @@ DDP should be used and is much more efficient that vanilla dataparallel.
 # In terms of code change, you only need to modify the `DDP_CONFIG` part in the yaml configuration file.
 # For example, in our case we have 2 nodes, then change `WORLD_SIZE` to 2.
 # `WOLRD_URLS` contains all machines' IP used for training (only support LAN IP for now), you can put their IP addresses in the list.
-
 # If `AUTO_RANK_MATCH` is True, the launcher will automatically assign a world rank number to each machine in `WOLRD_URLS`,
 # and consider the first machine as the root. Please make sure to use root's IP for `DIST_URL`.
 # If `AUTO_RANK_MATCH` is False, you need to manually set a ranking number to each instance.
 # The instance assigned with `rank=0` will be considered as the root machine.
 # We suggest always enable `AUTO_RANK_MATCH`.
+# An example configuration look like below,
+# ::
+#
+#     DDP_CONFIG:
+#       AUTO_RANK_MATCH: True
+#       WORLD_SIZE: 2 # Total Number of machines
+#       WORLD_RANK: 0 # Rank of this machine
+#       DIST_URL: 'tcp://172.31.72.195:23456'
+#       WOLRD_URLS: ['172.31.72.195', '172.31.72.196']
+#
+#       GPU_WORLD_SIZE: 8 # Total Number of GPUs, will be assigned automatically
+#       GPU_WORLD_RANK: 0 # Rank of GPUs, will be assigned automatically
+#       DIST_BACKEND: 'nccl'
+#       GPU: 0 # Rank of GPUs in the machine, will be assigned automatically
+#       DISTRIBUTED: True
 
 ################################################################
 # Once it is done, you can kickstart the training on each machine.
