@@ -7,10 +7,14 @@
 
 ```
 python train_ddp_pytorch.py --config-file ./configuration/XXX.yaml
-# if multi-grid training is needed
-python train_ddp_shortonly_pytorch.py --config-file ./configuration/XXX.yaml
-# we only use short-cycle only because it is stable and applies to a range of models
 ```
+
+If multi-grid training is needed,
+```
+python train_ddp_shortonly_pytorch.py --config-file ./configuration/XXX.yaml
+```
+Note that we only use short-cycle here because it is stable and applies to a range of models.
+
 
 ### [How to evaluate?](https://cv.gluon.ai/build/examples_torch_action_recognition/demo_i3d_kinetics400.html)
 
@@ -62,7 +66,7 @@ python inference.py
 ```
 
 ## MXNet calibration
-Please check out [CALIBRATION.md]() for more information on INT8 model calibration and inference.
+Please check out [CALIBRATION.md](https://raw.githubusercontent.com/dmlc/gluon-cv/master/scripts/action-recognition/CALIBRATION.md) for more information on INT8 model calibration and inference.
 
 ## Reproducing our arXiv survey paper
-Please check out `ARXIV.md` for more information on how to get the same dataset and how to reproduce all the methods in our model zoo.
+Please check out [ARXIV.md](https://raw.githubusercontent.com/dmlc/gluon-cv/master/scripts/action-recognition/ARXIV.md) for more information on how to get the same dataset and how to reproduce all the methods in our model zoo.
