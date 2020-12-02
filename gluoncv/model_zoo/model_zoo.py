@@ -222,7 +222,7 @@ _models = {
     'se_resnext101e_64x4d': se_resnext101e_64x4d,
     'senet_154': senet_154,
     'senet_154e': senet_154e,
-    # 'darknet53': darknet53,
+    'darknet53': darknet53,
     # 'yolo3_darknet53_coco': yolo3_darknet53_coco,
     # 'yolo3_darknet53_voc': yolo3_darknet53_voc,
     # 'yolo3_darknet53_custom': yolo3_darknet53_custom,
