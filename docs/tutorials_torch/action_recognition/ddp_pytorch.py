@@ -100,5 +100,3 @@ DDP should be used and is much more efficient that vanilla dataparallel.
 # If you simply want to try out our model zoo on your dataset/usecase, please see previous tutorial on how to finetune.
 # If you have your new video model, you can add it to the model zoo (e.g., a single .py file) and enjoy the speed up brought by our DDP framework.
 # You don't need to handle the multiprocess dataloading and the underlying distributed training setup.
-
-"""
