@@ -19,11 +19,15 @@
 # pylint: disable= arguments-differ,unused-argument,missing-docstring,too-many-function-args
 """MobileNet and MobileNetV2, implemented in Gluon."""
 
+import mxnet as mx
 from mxnet.gluon import nn
 from mxnet.gluon.nn import BatchNorm
 from mxnet.context import cpu
 from mxnet.gluon.block import HybridBlock
+from mxnet import use_np # pylint: disable=unused-import\
 from ..nn import ReLU6
+mx.npx.set_np()
+
 
 
 __all__ = [
@@ -61,6 +65,7 @@ def _add_conv_dw(out, dw_channels, channels, stride, relu6=False,
               norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
 
+@use_np
 class LinearBottleneck(nn.HybridBlock):
     r"""LinearBottleneck used in MobileNetV2 model from the
     `"Inverted Residuals and Linear Bottlenecks:
@@ -89,36 +94,36 @@ class LinearBottleneck(nn.HybridBlock):
                  norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
         super(LinearBottleneck, self).__init__(**kwargs)
         self.use_shortcut = stride == 1 and in_channels == channels
-        with self.name_scope():
-            self.out = nn.HybridSequential()
+        self.out = nn.HybridSequential()
 
-            if t != 1:
-                _add_conv(self.out,
-                          in_channels * t,
-                          relu6=True,
-                          norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+        if t != 1:
             _add_conv(self.out,
                       in_channels * t,
-                      kernel=3,
-                      stride=stride,
-                      pad=1,
-                      num_group=in_channels * t,
                       relu6=True,
                       norm_layer=norm_layer, norm_kwargs=norm_kwargs)
-            _add_conv(self.out,
-                      channels,
-                      active=False,
-                      relu6=True,
-                      norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+        _add_conv(self.out,
+                  in_channels * t,
+                  kernel=3,
+                  stride=stride,
+                  pad=1,
+                  num_group=in_channels * t,
+                  relu6=True,
+                  norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+        _add_conv(self.out,
+                  channels,
+                  active=False,
+                  relu6=True,
+                  norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
-    def hybrid_forward(self, F, x):
+    def forward(self, x):
         out = self.out(x)
         if self.use_shortcut:
-            out = F.elemwise_add(out, x)
+            out = out * x
         return out
 
 
 # Net
+@use_np
 class MobileNet(HybridBlock):
     r"""MobileNet model from the
     `"MobileNets: Efficient Convolutional Neural Networks for Mobile Vision Applications"
@@ -143,34 +148,33 @@ class MobileNet(HybridBlock):
     def __init__(self, multiplier=1.0, classes=1000,
                  norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
         super(MobileNet, self).__init__(**kwargs)
-        with self.name_scope():
-            self.features = nn.HybridSequential(prefix='')
-            with self.features.name_scope():
-                _add_conv(self.features, channels=int(32 * multiplier), kernel=3, pad=1, stride=2,
-                          norm_layer=norm_layer, norm_kwargs=norm_kwargs)
-                dw_channels = [int(x * multiplier) for x in [32, 64] + [128] * 2 +
-                               [256] *
-                               2 +
-                               [512] *
-                               6 +
-                               [1024]]
-                channels = [int(x * multiplier) for x in [64] +
-                            [128] * 2 + [256] * 2 + [512] * 6 + [1024] * 2]
-                strides = [1, 2] * 3 + [1] * 5 + [2, 1]
-                for dwc, c, s in zip(dw_channels, channels, strides):
-                    _add_conv_dw(self.features, dw_channels=dwc, channels=c, stride=s,
-                                 norm_layer=norm_layer, norm_kwargs=norm_kwargs)
-                self.features.add(nn.GlobalAvgPool2D())
-                self.features.add(nn.Flatten())
+        self.features = nn.HybridSequential()
+        _add_conv(self.features, channels=int(32 * multiplier), kernel=3, pad=1, stride=2,
+                  norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+        dw_channels = [int(x * multiplier) for x in [32, 64] + [128] * 2 +
+                       [256] *
+                       2 +
+                       [512] *
+                       6 +
+                       [1024]]
+        channels = [int(x * multiplier) for x in [64] +
+                    [128] * 2 + [256] * 2 + [512] * 6 + [1024] * 2]
+        strides = [1, 2] * 3 + [1] * 5 + [2, 1]
+        for dwc, c, s in zip(dw_channels, channels, strides):
+            _add_conv_dw(self.features, dw_channels=dwc, channels=c, stride=s,
+                         norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+        self.features.add(nn.GlobalAvgPool2D())
+        self.features.add(nn.Flatten())
 
-            self.output = nn.Dense(classes)
+        self.output = nn.Dense(classes)
 
-    def hybrid_forward(self, F, x):
+    def forward(self, x):
         x = self.features(x)
         x = self.output(x)
         return x
 
 
+@use_np
 class MobileNetV2(nn.HybridBlock):
     r"""MobileNetV2 model from the
     `"Inverted Residuals and Linear Bottlenecks:
@@ -194,43 +198,40 @@ class MobileNetV2(nn.HybridBlock):
     def __init__(self, multiplier=1.0, classes=1000,
                  norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
         super(MobileNetV2, self).__init__(**kwargs)
-        with self.name_scope():
-            self.features = nn.HybridSequential(prefix='features_')
-            with self.features.name_scope():
-                _add_conv(self.features, int(32 * multiplier), kernel=3,
-                          stride=2, pad=1, relu6=True,
-                          norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+        self.features = nn.HybridSequential()
+        _add_conv(self.features, int(32 * multiplier), kernel=3,
+                  stride=2, pad=1, relu6=True,
+                  norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
-                in_channels_group = [int(x * multiplier) for x in [32] + [16] + [24] * 2
-                                     + [32] * 3 + [64] * 4 + [96] * 3 + [160] * 3]
-                channels_group = [int(x * multiplier) for x in [16] + [24] * 2 + [32] * 3
-                                  + [64] * 4 + [96] * 3 + [160] * 3 + [320]]
-                ts = [1] + [6] * 16
-                strides = [1, 2] * 2 + [1, 1, 2] + [1] * 6 + [2] + [1] * 3
+        in_channels_group = [int(x * multiplier) for x in [32] + [16] + [24] * 2
+                             + [32] * 3 + [64] * 4 + [96] * 3 + [160] * 3]
+        channels_group = [int(x * multiplier) for x in [16] + [24] * 2 + [32] * 3
+                          + [64] * 4 + [96] * 3 + [160] * 3 + [320]]
+        ts = [1] + [6] * 16
+        strides = [1, 2] * 2 + [1, 1, 2] + [1] * 6 + [2] + [1] * 3
 
-                for in_c, c, t, s in zip(in_channels_group, channels_group, ts, strides):
-                    self.features.add(LinearBottleneck(in_channels=in_c,
-                                                       channels=c,
-                                                       t=t,
-                                                       stride=s,
-                                                       norm_layer=norm_layer,
-                                                       norm_kwargs=norm_kwargs))
+        for in_c, c, t, s in zip(in_channels_group, channels_group, ts, strides):
+            self.features.add(LinearBottleneck(in_channels=in_c,
+                                               channels=c,
+                                               t=t,
+                                               stride=s,
+                                               norm_layer=norm_layer,
+                                               norm_kwargs=norm_kwargs))
 
-                last_channels = int(1280 * multiplier) if multiplier > 1.0 else 1280
-                _add_conv(self.features,
-                          last_channels,
-                          relu6=True,
-                          norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+        last_channels = int(1280 * multiplier) if multiplier > 1.0 else 1280
+        _add_conv(self.features,
+                  last_channels,
+                  relu6=True,
+                  norm_layer=norm_layer, norm_kwargs=norm_kwargs)
 
-                self.features.add(nn.GlobalAvgPool2D())
+        self.features.add(nn.GlobalAvgPool2D())
 
-            self.output = nn.HybridSequential(prefix='output_')
-            with self.output.name_scope():
-                self.output.add(
-                    nn.Conv2D(classes, 1, use_bias=False, prefix='pred_'),
-                    nn.Flatten())
+        self.output = nn.HybridSequential()
+        self.output.add(
+            nn.Conv2D(classes, 1, use_bias=False),
+            nn.Flatten())
 
-    def hybrid_forward(self, F, x):
+    def forward(self, x):
         x = self.features(x)
         x = self.output(x)
         return x

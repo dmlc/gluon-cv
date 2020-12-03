@@ -15,7 +15,7 @@ from .cifarwideresnet import *
 # from .googlenet import *
 # from .inception import *
 # from .rcnn.mask_rcnn import *
-# from .mobilenet import *
+from .mobilenet import *
 # from .mobilenetv3 import *
 # from .nasnet import *
 # from .pruned_resnet.resnetv1b_pruned import *
@@ -92,14 +92,14 @@ _models = {
     # 'inceptionv3': inception_v3,
     # 'xception': get_xcetption,
     # 'xception71': get_xcetption_71,
-    # 'mobilenet1.0': mobilenet1_0,
-    # 'mobilenet0.75': mobilenet0_75,
-    # 'mobilenet0.5': mobilenet0_5,
-    # 'mobilenet0.25': mobilenet0_25,
-    # 'mobilenetv2_1.0': mobilenet_v2_1_0,
-    # 'mobilenetv2_0.75': mobilenet_v2_0_75,
-    # 'mobilenetv2_0.5': mobilenet_v2_0_5,
-    # 'mobilenetv2_0.25': mobilenet_v2_0_25,
+    'mobilenet1.0': mobilenet1_0,
+    'mobilenet0.75': mobilenet0_75,
+    'mobilenet0.5': mobilenet0_5,
+    'mobilenet0.25': mobilenet0_25,
+    'mobilenetv2_1.0': mobilenet_v2_1_0,
+    'mobilenetv2_0.75': mobilenet_v2_0_75,
+    'mobilenetv2_0.5': mobilenet_v2_0_5,
+    'mobilenetv2_0.25': mobilenet_v2_0_25,
     # 'mobilenetv3_large': mobilenet_v3_large,
     # 'mobilenetv3_small': mobilenet_v3_small,
     # 'mobile_pose_resnet18_v1b': mobile_pose_resnet18_v1b,
