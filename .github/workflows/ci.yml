@@ -233,6 +233,6 @@ jobs:
         with:
           issue-number: ${{ github.event.number }}
           body: |
-            Job ${{ github.event.number }}-${{ steps.vars.outputs.sha_short }} is done. 
-            Docs are uploaded to http://gluon-vision-staging.s3-website-us-west-2.amazonaws.com/${{ github.event.number }}/${{ steps.vars.outputs.sha_short }}/index.html 
+            Job PR-${{ github.event.number }}-${{ steps.vars.outputs.sha_short }} is done. 
+            Docs are uploaded to http://gluon-vision-staging.s3-website-us-west-2.amazonaws.com/PR-${{ github.event.number }}/${{ steps.vars.outputs.sha_short }}/index.html 
                         

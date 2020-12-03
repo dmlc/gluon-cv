@@ -33,8 +33,8 @@ if [[ ($BRANCH == master) && ($GIT_REPO == dmlc/gluon-cv) ]]; then
 	echo master
 else
 	# aws s3 cp s3://gluon-vision-staging/$PR_NUMBER/$COMMIT_SHA/coverage.svg build/html/coverage.svg
-	aws s3 sync --delete build/html/ s3://gluon-vision-staging/$PR_NUMBER/$COMMIT_SHA/ --acl public-read
-	echo "Uploaded doc to http://gluon-vision-staging.s3-website-us-west-2.amazonaws.com/$PR_NUMBER/$COMMIT_SHA/index.html"
+	aws s3 sync --delete build/html/ s3://gluon-vision-staging/PR-$PR_NUMBER/$COMMIT_SHA/ --acl public-read
+	echo "Uploaded doc to http://gluon-vision-staging.s3-website-us-west-2.amazonaws.com/PR-$PR_NUMBER/$COMMIT_SHA/index.html"
 	echo $GIT_REPO: $BRANCH
 fi;
 exit $COMMAND_EXIT_CODE
