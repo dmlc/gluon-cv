@@ -187,8 +187,15 @@ jobs:
     needs: [unittests, model_zoo_mxnet, model_zoo_torch, auto]
     runs-on: ubuntu-latest
     steps:
-      - name: checkout
+      - name: Checkout repository(For push)
+        if: ${{ github.event_name == 'push' }}
         uses: actions/checkout@v2
+      - name: Checkout Pull Request Repository(For pull request)
+        if: ${{ github.event_name == 'pull_request' || github.event_name == 'pull_request_target' }}
+        uses: actions/checkout@v2
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
