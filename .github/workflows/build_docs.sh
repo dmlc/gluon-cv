@@ -27,15 +27,14 @@ sed -i.bak 's/pre{padding:1rem;margin:1.5rem\\s0;overflow:auto;overflow-y:hidden
 
 if [[ ($BRANCH == master) && ($GIT_REPO == dmlc/gluon-cv) ]]; then
 	# aws s3 cp s3://gluon-cv.mxnet.io/coverage.svg build/html/coverage.svg
-	aws s3 sync --delete build/html/ s3://gluoncv-ci/build_docs/master/ --acl public-read --cache-control max-age=7200
+	aws s3 sync --delete build/html/ s3://gluon-cv.mxnet.io/ --acl public-read --cache-control max-age=7200
 	# aws s3 cp build/html/coverage.svg s3://gluon-cv.mxnet.io/coverage.svg --acl public-read --cache-control max-age=300
-	# echo "Uploaded doc to http://gluon-cv.mxnet.io"
+	echo "Uploaded doc to http://gluon-cv.mxnet.io"
 	echo master
 else
-	# aws s3 cp s3://gluoncv-ci/build_docs/$PR_NUMBER/$COMMIT_SHA/coverage.svg build/html/coverage.svg
-	aws s3 sync --delete build/html/ s3://gluoncv-ci/build_docs/$PR_NUMBER/$COMMIT_SHA/ --acl public-read
-	# echo "Uploaded doc to http://gluon-vision-staging.s3-website-us-west-2.amazonaws.com/${env.BRANCH_NAME}/${env.BUILD_NUMBER}/index.html"
-	echo "Uploaded doc to https://gluoncv-ci.s3-us-west-2.amazonaws.com/build_docs//$PR_NUMBER/$COMMIT_SHA/index.html"
+	# aws s3 cp s3://gluon-vision-staging/$PR_NUMBER/$COMMIT_SHA/coverage.svg build/html/coverage.svg
+	aws s3 sync --delete build/html/ s3://gluon-vision-staging/PR-$PR_NUMBER/$COMMIT_SHA/ --acl public-read
+	echo "Uploaded doc to http://gluon-vision-staging.s3-website-us-west-2.amazonaws.com/PR-$PR_NUMBER/$COMMIT_SHA/index.html"
 	echo $GIT_REPO: $BRANCH
 fi;
 exit $COMMAND_EXIT_CODE
