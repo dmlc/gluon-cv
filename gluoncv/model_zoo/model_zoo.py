@@ -2,7 +2,7 @@
 """Model store which handles pretrained models from both
 mxnet.gluon.model_zoo.vision and gluoncv.models
 """
-# from .alexnet import *
+from .alexnet import *
 from .cifarresnet import *
 from .cifarresnext import *
 from .cifarwideresnet import *

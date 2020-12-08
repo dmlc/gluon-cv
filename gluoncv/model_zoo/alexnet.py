@@ -20,9 +20,12 @@
 """Alexnet, implemented in Gluon."""
 __all__ = ['AlexNet', 'alexnet']
 
+import mxnet as mx
 from mxnet.context import cpu
 from mxnet.gluon.block import HybridBlock
 from mxnet.gluon import nn
+from mxnet import use_np # pylint: disable=unused-import
+mx.npx.set_np()
 
 # Net
 class AlexNet(HybridBlock):
@@ -59,7 +62,7 @@ class AlexNet(HybridBlock):
 
             self.output = nn.Dense(classes)
 
-    def hybrid_forward(self, F, x):
+    def forward(self, x):
         x = self.features(x)
         x = self.output(x)
         return x
