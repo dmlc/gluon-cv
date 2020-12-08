@@ -12,10 +12,10 @@ if __name__ == '__main__':
     # specify hyperparameters
     config = {
         'dataset': 'sheep',
-        'gpus': [0, 1, 2, 3],
-        'estimator': YOLOv3Estimator,
+        'gpus': [0, 1, 2, 3, 4, 5, 6, 7],
+        'estimator': 'yolo3',
         'base_network': 'darknet53',
-        'batch_size': 32,  # range [4, 32]
+        'batch_size': 64,  # range [8, 16, 32, 64]
         'epochs': 3
     }
     config = config_to_nested(config)

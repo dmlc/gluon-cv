@@ -62,6 +62,9 @@ def _train_image_classification(args, reporter):
     # train, val data
     train_data = args.pop('train_data')
     val_data = args.pop('val_data')
+    task = args.pop('task')
+    dataset = args.pop('dataset')
+    num_trials = args.pop('num_trials')
     # convert user defined config to nested form
     args = config_to_nested(args)
 
@@ -80,7 +83,8 @@ def _train_image_classification(args, reporter):
         trial_log.update(args)
         trial_log.update(result)
         json_str = json.dumps(trial_log)
-        with open('classification_' + 'dataset_' + args['dataset'] + '_' + str(uuid.uuid4()) + '.json', 'w') as json_file:
+        time_str = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
+        with open(task + '_dataset-' + dataset + '_trials-' + str(num_trials) + '_' + time_str + '.json', 'w') as json_file:
             json_file.write(json_str)
         logging.info('Config and result in this trial have been saved.')
     # pylint: disable=bare-except
@@ -225,14 +229,29 @@ class ImageClassification(BaseTask):
             train_data, val_data = train, val
 
         # automatically suggest some hyperparameters based on the dataset statistics(experimental)
+        # estimator = self._config.get('estimator', None)
+        # if estimator is None:
+        #     estimator = [ImageClassificationEstimator]
+        # elif isinstance(estimator, (tuple, list)):
+        #     pass
+        # else:
+        #     assert issubclass(estimator, BaseEstimator)
+        #     estimator = [estimator]
+        # self._config['estimator'] = ag.Categorical(*estimator)
+
         estimator = self._config.get('estimator', None)
         if estimator is None:
             estimator = [ImageClassificationEstimator]
-        elif isinstance(estimator, (tuple, list)):
-            pass
         else:
-            assert issubclass(estimator, BaseEstimator)
-            estimator = [estimator]
+            if isinstance(estimator, ag.Space):
+                estimator = estimator.data
+            elif isinstance(estimator, str):
+                estimator = [estimator]
+            for i, e in enumerate(estimator):
+                if e == 'img_cls':
+                    estimator[i] = ImageClassificationEstimator
+                else:
+                    estimator.pop(e)
         self._config['estimator'] = ag.Categorical(*estimator)
 
         # register args

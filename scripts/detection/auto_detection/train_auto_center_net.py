@@ -1,13 +1,20 @@
+import os
 import argparse
 import logging
 
+import cv2
 import autogluon.core as ag
 from gluoncv.auto.tasks import ObjectDetection
 from gluoncv.auto.estimators import CenterNetEstimator
 from d8.object_detection import Dataset
 
+os.environ['MXNET_ENABLE_GPU_P2P'] = '0'
+
 
 if __name__ == '__main__':
+    # disable parallel computation for opencv
+    cv2.setNumThreads(0)
+
     # user defined arguments
     parser = argparse.ArgumentParser(description='benchmark for object detection')
     parser.add_argument('--dataset', type=str, default='sheep', help='dataset name')
@@ -17,15 +24,16 @@ if __name__ == '__main__':
 
     # specify hyperparameter search space
     config = {
+        'task': 'center_net',
         'dataset': args.dataset,
-        'estimator': CenterNetEstimator,
+        'estimator': 'center_net',
         'base_network': None,
         'transfer': ag.Categorical('center_net_resnet18_v1b_coco',
                                    'center_net_resnet50_v1b_coco',
                                    'center_net_resnet101_v1b_coco',
                                    'center_net_dla34_coco'),
         'lr': ag.Real(1e-4, 1e-2, log=True),
-        'batch_size': ag.Categorical(4, 8, 16, 32),
+        'batch_size': ag.Categorical(8, 16, 32, 64),
         'momentum': ag.Real(0.85, 0.95),
         'wd': ag.Real(1e-6, 1e-2, log=True),
         'epochs': 20,

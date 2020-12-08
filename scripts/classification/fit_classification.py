@@ -12,10 +12,10 @@ if __name__ == '__main__':
     # specify hyperparameters
     config = {
         'dataset': 'boat',
-        'gpus': [0, 1, 2, 3],
-        'estimator': ImageClassificationEstimator,
+        'gpus': [0, 1, 2, 3, 4, 5, 6, 7],
+        'estimator': 'img_cls',
         'model': 'resnet50_v1b',
-        'batch_size': 128,  # range [16, 128]
+        'batch_size': 128,  # range [16, 32, 64, 128]
         'epochs': 3
     }
     config = config_to_nested(config)

@@ -12,11 +12,11 @@ if __name__ == '__main__':
     # specify hyperparameters
     config = {
         'dataset': 'sheep',
-        'gpus': [0, 1, 2, 3],
-        'estimator': SSDEstimator,
+        'gpus': [0, 1, 2, 3, 4, 5, 6, 7],
+        'estimator': 'ssd',
         'base_network': 'resnet50_v1',
         'data_shape': 512,
-        'batch_size': 32,  # range [4, 32]
+        'batch_size': 64,  # range [8, 16, 32, 64]
         'epochs': 3
     }
     config = config_to_nested(config)

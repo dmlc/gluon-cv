@@ -58,30 +58,6 @@ def _train_object_detection(args, reporter):
     ----------
     args: <class 'autogluon.utils.edict.EasyDict'>
     """
-    # choose hyperparameters based on pretrained model in transfer learning
-    if args.get('transfer', None):
-        # choose estimator
-        if args.transfer.startswith('ssd'):
-            args.estimator = SSDEstimator
-        elif args.transfer.startswith('yolo3'):
-            args.estimator = YOLOv3Estimator
-        elif args.transfer.startswith('faster_rcnn'):
-            args.estimator = FasterRCNNEstimator
-        elif args.transfer.startswith('center_net'):
-            args.estimator = CenterNetEstimator
-        # choose base network
-        transfer_list = args.transfer.split('_')
-        if transfer_list[0] == 'yolo3':
-            transfer_list.pop(0)
-            transfer_list.pop(-1)
-        else:
-            transfer_list.pop(0)
-            transfer_list.pop(0)
-            transfer_list.pop(-1)
-        args.base_network = '_'.join(transfer_list)
-        if args.base_network.startswith('mobilenet'):
-            args.base_network.replace('_', '.')
-
     # pruning for batch size
     # if args.get('batch_size', None):
     #     if args.estimator == FasterRCNNEstimator and args.batch_size not in [4, 8]:
@@ -115,6 +91,9 @@ def _train_object_detection(args, reporter):
     # train, val data
     train_data = args.pop('train_data')
     val_data = args.pop('val_data')
+    task = args.pop('task')
+    dataset = args.pop('dataset')
+    num_trials = args.pop('num_trials')
     # convert user defined config to nested form
     args = config_to_nested(args)
 
@@ -129,7 +108,8 @@ def _train_object_detection(args, reporter):
         trial_log.update(args)
         trial_log.update(result)
         json_str = json.dumps(trial_log)
-        with open('detection_' + 'dataset_' + args['dataset'] + '_' + str(uuid.uuid4()) + '.json', 'w') as json_file:
+        time_str = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
+        with open(task + '_dataset-' + dataset + '_trials-' + str(num_trials) + '_' + time_str + '.json', 'w') as json_file:
             json_file.write(json_str)
         logging.info('Config and result in this trial have been saved.')
     # pylint: disable=bare-except
@@ -204,17 +184,26 @@ class ObjectDetection(BaseTask):
         estimator = config.get('estimator', None)
         transfer = config.get('transfer', None)
         if estimator is not None and transfer is not None:
+            if isinstance(estimator, ag.Space):
+                estimator = estimator.data
+            elif isinstance(estimator, str):
+                estimator = [estimator]
             if isinstance(transfer, ag.Space):
                 transfer = transfer.data
-            if isinstance(transfer, str):
+            elif isinstance(transfer, str):
                 transfer = [transfer]
-            transfer = [t for t in transfer if estimator in t]
-            if not transfer:
+
+            valid_transfer = []
+            for e in estimator:
+                for t in transfer:
+                    if e in t: valid_transfer.append(t)
+
+            if not valid_transfer:
                 raise ValueError(f'No matching `transfer` model for {estimator}')
-            if len(transfer) == 1:
-                config['transfer'] = transfer[0]
+            elif len(valid_transfer) == 1:
+                config['transfer'] = valid_transfer[0]
             else:
-                config['transfer'] = ag.Categorical(**transfer)
+                config['transfer'] = ag.Categorical(*valid_transfer)
 
         # additional configs
         config['num_workers'] = nthreads_per_trial
@@ -285,8 +274,9 @@ class ObjectDetection(BaseTask):
             train_data, val_data = train, val
 
         # automatically suggest some hyperparameters based on the dataset statistics(experimental)
-        if not self._config.get('transfer', None):
-            estimator = self._config.get('estimator', None)
+        estimator = self._config.get('estimator', None)
+        transfer = self._config.get('transfer', None)
+        if not transfer:
             self._config['train_dataset'] = train_data
             auto_suggest(self._config, estimator, self._logger)
             self._config.pop('train_dataset')

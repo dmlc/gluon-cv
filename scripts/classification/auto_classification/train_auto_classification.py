@@ -1,3 +1,4 @@
+import os
 import argparse
 import logging
 
@@ -5,6 +6,8 @@ import autogluon.core as ag
 from gluoncv.auto.tasks import ImageClassification
 from gluoncv.auto.estimators import ImageClassificationEstimator
 from d8.image_classification import Dataset
+
+os.environ['MXNET_ENABLE_GPU_P2P'] = '0'
 
 
 if __name__ == '__main__':
@@ -17,8 +20,9 @@ if __name__ == '__main__':
 
     # specify hyperparameter search space
     config = {
+        'task': 'classification',
         'dataset': args.dataset,
-        'estimator': ImageClassificationEstimator,
+        'estimator': 'img_cls',
         'model': ag.Categorical('resnet50_v1', 'resnet101_v1',
                                 'resnet50_v2', 'resnet101_v2',
                                 'resnet50_v1b', 'resnet101_v1b',

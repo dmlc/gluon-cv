@@ -81,14 +81,25 @@ def auto_suggest(config, estimator, logger):
     """
     Automatically suggest some hyperparameters based on the dataset statistics.
     """
+    # specify estimator search space
     if estimator is None:
-        estimator = [SSDEstimator, FasterRCNNEstimator, YOLOv3Estimator, CenterNetEstimator]
-    elif isinstance(estimator, (tuple, list)):
-        pass
+        estimator_init = [SSDEstimator, YOLOv3Estimator, FasterRCNNEstimator, CenterNetEstimator]
+        config['estimator'] = ag.Categorical(*estimator_init)
     else:
-        assert issubclass(estimator, BaseEstimator)
-        estimator = [estimator]
-    config['estimator'] = ag.Categorical(*estimator)
+        if isinstance(estimator, ag.Space):
+            estimator = estimator.data
+        elif isinstance(estimator, str):
+            estimator = [estimator]
+        for i, e in enumerate(estimator):
+            if e == 'ssd':
+                estimator[i] = SSDEstimator
+            elif e == 'yolo3':
+                estimator[i] = YOLOv3Estimator
+            elif e == 'faster_rcnn':
+                estimator[i] = FasterRCNNEstimator
+            elif e == 'center_net':
+                estimator[i] = CenterNetEstimator
+        config['estimator'] = ag.Categorical(*estimator)
 
     # get dataset statistics
     # user needs to define a Dataset object "train_dataset" when using custom dataset
@@ -164,17 +175,10 @@ def auto_suggest(config, estimator, logger):
     else:
         suggested_estimator = [SSDEstimator, YOLOv3Estimator, CenterNetEstimator]
 
-    # config['lr'] = config.get('lr', ag.Categorical(1e-2, 5e-3, 1e-3, 5e-4, 1e-4))
-
-    # estimator setting
+    # specify estimator search space based on suggestion
     if estimator is None:
         estimator = suggested_estimator
-    elif isinstance(estimator, (tuple, list)):
-        pass
-    else:
-        assert issubclass(estimator, BaseEstimator)
-        estimator = [estimator]
-    config['estimator'] = ag.Categorical(*estimator)
+        config['estimator'] = ag.Categorical(*estimator)
 
 def get_recursively(search_dict, field):
     """
@@ -198,35 +202,82 @@ def get_recursively(search_dict, field):
 
 def config_to_nested(config):
     """Convert config to nested version"""
+    # estimator = config.get('estimator', None)
+    # if estimator is None:
+    #     transfer = config.get('transfer', None)
+    #     assert transfer is not None, "estimator or transfer is required in search space"
+    #     if transfer.startswith('ssd'):
+    #         estimator = SSDEstimator
+    #     elif transfer.startswith('faster_rcnn'):
+    #         estimator = FasterRCNNEstimator
+    #     elif transfer.startswith('yolo3'):
+    #         estimator = YOLOv3Estimator
+    #     elif transfer.startswith('center_net'):
+    #         estimator = CenterNetEstimator
+    #     else:
+    #         estimator = ImageClassificationEstimator
+    # else:
+    #     # str to instance
+    #     if isinstance(estimator, str):
+    #         if estimator == 'ssd':
+    #             estimator = SSDEstimator
+    #         elif estimator == 'faster_rcnn':
+    #             estimator = FasterRCNNEstimator
+    #         elif estimator == 'yolo3':
+    #             estimator = YOLOv3Estimator
+    #         elif estimator == 'center_net':
+    #             estimator = CenterNetEstimator
+    #         elif estimator == 'img_cls':
+    #             estimator = ImageClassificationEstimator
+    #         else:
+    #             raise ValueError(f'Unknown estimator: {estimator}')
+
     estimator = config.get('estimator', None)
-    if estimator is None:
-        transfer = config.get('transfer', None)
-        assert transfer is not None, "estimator or transfer is required in search space"
+    transfer = config.get('transfer', None)
+    # choose hyperparameters based on pretrained model in transfer learning
+    if transfer:
+        # choose estimator
         if transfer.startswith('ssd'):
             estimator = SSDEstimator
-        elif transfer.startswith('faster_rcnn'):
-            estimator = FasterRCNNEstimator
         elif transfer.startswith('yolo3'):
             estimator = YOLOv3Estimator
+        elif transfer.startswith('faster_rcnn'):
+            estimator = FasterRCNNEstimator
         elif transfer.startswith('center_net'):
             estimator = CenterNetEstimator
         else:
             estimator = ImageClassificationEstimator
+        # choose base network
+        transfer_list = transfer.split('_')
+        if transfer_list[0] == 'ssd':
+            transfer_list.pop(0)
+            config['data_shape'] = int(transfer_list.pop(0))
+            transfer_list.pop(-1)
+        elif transfer_list[0] == 'yolo3':
+            transfer_list.pop(0)
+            transfer_list.pop(-1)
+        else:
+            transfer_list.pop(0)
+            transfer_list.pop(0)
+            transfer_list.pop(-1)
+        config['base_network'] = '_'.join(transfer_list)
+        if config['base_network'].startswith('mobilenet'):
+            config['base_network'].replace('_', '.')
+    elif isinstance(estimator, str):
+        if estimator == 'ssd':
+            estimator = SSDEstimator
+        elif estimator == 'yolo3':
+            estimator = YOLOv3Estimator
+        elif estimator == 'faster_rcnn':
+            estimator = FasterRCNNEstimator
+        elif estimator == 'center_net':
+            estimator = CenterNetEstimator
+        elif estimator == 'img_cls':
+            estimator = ImageClassificationEstimator
+        else:
+            raise ValueError(f'Unknown estimator: {estimator}')
     else:
-        # str to instance
-        if isinstance(estimator, str):
-            if estimator == 'ssd':
-                estimator = SSDEstimator
-            elif estimator == 'faster_rcnn':
-                estimator = FasterRCNNEstimator
-            elif estimator == 'yolo3':
-                estimator = YOLOv3Estimator
-            elif estimator == 'center_net':
-                estimator = CenterNetEstimator
-            elif estimator == 'img_cls':
-                estimator = ImageClassificationEstimator
-            else:
-                raise ValueError(f'Unknown estimator: {estimator}')
+        assert issubclass(estimator, BaseEstimator)
 
     cfg_map = estimator._default_cfg.asdict()
 

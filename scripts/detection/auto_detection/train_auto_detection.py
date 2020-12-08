@@ -1,3 +1,4 @@
+import os
 import argparse
 import logging
 
@@ -5,6 +6,8 @@ import autogluon.core as ag
 from gluoncv.auto.tasks import ObjectDetection
 from gluoncv.auto.estimators import SSDEstimator, YOLOv3Estimator, FasterRCNNEstimator, CenterNetEstimator
 from d8.object_detection import Dataset
+
+os.environ['MXNET_ENABLE_GPU_P2P'] = '0'
 
 
 if __name__ == '__main__':
@@ -17,6 +20,7 @@ if __name__ == '__main__':
 
     # specify hyperparameter search space
     config = {
+        'task': 'detection',
         'dataset': args.dataset,
         'estimator': None,
         'base_network': None,
@@ -29,7 +33,7 @@ if __name__ == '__main__':
                                    'faster_rcnn_resnet50_v1b_coco', 'faster_rcnn_fpn_syncbn_resnest50_coco',
                                    'center_net_resnet50_v1b_coco', 'center_net_dla34_coco'),
         'lr': ag.Real(1e-4, 1e-2, log=True),
-        'batch_size': ag.Categorical(4, 8, 16, 32),
+        'batch_size': ag.Categorical(8, 16, 32, 64),
         'momentum': ag.Real(0.85, 0.95),
         'wd': ag.Real(1e-6, 1e-2, log=True),
         'epochs': 20,
