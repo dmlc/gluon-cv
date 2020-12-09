@@ -10,7 +10,7 @@ import portalocker
 from ..utils import download, check_sha1
 
 _model_sha1 = {name: checksum for checksum, name in [
-    ('44335d1f0046b328243b32a26a4fbd62d9057b45', 'alexnet'),
+    ('1a6f936097ef843c35b70ffd11e787bef94c530f', 'alexnet'),
     ('f27dbf2dbd5ce9a80b102d89c7483342cd33cb31', 'densenet121'),
     ('b6c8a95717e3e761bd88d145f4d0a214aaa515dc', 'densenet161'),
     ('2603f878403c6aa5a71a124c4a3307143d6820e9', 'densenet169'),

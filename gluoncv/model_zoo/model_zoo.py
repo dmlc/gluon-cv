@@ -81,7 +81,7 @@ _models = {
     # 'vgg13_bn': vgg13_bn,
     # 'vgg16_bn': vgg16_bn,
     # 'vgg19_bn': vgg19_bn,
-    # 'alexnet': alexnet,
+    'alexnet': alexnet,
     # 'densenet121': densenet121,
     # 'densenet161': densenet161,
     # 'densenet169': densenet169,
