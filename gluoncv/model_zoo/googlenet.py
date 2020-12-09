@@ -26,6 +26,7 @@ from mxnet.context import cpu
 from mxnet.gluon.block import HybridBlock
 from mxnet.gluon import nn
 from mxnet.gluon.nn import BatchNorm, HybridConcatenate
+from mxnet import use_np
 mx.npx.set_np()
 
 def _make_basic_conv(in_channels, channels, norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
