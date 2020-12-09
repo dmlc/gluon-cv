@@ -31,7 +31,7 @@ from .senet import *
 # from .simple_pose.mobile_pose import *
 # from .squeezenet import *
 # from .ssd import *
-# from .vgg import *
+from .vgg import *
 # from .xception import *
 from .yolo import *
 # from .alpha_pose import *
@@ -73,14 +73,14 @@ _models = {
     'se_resnet50_v2': se_resnet50_v2,
     'se_resnet101_v2': se_resnet101_v2,
     'se_resnet152_v2': se_resnet152_v2,
-    # 'vgg11': vgg11,
-    # 'vgg13': vgg13,
-    # 'vgg16': vgg16,
-    # 'vgg19': vgg19,
-    # 'vgg11_bn': vgg11_bn,
-    # 'vgg13_bn': vgg13_bn,
-    # 'vgg16_bn': vgg16_bn,
-    # 'vgg19_bn': vgg19_bn,
+    'vgg11': vgg11,
+    'vgg13': vgg13,
+    'vgg16': vgg16,
+    'vgg19': vgg19,
+    'vgg11_bn': vgg11_bn,
+    'vgg13_bn': vgg13_bn,
+    'vgg16_bn': vgg16_bn,
+    'vgg19_bn': vgg19_bn,
     'alexnet': alexnet,
     # 'densenet121': densenet121,
     # 'densenet161': densenet161,
