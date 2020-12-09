@@ -21,10 +21,12 @@
 
 __all__ = ['GoogLeNet', 'googlenet']
 
+import mxnet as mx
 from mxnet.context import cpu
 from mxnet.gluon.block import HybridBlock
 from mxnet.gluon import nn
 from mxnet.gluon.nn import BatchNorm, HybridConcatenate
+mx.npx.set_np()
 
 def _make_basic_conv(in_channels, channels, norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
     out = nn.HybridSequential()
@@ -193,6 +195,7 @@ def _make_aux(in_channels, classes, norm_layer, norm_kwargs):
     out.add(nn.Dense(units=classes, in_units=1024))
     return out
 
+@use_np
 class GoogLeNet(HybridBlock):
     r"""GoogleNet model from
     `"Going Deeper with Convolutions"
