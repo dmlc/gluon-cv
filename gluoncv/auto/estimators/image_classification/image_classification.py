@@ -18,7 +18,7 @@ from ....utils import LRSequential, LRScheduler
 from .... import nn
 from .... import loss
 from ..base_estimator import BaseEstimator, set_default
-from .utils import get_data_loader, get_data_rec
+from .utils import get_data_loader, get_data_rec, smooth
 from .default import ImageClassificationCfg
 
 __all__ = ['ImageClassificationEstimator']
@@ -149,7 +149,7 @@ class ImageClassificationEstimator(BaseEstimator):
 
                 elif self._cfg.train.label_smoothing:
                     hard_label = label
-                    label = smooth(label, classes)
+                    label = smooth(label, self.num_class)
 
                 if self.distillation:
                     teacher_prob = [nd.softmax(self.teacher(X.astype(self._cfg.train.dtype, copy=False)) \

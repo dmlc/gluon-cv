@@ -26,29 +26,29 @@ __all__ = ['ImageClassification']
 
 @dataclass
 class LiteConfig:
-    model : Union[str, ag.Space] = ag.Categorical('resnet18_v1b', 'mobilenetv3_small')
+    model : Union[str, ag.Space, type(None)] = ag.Categorical('resnet18_v1b', 'mobilenetv3_small')
     lr : Union[ag.Space, float] = 1e-2
     num_trials : int = 1
-    epochs : int = 5
-    batch_size : int = 8
+    epochs : Union[ag.Space, int] = 5
+    batch_size : Union[ag.Space, int] = 8
     nthreads_per_trial : int = 32
     ngpus_per_trial : int = 0
     time_limits : int = 3600
-    search_strategy : str = 'random'
-    dist_ip_addrs : Union[None, list, Tuple] = None
+    search_strategy : Union[str, ag.Space] = 'random'
+    dist_ip_addrs : Union[type(None), list, Tuple] = None
 
 @dataclass
 class DefaultConfig:
     model : Union[ag.Space, str] = ag.Categorical('resnet50_v1b', 'resnest50')
     lr : Union[ag.Space, float] = ag.Categorical(1e-2, 5e-2)
     num_trials : int = 3
-    epochs : int = 15
-    batch_size : int = 16
+    epochs : Union[ag.Space, int] = 15
+    batch_size : Union[ag.Space, int] = 16
     nthreads_per_trial : int = 128
     ngpus_per_trial : int = 8
     time_limits : int = 3600
-    search_strategy : str = 'random'
-    dist_ip_addrs : Union[None, list, Tuple] = None
+    search_strategy : Union[str, ag.Space] = 'random'
+    dist_ip_addrs : Union[type(None), list, Tuple] = None
 
 @ag.args()
 def _train_image_classification(args, reporter):
