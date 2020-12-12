@@ -1,6 +1,9 @@
 # pylint: disable=arguments-differ,line-too-long,missing-docstring,missing-module-docstring
+import mxnet as mx
 from mxnet.gluon import nn
 from mxnet.gluon.nn import Conv2D, HybridBlock, BatchNorm, Activation
+from mxnet import use_np # pylint: disable=unused-import
+mx.npx.set_np()
 
 __all__ = ['SplitAttentionConv']
 
@@ -33,31 +36,36 @@ class SplitAttentionConv(HybridBlock):
         self.fc2 = Conv2D(channels*radix, 1, in_channels=inter_channels, groups=self.cardinality)
         self.channels = channels
 
-    def hybrid_forward(self, F, x):
+    def forward(self, x):
         x = self.conv(x)
         if self.use_bn:
             x = self.bn(x)
         x = self.relu(x)
         if self.radix > 1:
-            splited = F.reshape(x.expand_dims(1), (0, self.radix, self.channels, 0, 0))
-            gap = F.sum(splited, axis=1)
+            x_expand_dims = mx.np.expand_dims(x, axis=1)
+            splited = mx.np.reshape(x_expand_dims,
+                                    (x_expand_dims.shape[0], self.radix, self.channels,
+                                     x_expand_dims.shape[3], x_expand_dims.shape[4]))
+            gap = mx.np.sum(splited, axis=1)
         else:
             gap = x
-        gap = F.contrib.AdaptiveAvgPooling2D(gap, 1)
+        gap = mx.nd.contrib.AdaptiveAvgPooling2D(gap.as_nd_ndarray(), 1).as_np_ndarray()
         gap = self.fc1(gap)
         if self.use_bn:
             gap = self.bn1(gap)
         atten = self.relu1(gap)
         if self.drop:
             atten = self.drop(atten)
-        atten = self.fc2(atten).reshape((0, self.cardinality, self.radix, -1)).swapaxes(1, 2)
+        atten = self.fc2(atten)
+        atten = atten.reshape((atten.shape[0], self.cardinality, self.radix, -1)).swapaxes(1, 2)
         if self.radix > 1:
-            atten = F.softmax(atten, axis=1).reshape((0, self.radix, -1, 1, 1))
+            atten = mx.npx.softmax(atten, axis=1)
+            atten = atten.reshape((atten.shape[0], self.radix, -1, 1, 1))
         else:
-            atten = F.sigmoid(atten).reshape((0, -1, 1, 1))
+            atten = mx.npx.sigmoid(atten).reshape((0, -1, 1, 1))
         if self.radix > 1:
-            outs = F.broadcast_mul(atten, splited)
-            out = F.sum(outs, axis=1)
+            outs = atten * splited
+            out = mx.np.sum(outs, axis=1)
         else:
-            out = F.broadcast_mul(atten, x)
+            out = atten * x
         return out

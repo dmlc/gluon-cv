@@ -2,9 +2,12 @@
 from functools import partial
 import mxnet as mx
 from mxnet.gluon.nn import HybridBlock
+from mxnet import use_np # pylint: disable=unused-import
+mx.npx.set_np()
 
 __all__ = ['DropBlock', 'set_drop_prob', 'DropBlockScheduler']
 
+@use_np
 class DropBlock(HybridBlock):
     def __init__(self, drop_prob, block_size, c, h, w):
         super(DropBlock, self).__init__()
@@ -17,18 +20,21 @@ class DropBlock(HybridBlock):
         self.padding = (pad_h//2, pad_h-pad_h//2, pad_w//2, pad_w-pad_w//2)
         self.dtype = 'float32'
 
-    def hybrid_forward(self, F, x):
+    def forward(self, x):
         if not mx.autograd.is_training() or self.drop_prob <= 0:
             return x
         gamma = self.drop_prob * (self.h * self.w) / (self.block_size ** 2) / \
             ((self.w - self.block_size + 1) * (self.h - self.block_size + 1))
         # generate mask
-        mask = F.random.uniform(0, 1, shape=(1, self.c, self.h, self.w), dtype=self.dtype) < gamma
-        mask = F.Pooling(mask, pool_type='max',
-                         kernel=(self.block_size, self.block_size), pad=self.padding)
+        mask = mx.np.random.uniform(0, 1, size=(1, self.c, self.h, self.w), dtype=self.dtype) < gamma
+        mask = mx.npx.pooling(mask, pool_type='max',
+                              kernel=(self.block_size, self.block_size), pad=self.padding)
         mask = 1 - mask
-        y = F.broadcast_mul(F.broadcast_mul(x, mask),
-                            (1.0 * self.numel / mask.sum(axis=0, exclude=True).expand_dims(1).expand_dims(1).expand_dims(1)))
+        y = (x * mask) * (1.0 * self.numel / mx.np.expand_dims(mx.np.expand_dims(mx.np.expand_dims(mask.sum(axis=0,
+                                                                                                            exclude=True),
+                                                                                                   axis=1),
+                                                                                 axis=1),
+                                                               axis=1))
         return y
 
     def cast(self, dtype):
@@ -51,6 +57,7 @@ def set_drop_prob(drop_prob, module):
         module.drop_prob = drop_prob
 
 
+@use_np
 class DropBlockScheduler(object):
     # pylint: disable=chained-comparison
     def __init__(self, net, start_prob, end_prob, num_epochs):
