@@ -2,9 +2,12 @@
 """Customized Layers.
 """
 from __future__ import absolute_import
+import mxnet as mx
 from mxnet import initializer
 from mxnet.gluon import nn, contrib
 from mxnet.gluon.nn import BatchNorm, HybridBlock
+from mxnet import use_np
+mx.npx.set_np()
 
 __all__ = ['BatchNormCudnnOff', 'Consensus', 'ReLU6', 'HardSigmoid', 'HardSwish']
 
@@ -18,10 +21,11 @@ class BatchNormCudnnOff(BatchNorm):
     def __init__(self, **kwargs):
         super(BatchNormCudnnOff, self).__init__(**kwargs)
 
-    def hybrid_forward(self, F, x, gamma, beta, running_mean, running_var):
-        return F.BatchNorm(x, gamma, beta, running_mean, running_var,
-                           name='fwd', cudnn_off=True, **self._kwargs)
+    def forward(self, x, gamma, beta, running_mean, running_var):
+        return mx.npx.BatchNorm(x, gamma, beta, running_mean, running_var,
+                                name='fwd', cudnn_off=True, **self._kwargs)
 
+@use_np
 class Consensus(HybridBlock):
     """Consensus used in temporal segment networks.
 
@@ -37,11 +41,12 @@ class Consensus(HybridBlock):
         self.nclass = nclass
         self.num_segments = num_segments
 
-    def hybrid_forward(self, F, x):
+    def forward(self, x):
         reshape_out = x.reshape((-1, self.num_segments, self.nclass))
         consensus_out = reshape_out.mean(axis=1)
         return consensus_out
 
+@use_np
 class ReLU6(HybridBlock):
     """RelU6 used in MobileNetV2 and MobileNetV3.
 
@@ -53,9 +58,10 @@ class ReLU6(HybridBlock):
     def __init__(self, **kwargs):
         super(ReLU6, self).__init__(**kwargs)
 
-    def hybrid_forward(self, F, x):
-        return F.clip(x, 0, 6, name="relu6")
+    def forward(self, x):
+        return mx.np.clip(x, 0, 6)
 
+@use_np
 class HardSigmoid(HybridBlock):
     """HardSigmoid used in MobileNetV3.
 
@@ -67,9 +73,10 @@ class HardSigmoid(HybridBlock):
         super(HardSigmoid, self).__init__(**kwargs)
         self.act = ReLU6()
 
-    def hybrid_forward(self, F, x):
+    def forward(self, x):
         return self.act(x + 3.) / 6.
 
+@use_np
 class HardSwish(HybridBlock):
     """HardSwish used in MobileNetV3.
 
@@ -81,9 +88,10 @@ class HardSwish(HybridBlock):
         super(HardSwish, self).__init__(**kwargs)
         self.act = HardSigmoid()
 
-    def hybrid_forward(self, F, x):
+    def forward(self, x):
         return x * self.act(x)
 
+@use_np
 class SoftmaxHD(HybridBlock):
     """Softmax on multiple dimensions
 
@@ -95,13 +103,14 @@ class SoftmaxHD(HybridBlock):
         super(SoftmaxHD, self).__init__(**kwargs)
         self.axis = axis
 
-    def hybrid_forward(self, F, x):
-        x_max = F.max(x, axis=self.axis, keepdims=True)
-        x_exp = F.exp(F.broadcast_minus(x, x_max))
-        norm = F.sum(x_exp, axis=self.axis, keepdims=True)
-        res = F.broadcast_div(x_exp, norm)
+    def forward(self, x):
+        x_max = mx.np.max(x, axis=self.axis, keepdims=True)
+        x_exp = mx.np.exp(x - x_max)
+        norm = mx.np.sum(x_exp, axis=self.axis, keepdims=True)
+        res = x_exp / norm
         return res
 
+@use_np
 class DSNT(HybridBlock):
     '''DSNT module to translate heatmap to coordinates
 
@@ -131,22 +140,23 @@ class DSNT(HybridBlock):
         self.hfirst = 1 / (2 * self.size[1])
         self.hlast = 1 - 1 / (2 * self.size[1])
 
-    def hybrid_forward(self, F, M):
+    def forward(self, M):
         # pylint: disable=missing-function-docstring
         if self.norm == 'softmax':
             Z = self.softmax(M)
         elif self.norm == 'sum':
-            norm = F.sum(M, axis=self.axis, keepdims=True)
-            Z = F.broadcast_div(M, norm)
+            norm = mx.np.sum(M, axis=self.axis, keepdims=True)
+            Z = M / norm
         else:
             Z = M
-        x = F.linspace(self.wfirst, self.wlast, self.size[0]).expand_dims(0)
-        y = F.linspace(self.hfirst, self.hlast, self.size[1]).expand_dims(0).transpose()
-        output_x = F.sum(F.broadcast_mul(Z, x), axis=self.axis)
-        output_y = F.sum(F.broadcast_mul(Z, y), axis=self.axis)
-        res = F.stack(output_x, output_y, axis=2)
+        x = mx.np.expand_dims(mx.np.linspace(self.wfirst, self.wlast, self.size[0]), 0)
+        y = mx.np.expand_dims(mx.np.linspace(self.hfirst, self.hlast, self.size[1]), 0).transpose()
+        output_x = mx.np.sum(Z * x, axis=self.axis)
+        output_y = mx.np.sum(Z * y, axis=self.axis)
+        res = mx.np.stack(output_x, output_y, axis=2)
         return res, Z
 
+@use_np
 class DUC(HybridBlock):
     '''Upsampling layer with pixel shuffle
     '''
@@ -158,7 +168,7 @@ class DUC(HybridBlock):
         self.relu = nn.Activation('relu')
         self.pixel_shuffle = contrib.nn.PixelShuffle2D(upscale_factor)
 
-    def hybrid_forward(self, F, x):
+    def forward(self, x):
         x = self.conv(x)
         x = self.bn(x)
         x = self.relu(x)
