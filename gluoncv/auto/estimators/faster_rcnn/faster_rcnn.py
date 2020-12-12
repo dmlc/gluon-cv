@@ -116,6 +116,8 @@ class FasterRCNNEstimator(BaseEstimator):
             self._logger.info('Trainable parameters:')
             self._logger.info(self.net.collect_train_params().keys())
         self._logger.info('Start training from [Epoch %d]', max(self._cfg.train.start_epoch, self.epoch))
+        self.net.collect_params().reset_ctx(self.ctx)
+        self.net.target_generator.collect_params().reset_ctx(self.ctx)
 
         for self.epoch in range(max(self._cfg.train.start_epoch, self.epoch), self._cfg.train.epochs):
             epoch = self.epoch
