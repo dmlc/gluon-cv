@@ -1,11 +1,10 @@
-# pylint: disable=missing-function-docstring, line-too-long
+# pylint: disable=missing-function-docstring, line-too-long, unused-argument
 """
 SlowFast Networks for Video Recognition
 ICCV 2019, https://arxiv.org/abs/1812.03982
 Code adapted from https://github.com/open-mmlab/mmaction and
 https://github.com/decisionforce/TPN
 """
-from mxnet import nd
 from mxnet import init
 from mxnet.context import cpu
 from mxnet.gluon.block import HybridBlock
@@ -69,6 +68,7 @@ class Bottleneck(HybridBlock):
         self.conv2_stride = spatial_stride
         self.conv1_stride_t = 1
         self.conv2_stride_t = temporal_stride
+        self.layer_name = layer_name
 
         if if_inflate:
             if inflate_style == '3x1x1':
@@ -353,7 +353,6 @@ class ResNet_SlowFast(HybridBlock):
 
     def init_weights(self, ctx):
         """Initial I3D_slow network."""
-
         self.first_stage.initialize(ctx=ctx)
         self.res_layers.initialize(ctx=ctx)
         self.head.initialize(ctx=ctx)
@@ -402,9 +401,11 @@ def i3d_slow_resnet101_f16s4_kinetics700(nclass=700, pretrained=False, pretraine
 
     if pretrained:
         from ..model_store import get_model_file
-        model.load_parameters('/home/ubuntu/code/gluon-cv/extra/i3d_slow_k700/i3d_slow_resnet101_f16s4_kinetics700.params')
-        # model.load_parameters(get_model_file('i3d_slow_resnet101_f16s4_kinetics700',
-        #                                      tag=pretrained, root=root), ctx=ctx)
+        model.load_parameters(get_model_file('i3d_slow_resnet101_f16s4_kinetics700',
+                                             tag=pretrained, root=root), ctx=ctx)
+        from ...data import Kinetics700Attr
+        attrib = Kinetics700Attr()
+        model.classes = attrib.classes
     model.collect_params().reset_ctx(ctx)
 
     return model
