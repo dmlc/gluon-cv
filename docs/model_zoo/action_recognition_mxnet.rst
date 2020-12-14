@@ -68,6 +68,19 @@ The following table lists pre-trained models trained on Kinetics400.
    :class: tight-table
    :widths: 30 12 10 10 8 10 12 8
 
+
+Kinetics700 Dataset
+-------------------
+
+The following table lists our trained models on Kinetics700.
+
+.. csv-table::
+   :file: ./csv_tables/Action_Recognitions/Kinetics700.csv
+   :header-rows: 1
+   :class: tight-table
+   :widths: 30 12 10 10 8 10 12 8
+
+
 UCF101 Dataset
 --------------
 

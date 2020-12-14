@@ -1,0 +1,2 @@
+Name,Pretrained,Segments,Clip Length,Top-1,Hashtag,Train Command,Train Log
+i3d_slow_resnet101_f16s4_kinetics700 [8]_,Scratch,1,16 (64/4),67.65,299b1d9d,NA,NA

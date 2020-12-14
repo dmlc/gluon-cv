@@ -69,4 +69,16 @@ python inference.py
 Please check out [CALIBRATION.md](https://raw.githubusercontent.com/dmlc/gluon-cv/master/scripts/action-recognition/CALIBRATION.md) for more information on INT8 model calibration and inference.
 
 ## Reproducing our arXiv survey paper
+
+If you feel our code or models helps in your research, kindly cite our papers:
+
+```
+@article{zhu_arxiv2020_comprehensiveVideo,
+  title={A Comprehensive Study of Deep Video Action Recognition},
+  author={Yi Zhu, Xinyu Li, Chunhui Liu, Mohammadreza Zolfaghari, Yuanjun Xiong, Chongruo Wu, Zhi Zhang, Joseph Tighe, R. Manmatha, Mu Li},
+  journal={arXiv preprint arXiv:2012.06567},
+  year={2020}
+}
+```
+
 Please check out [ARXIV.md](https://raw.githubusercontent.com/dmlc/gluon-cv/master/scripts/action-recognition/ARXIV.md) for more information on how to get the same dataset and how to reproduce all the methods in our model zoo.
