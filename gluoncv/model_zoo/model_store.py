@@ -228,6 +228,7 @@ _model_sha1 = {name: checksum for checksum, name in [
     ('9515c219cf72575636e2168728ebb9f12fe8e4df', 'monodepth2_resnet18_kitti_mono_stereo_640x192'),
     ('661ee2e1bf824f4f4549b3488c59dec0b0078c38', 'monodepth2_resnet18_posenet_kitti_mono_640x192'),
     ('c14979bb016ed4f555fa09004ddc7616dd60b8b9', 'monodepth2_resnet18_posenet_kitti_mono_stereo_640x192'),
+    ('299b1d9d8a2bcf7c122acd0d23606af4fdfbe7e1', 'i3d_slow_resnet101_f16s4_kinetics700'),
 ]}
 
 apache_repo_url = 'https://apache-mxnet.s3-accelerate.dualstack.amazonaws.com/'

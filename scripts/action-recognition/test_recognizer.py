@@ -13,14 +13,14 @@ from mxnet.gluon.data.vision import transforms
 from mxnet.contrib.quantization import *
 
 from gluoncv.data.transforms import video
-from gluoncv.data import UCF101, Kinetics400, SomethingSomethingV2, HMDB51
+from gluoncv.data import UCF101, Kinetics400, Kinetics700, SomethingSomethingV2, HMDB51
 from gluoncv.model_zoo import get_model
 from gluoncv.utils import makedirs, LRSequential, LRScheduler, split_and_load
 
 # CLI
 def parse_args():
     parser = argparse.ArgumentParser(description='Test a trained model for video action recognition.')
-    parser.add_argument('--dataset', type=str, default='ucf101', choices=['ucf101', 'kinetics400', 'somethingsomethingv2', 'hmdb51'],
+    parser.add_argument('--dataset', type=str, default='ucf101', choices=['ucf101', 'kinetics400', 'kinetics700', 'somethingsomethingv2', 'hmdb51'],
                         help='which dataset to use.')
     parser.add_argument('--data-dir', type=str, default=os.path.expanduser('~/.mxnet/datasets/ucf101/rawframes'),
                         help='training (and validation) pictures to use.')
@@ -365,6 +365,12 @@ def main(logger):
                              test_mode=True, data_aug=opt.data_aug, num_segments=opt.num_segments, transform=transform_test)
     elif opt.dataset == 'kinetics400':
         val_dataset = Kinetics400(setting=opt.val_list, root=opt.data_dir, train=False,
+                                  new_width=opt.new_width, new_height=opt.new_height, new_length=opt.new_length, new_step=opt.new_step,
+                                  target_width=opt.input_size, target_height=opt.input_size, video_loader=opt.video_loader, use_decord=opt.use_decord,
+                                  slowfast=opt.slowfast, slow_temporal_stride=opt.slow_temporal_stride, fast_temporal_stride=opt.fast_temporal_stride,
+                                  test_mode=True, data_aug=opt.data_aug, num_segments=opt.num_segments, num_crop=opt.num_crop, transform=transform_test)
+    elif opt.dataset == 'kinetics700':
+        val_dataset = Kinetics700(setting=opt.val_list, root=opt.data_dir, train=False,
                                   new_width=opt.new_width, new_height=opt.new_height, new_length=opt.new_length, new_step=opt.new_step,
                                   target_width=opt.input_size, target_height=opt.input_size, video_loader=opt.video_loader, use_decord=opt.use_decord,
                                   slowfast=opt.slowfast, slow_temporal_stride=opt.slow_temporal_stride, fast_temporal_stride=opt.fast_temporal_stride,
