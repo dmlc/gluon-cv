@@ -5,7 +5,7 @@ We provide a series of tutorials for new comers to this field, including this su
 
 ## Dataset
 
-We use a version of [Kinetics400](https://academictorrents.com/details/184d11318372f70018cf9a72ef867e2fb9ce1d26) and [Kinetcs700](https://academictorrents.com/details/49f203189fb69ae96fb40a6d0e129949e1dfec98) from the academic torrent website. To fully reproduce all our results, please use the same dataset as we do.
+We do not own or manage the data, but to ensure reproducibility, please use the copies available in here: [Kinetics400](https://academictorrents.com/details/184d11318372f70018cf9a72ef867e2fb9ce1d26) and [Kinetcs700](https://academictorrents.com/details/49f203189fb69ae96fb40a6d0e129949e1dfec98).
 
 
 ## Training/Evaluation
