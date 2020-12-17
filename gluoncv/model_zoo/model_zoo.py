@@ -8,7 +8,7 @@ from .cifarresnext import *
 from .cifarwideresnet import *
 # from .deeplabv3 import *
 # from .deeplabv3b_plus import *
-# from .densenet import *
+from .densenet import *
 # from .dla import *
 # from .rcnn.faster_rcnn import *
 # from .fcn import *
@@ -82,10 +82,10 @@ _models = {
     'vgg16_bn': vgg16_bn,
     'vgg19_bn': vgg19_bn,
     'alexnet': alexnet,
-    # 'densenet121': densenet121,
-    # 'densenet161': densenet161,
-    # 'densenet169': densenet169,
-    # 'densenet201': densenet201,
+    'densenet121': densenet121,
+    'densenet161': densenet161,
+    'densenet169': densenet169,
+    'densenet201': densenet201,
     # 'squeezenet1.0': squeezenet1_0,
     # 'squeezenet1.1': squeezenet1_1,
     'googlenet': googlenet,
