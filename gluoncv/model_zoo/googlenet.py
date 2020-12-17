@@ -21,14 +21,16 @@
 
 __all__ = ['GoogLeNet', 'googlenet']
 
+import mxnet as mx
 from mxnet.context import cpu
 from mxnet.gluon.block import HybridBlock
 from mxnet.gluon import nn
-from mxnet.gluon.nn import BatchNorm
-from mxnet.gluon.contrib.nn import HybridConcurrent
+from mxnet.gluon.nn import BatchNorm, HybridConcatenate
+from mxnet import use_np
+mx.npx.set_np()
 
 def _make_basic_conv(in_channels, channels, norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
-    out = nn.HybridSequential(prefix='')
+    out = nn.HybridSequential()
     out.add(nn.Conv2D(in_channels=in_channels, channels=channels, use_bias=False, **kwargs))
     out.add(norm_layer(in_channels=channels, epsilon=0.001,
                        **({} if norm_kwargs is None else norm_kwargs)))
@@ -36,7 +38,7 @@ def _make_basic_conv(in_channels, channels, norm_layer=BatchNorm, norm_kwargs=No
     return out
 
 def _make_branch(use_pool, norm_layer, norm_kwargs, *conv_settings):
-    out = nn.HybridSequential(prefix='')
+    out = nn.HybridSequential()
     if use_pool == 'avg':
         out.add(nn.AvgPool2D(pool_size=3, strides=1, padding=1))
     elif use_pool == 'max':
@@ -55,143 +57,134 @@ def _make_branch(use_pool, norm_layer, norm_kwargs, *conv_settings):
         out.add(_make_basic_conv(in_channels, channels, norm_layer, norm_kwargs, **kwargs))
     return out
 
-def _make_Mixed_3a(in_channels, pool_features, prefix, norm_layer, norm_kwargs):
-    out = HybridConcurrent(axis=1, prefix=prefix)
-    with out.name_scope():
-        out.add(_make_branch(None, norm_layer, norm_kwargs,
-                             (in_channels, 64, 1, None, None)))
-        out.add(_make_branch(None, norm_layer, norm_kwargs,
-                             (in_channels, 96, 1, None, None),
-                             (96, 128, 3, None, 1)))
-        out.add(_make_branch(None, norm_layer, norm_kwargs,
-                             (in_channels, 16, 1, None, None),
-                             (16, 32, 3, None, 1)))
-        out.add(_make_branch('max', norm_layer, norm_kwargs,
-                             (in_channels, pool_features, 1, None, None)))
+def _make_Mixed_3a(in_channels, pool_features, norm_layer, norm_kwargs):
+    out = HybridConcatenate(axis=1)
+    out.add(_make_branch(None, norm_layer, norm_kwargs,
+                         (in_channels, 64, 1, None, None)))
+    out.add(_make_branch(None, norm_layer, norm_kwargs,
+                         (in_channels, 96, 1, None, None),
+                         (96, 128, 3, None, 1)))
+    out.add(_make_branch(None, norm_layer, norm_kwargs,
+                         (in_channels, 16, 1, None, None),
+                         (16, 32, 3, None, 1)))
+    out.add(_make_branch('max', norm_layer, norm_kwargs,
+                         (in_channels, pool_features, 1, None, None)))
     return out
 
-def _make_Mixed_3b(in_channels, pool_features, prefix, norm_layer, norm_kwargs):
-    out = HybridConcurrent(axis=1, prefix=prefix)
-    with out.name_scope():
-        out.add(_make_branch(None, norm_layer, norm_kwargs,
-                             (in_channels, 128, 1, None, None)))
-        out.add(_make_branch(None, norm_layer, norm_kwargs,
-                             (in_channels, 128, 1, None, None),
-                             (128, 192, 3, None, 1)))
-        out.add(_make_branch(None, norm_layer, norm_kwargs,
-                             (in_channels, 32, 1, None, None),
-                             (32, 96, 3, None, 1)))
-        out.add(_make_branch('max', norm_layer, norm_kwargs,
-                             (in_channels, pool_features, 1, None, None)))
+def _make_Mixed_3b(in_channels, pool_features, norm_layer, norm_kwargs):
+    out = HybridConcatenate(axis=1)
+    out.add(_make_branch(None, norm_layer, norm_kwargs,
+                         (in_channels, 128, 1, None, None)))
+    out.add(_make_branch(None, norm_layer, norm_kwargs,
+                         (in_channels, 128, 1, None, None),
+                         (128, 192, 3, None, 1)))
+    out.add(_make_branch(None, norm_layer, norm_kwargs,
+                         (in_channels, 32, 1, None, None),
+                         (32, 96, 3, None, 1)))
+    out.add(_make_branch('max', norm_layer, norm_kwargs,
+                         (in_channels, pool_features, 1, None, None)))
     return out
 
-def _make_Mixed_4a(in_channels, pool_features, prefix, norm_layer, norm_kwargs):
-    out = HybridConcurrent(axis=1, prefix=prefix)
-    with out.name_scope():
-        out.add(_make_branch(None, norm_layer, norm_kwargs,
-                             (in_channels, 192, 1, None, None)))
-        out.add(_make_branch(None, norm_layer, norm_kwargs,
-                             (in_channels, 96, 1, None, None),
-                             (96, 208, 3, None, 1)))
-        out.add(_make_branch(None, norm_layer, norm_kwargs,
-                             (in_channels, 16, 1, None, None),
-                             (16, 48, 3, None, 1)))
-        out.add(_make_branch('max', norm_layer, norm_kwargs,
-                             (in_channels, pool_features, 1, None, None)))
+def _make_Mixed_4a(in_channels, pool_features, norm_layer, norm_kwargs):
+    out = HybridConcatenate(axis=1)
+    out.add(_make_branch(None, norm_layer, norm_kwargs,
+                         (in_channels, 192, 1, None, None)))
+    out.add(_make_branch(None, norm_layer, norm_kwargs,
+                         (in_channels, 96, 1, None, None),
+                         (96, 208, 3, None, 1)))
+    out.add(_make_branch(None, norm_layer, norm_kwargs,
+                         (in_channels, 16, 1, None, None),
+                         (16, 48, 3, None, 1)))
+    out.add(_make_branch('max', norm_layer, norm_kwargs,
+                         (in_channels, pool_features, 1, None, None)))
     return out
 
-def _make_Mixed_4b(in_channels, pool_features, prefix, norm_layer, norm_kwargs):
-    out = HybridConcurrent(axis=1, prefix=prefix)
-    with out.name_scope():
-        out.add(_make_branch(None, norm_layer, norm_kwargs,
-                             (in_channels, 160, 1, None, None)))
-        out.add(_make_branch(None, norm_layer, norm_kwargs,
-                             (in_channels, 112, 1, None, None),
-                             (112, 224, 3, None, 1)))
-        out.add(_make_branch(None, norm_layer, norm_kwargs,
-                             (in_channels, 24, 1, None, None),
-                             (24, 64, 3, None, 1)))
-        out.add(_make_branch('max', norm_layer, norm_kwargs,
-                             (in_channels, pool_features, 1, None, None)))
+def _make_Mixed_4b(in_channels, pool_features, norm_layer, norm_kwargs):
+    out = HybridConcatenate(axis=1)
+    out.add(_make_branch(None, norm_layer, norm_kwargs,
+                         (in_channels, 160, 1, None, None)))
+    out.add(_make_branch(None, norm_layer, norm_kwargs,
+                         (in_channels, 112, 1, None, None),
+                         (112, 224, 3, None, 1)))
+    out.add(_make_branch(None, norm_layer, norm_kwargs,
+                         (in_channels, 24, 1, None, None),
+                         (24, 64, 3, None, 1)))
+    out.add(_make_branch('max', norm_layer, norm_kwargs,
+                         (in_channels, pool_features, 1, None, None)))
     return out
 
-def _make_Mixed_4c(in_channels, pool_features, prefix, norm_layer, norm_kwargs):
-    out = HybridConcurrent(axis=1, prefix=prefix)
-    with out.name_scope():
-        out.add(_make_branch(None, norm_layer, norm_kwargs,
-                             (in_channels, 128, 1, None, None)))
-        out.add(_make_branch(None, norm_layer, norm_kwargs,
-                             (in_channels, 128, 1, None, None),
-                             (128, 256, 3, None, 1)))
-        out.add(_make_branch(None, norm_layer, norm_kwargs,
-                             (in_channels, 24, 1, None, None),
-                             (24, 64, 3, None, 1)))
-        out.add(_make_branch('max', norm_layer, norm_kwargs,
-                             (in_channels, pool_features, 1, None, None)))
+def _make_Mixed_4c(in_channels, pool_features, norm_layer, norm_kwargs):
+    out = HybridConcatenate(axis=1)
+    out.add(_make_branch(None, norm_layer, norm_kwargs,
+                         (in_channels, 128, 1, None, None)))
+    out.add(_make_branch(None, norm_layer, norm_kwargs,
+                         (in_channels, 128, 1, None, None),
+                         (128, 256, 3, None, 1)))
+    out.add(_make_branch(None, norm_layer, norm_kwargs,
+                         (in_channels, 24, 1, None, None),
+                         (24, 64, 3, None, 1)))
+    out.add(_make_branch('max', norm_layer, norm_kwargs,
+                         (in_channels, pool_features, 1, None, None)))
     return out
 
-def _make_Mixed_4d(in_channels, pool_features, prefix, norm_layer, norm_kwargs):
-    out = HybridConcurrent(axis=1, prefix=prefix)
-    with out.name_scope():
-        out.add(_make_branch(None, norm_layer, norm_kwargs,
-                             (in_channels, 112, 1, None, None)))
-        out.add(_make_branch(None, norm_layer, norm_kwargs,
-                             (in_channels, 144, 1, None, None),
-                             (144, 288, 3, None, 1)))
-        out.add(_make_branch(None, norm_layer, norm_kwargs,
-                             (in_channels, 32, 1, None, None),
-                             (32, 64, 3, None, 1)))
-        out.add(_make_branch('max', norm_layer, norm_kwargs,
-                             (in_channels, pool_features, 1, None, None)))
+def _make_Mixed_4d(in_channels, pool_features, norm_layer, norm_kwargs):
+    out = HybridConcatenate(axis=1)
+    out.add(_make_branch(None, norm_layer, norm_kwargs,
+                         (in_channels, 112, 1, None, None)))
+    out.add(_make_branch(None, norm_layer, norm_kwargs,
+                         (in_channels, 144, 1, None, None),
+                         (144, 288, 3, None, 1)))
+    out.add(_make_branch(None, norm_layer, norm_kwargs,
+                         (in_channels, 32, 1, None, None),
+                         (32, 64, 3, None, 1)))
+    out.add(_make_branch('max', norm_layer, norm_kwargs,
+                         (in_channels, pool_features, 1, None, None)))
     return out
 
-def _make_Mixed_4e(in_channels, pool_features, prefix, norm_layer, norm_kwargs):
-    out = HybridConcurrent(axis=1, prefix=prefix)
-    with out.name_scope():
-        out.add(_make_branch(None, norm_layer, norm_kwargs,
-                             (in_channels, 256, 1, None, None)))
-        out.add(_make_branch(None, norm_layer, norm_kwargs,
-                             (in_channels, 160, 1, None, None),
-                             (160, 320, 3, None, 1)))
-        out.add(_make_branch(None, norm_layer, norm_kwargs,
-                             (in_channels, 32, 1, None, None),
-                             (32, 128, 3, None, 1)))
-        out.add(_make_branch('max', norm_layer, norm_kwargs,
-                             (in_channels, pool_features, 1, None, None)))
+def _make_Mixed_4e(in_channels, pool_features, norm_layer, norm_kwargs):
+    out = HybridConcatenate(axis=1)
+    out.add(_make_branch(None, norm_layer, norm_kwargs,
+                         (in_channels, 256, 1, None, None)))
+    out.add(_make_branch(None, norm_layer, norm_kwargs,
+                         (in_channels, 160, 1, None, None),
+                         (160, 320, 3, None, 1)))
+    out.add(_make_branch(None, norm_layer, norm_kwargs,
+                         (in_channels, 32, 1, None, None),
+                         (32, 128, 3, None, 1)))
+    out.add(_make_branch('max', norm_layer, norm_kwargs,
+                         (in_channels, pool_features, 1, None, None)))
     return out
 
-def _make_Mixed_5a(in_channels, pool_features, prefix, norm_layer, norm_kwargs):
-    out = HybridConcurrent(axis=1, prefix=prefix)
-    with out.name_scope():
-        out.add(_make_branch(None, norm_layer, norm_kwargs,
-                             (in_channels, 256, 1, None, None)))
-        out.add(_make_branch(None, norm_layer, norm_kwargs,
-                             (in_channels, 160, 1, None, None),
-                             (160, 320, 3, None, 1)))
-        out.add(_make_branch(None, norm_layer, norm_kwargs,
-                             (in_channels, 32, 1, None, None),
-                             (32, 128, 3, None, 1)))
-        out.add(_make_branch('max', norm_layer, norm_kwargs,
-                             (in_channels, pool_features, 1, None, None)))
+def _make_Mixed_5a(in_channels, pool_features, norm_layer, norm_kwargs):
+    out = HybridConcatenate(axis=1)
+    out.add(_make_branch(None, norm_layer, norm_kwargs,
+                         (in_channels, 256, 1, None, None)))
+    out.add(_make_branch(None, norm_layer, norm_kwargs,
+                         (in_channels, 160, 1, None, None),
+                         (160, 320, 3, None, 1)))
+    out.add(_make_branch(None, norm_layer, norm_kwargs,
+                         (in_channels, 32, 1, None, None),
+                         (32, 128, 3, None, 1)))
+    out.add(_make_branch('max', norm_layer, norm_kwargs,
+                         (in_channels, pool_features, 1, None, None)))
     return out
 
-def _make_Mixed_5b(in_channels, pool_features, prefix, norm_layer, norm_kwargs):
-    out = HybridConcurrent(axis=1, prefix=prefix)
-    with out.name_scope():
-        out.add(_make_branch(None, norm_layer, norm_kwargs,
-                             (in_channels, 384, 1, None, None)))
-        out.add(_make_branch(None, norm_layer, norm_kwargs,
-                             (in_channels, 192, 1, None, None),
-                             (192, 384, 3, None, 1)))
-        out.add(_make_branch(None, norm_layer, norm_kwargs,
-                             (in_channels, 48, 1, None, None),
-                             (48, 128, 3, None, 1)))
-        out.add(_make_branch('max', norm_layer, norm_kwargs,
-                             (in_channels, pool_features, 1, None, None)))
+def _make_Mixed_5b(in_channels, pool_features, norm_layer, norm_kwargs):
+    out = HybridConcatenate(axis=1)
+    out.add(_make_branch(None, norm_layer, norm_kwargs,
+                         (in_channels, 384, 1, None, None)))
+    out.add(_make_branch(None, norm_layer, norm_kwargs,
+                         (in_channels, 192, 1, None, None),
+                         (192, 384, 3, None, 1)))
+    out.add(_make_branch(None, norm_layer, norm_kwargs,
+                         (in_channels, 48, 1, None, None),
+                         (48, 128, 3, None, 1)))
+    out.add(_make_branch('max', norm_layer, norm_kwargs,
+                         (in_channels, pool_features, 1, None, None)))
     return out
 
 def _make_aux(in_channels, classes, norm_layer, norm_kwargs):
-    out = nn.HybridSequential(prefix='')
+    out = nn.HybridSequential()
     out.add(nn.AvgPool2D(pool_size=5, strides=3))
     out.add(_make_basic_conv(in_channels=in_channels, channels=128, kernel_size=1,
                              norm_layer=norm_layer, norm_kwargs=norm_kwargs))
@@ -203,6 +196,7 @@ def _make_aux(in_channels, classes, norm_layer, norm_kwargs):
     out.add(nn.Dense(units=classes, in_units=1024))
     return out
 
+@use_np
 class GoogLeNet(HybridBlock):
     r"""GoogleNet model from
     `"Going Deeper with Convolutions"
@@ -229,53 +223,52 @@ class GoogLeNet(HybridBlock):
         self.dropout_ratio = dropout_ratio
         self.aux_logits = aux_logits
 
-        with self.name_scope():
-            self.conv1 = _make_basic_conv(in_channels=3, channels=64, kernel_size=7,
-                                          strides=2, padding=3,
-                                          norm_layer=norm_layer, norm_kwargs=norm_kwargs)
-            self.maxpool1 = nn.MaxPool2D(pool_size=3, strides=2, ceil_mode=True)
+        self.conv1 = _make_basic_conv(in_channels=3, channels=64, kernel_size=7,
+                                      strides=2, padding=3,
+                                      norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+        self.maxpool1 = nn.MaxPool2D(pool_size=3, strides=2, ceil_mode=True)
 
-            if partial_bn:
-                if norm_kwargs is not None:
-                    norm_kwargs['use_global_stats'] = True
-                else:
-                    norm_kwargs = {}
-                    norm_kwargs['use_global_stats'] = True
+        if partial_bn:
+            if norm_kwargs is not None:
+                norm_kwargs['use_global_stats'] = True
+            else:
+                norm_kwargs = {}
+                norm_kwargs['use_global_stats'] = True
 
-            self.conv2 = _make_basic_conv(in_channels=64, channels=64, kernel_size=1,
-                                          norm_layer=norm_layer, norm_kwargs=norm_kwargs)
-            self.conv3 = _make_basic_conv(in_channels=64, channels=192,
-                                          kernel_size=3, padding=1,
-                                          norm_layer=norm_layer, norm_kwargs=norm_kwargs)
-            self.maxpool2 = nn.MaxPool2D(pool_size=3, strides=2, ceil_mode=True)
+        self.conv2 = _make_basic_conv(in_channels=64, channels=64, kernel_size=1,
+                                      norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+        self.conv3 = _make_basic_conv(in_channels=64, channels=192,
+                                      kernel_size=3, padding=1,
+                                      norm_layer=norm_layer, norm_kwargs=norm_kwargs)
+        self.maxpool2 = nn.MaxPool2D(pool_size=3, strides=2, ceil_mode=True)
 
-            self.inception3a = _make_Mixed_3a(192, 32, 'Mixed_3a_', norm_layer, norm_kwargs)
-            self.inception3b = _make_Mixed_3b(256, 64, 'Mixed_3b_', norm_layer, norm_kwargs)
-            self.maxpool3 = nn.MaxPool2D(pool_size=3, strides=2, ceil_mode=True)
+        self.inception3a = _make_Mixed_3a(192, 32, norm_layer, norm_kwargs)
+        self.inception3b = _make_Mixed_3b(256, 64, norm_layer, norm_kwargs)
+        self.maxpool3 = nn.MaxPool2D(pool_size=3, strides=2, ceil_mode=True)
 
-            self.inception4a = _make_Mixed_4a(480, 64, 'Mixed_4a_', norm_layer, norm_kwargs)
-            self.inception4b = _make_Mixed_4b(512, 64, 'Mixed_4b_', norm_layer, norm_kwargs)
-            self.inception4c = _make_Mixed_4c(512, 64, 'Mixed_4c_', norm_layer, norm_kwargs)
-            self.inception4d = _make_Mixed_4d(512, 64, 'Mixed_4d_', norm_layer, norm_kwargs)
-            self.inception4e = _make_Mixed_4e(528, 128, 'Mixed_4e_', norm_layer, norm_kwargs)
-            self.maxpool4 = nn.MaxPool2D(pool_size=2, strides=2)
+        self.inception4a = _make_Mixed_4a(480, 64, norm_layer, norm_kwargs)
+        self.inception4b = _make_Mixed_4b(512, 64, norm_layer, norm_kwargs)
+        self.inception4c = _make_Mixed_4c(512, 64, norm_layer, norm_kwargs)
+        self.inception4d = _make_Mixed_4d(512, 64, norm_layer, norm_kwargs)
+        self.inception4e = _make_Mixed_4e(528, 128, norm_layer, norm_kwargs)
+        self.maxpool4 = nn.MaxPool2D(pool_size=2, strides=2)
 
-            self.inception5a = _make_Mixed_5a(832, 128, 'Mixed_5a_', norm_layer, norm_kwargs)
-            self.inception5b = _make_Mixed_5b(832, 128, 'Mixed_5b_', norm_layer, norm_kwargs)
+        self.inception5a = _make_Mixed_5a(832, 128, norm_layer, norm_kwargs)
+        self.inception5b = _make_Mixed_5b(832, 128, norm_layer, norm_kwargs)
 
-            if self.aux_logits:
-                self.aux1 = _make_aux(512, classes, norm_layer, norm_kwargs)
-                self.aux2 = _make_aux(528, classes, norm_layer, norm_kwargs)
+        if self.aux_logits:
+            self.aux1 = _make_aux(512, classes, norm_layer, norm_kwargs)
+            self.aux2 = _make_aux(528, classes, norm_layer, norm_kwargs)
 
-            self.head = nn.HybridSequential(prefix='')
-            self.avgpool = nn.AvgPool2D(pool_size=7)
-            self.dropout = nn.Dropout(self.dropout_ratio)
-            self.output = nn.Dense(units=classes, in_units=1024)
-            self.head.add(self.avgpool)
-            self.head.add(self.dropout)
-            self.head.add(self.output)
+        self.head = nn.HybridSequential()
+        self.avgpool = nn.AvgPool2D(pool_size=7)
+        self.dropout = nn.Dropout(self.dropout_ratio)
+        self.output = nn.Dense(units=classes, in_units=1024)
+        self.head.add(self.avgpool)
+        self.head.add(self.dropout)
+        self.head.add(self.output)
 
-    def hybrid_forward(self, F, x):
+    def forward(self, x):
         x = self.conv1(x)
         x = self.maxpool1(x)
 

@@ -5,14 +5,16 @@ from __future__ import absolute_import
 import os
 import mxnet as mx
 from mxnet import gluon
+from mxnet import use_np
 from mxnet.gluon import nn
 from mxnet.gluon.nn import BatchNorm
+mx.npx.set_np()
 
 __all__ = ['DarknetV3', 'get_darknet', 'darknet53']
 
 def _conv2d(channel, kernel, padding, stride, norm_layer=BatchNorm, norm_kwargs=None):
     """A common conv-bn-leakyrelu cell"""
-    cell = nn.HybridSequential(prefix='')
+    cell = nn.HybridSequential()
     cell.add(nn.Conv2D(channel, kernel_size=kernel,
                        strides=stride, padding=padding, use_bias=False))
     cell.add(norm_layer(epsilon=1e-5, momentum=0.9, **({} if norm_kwargs is None else norm_kwargs)))
@@ -20,6 +22,7 @@ def _conv2d(channel, kernel, padding, stride, norm_layer=BatchNorm, norm_kwargs=
     return cell
 
 
+@use_np
 class DarknetBasicBlockV3(gluon.HybridBlock):
     """Darknet Basic Block. Which is a 1x1 reduce conv followed by 3x3 conv.
 
@@ -37,19 +40,20 @@ class DarknetBasicBlockV3(gluon.HybridBlock):
     """
     def __init__(self, channel, norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
         super(DarknetBasicBlockV3, self).__init__(**kwargs)
-        self.body = nn.HybridSequential(prefix='')
+        self.body = nn.HybridSequential()
         # 1x1 reduce
         self.body.add(_conv2d(channel, 1, 0, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs))
         # 3x3 conv expand
         self.body.add(_conv2d(channel * 2, 3, 1, 1, norm_layer=norm_layer, norm_kwargs=norm_kwargs))
 
     # pylint: disable=unused-argument
-    def hybrid_forward(self, F, x, *args):
+    def forward(self, x, *args):
         residual = x
         x = self.body(x)
         return x + residual
 
 
+@use_np
 class DarknetV3(gluon.HybridBlock):
     """Darknet v3.
 
@@ -82,31 +86,30 @@ class DarknetV3(gluon.HybridBlock):
         for kwarg_key in kwargs:
             if kwarg_key not in ['prefix', 'params']:
                 raise Warning("class DraknetV3 should only accept kwargs {'params', or 'prefix'}")
-        super(DarknetV3, self).__init__(kwargs.get('prefix', None), kwargs.get('params', None))
+        super(DarknetV3, self).__init__(**kwargs)
         assert len(layers) == len(channels) - 1, (
             "len(channels) should equal to len(layers) + 1, given {} vs {}".format(
                 len(channels), len(layers)))
-        with self.name_scope():
-            self.features = nn.HybridSequential()
-            # first 3x3 conv
-            self.features.add(_conv2d(channels[0], 3, 1, 1,
+        self.features = nn.HybridSequential()
+        # first 3x3 conv
+        self.features.add(_conv2d(channels[0], 3, 1, 1,
+                                  norm_layer=norm_layer, norm_kwargs=norm_kwargs))
+        for nlayer, channel in zip(layers, channels[1:]):
+            assert channel % 2 == 0, "channel {} cannot be divided by 2".format(channel)
+            # add downsample conv with stride=2
+            self.features.add(_conv2d(channel, 3, 1, 2,
                                       norm_layer=norm_layer, norm_kwargs=norm_kwargs))
-            for nlayer, channel in zip(layers, channels[1:]):
-                assert channel % 2 == 0, "channel {} cannot be divided by 2".format(channel)
-                # add downsample conv with stride=2
-                self.features.add(_conv2d(channel, 3, 1, 2,
-                                          norm_layer=norm_layer, norm_kwargs=norm_kwargs))
-                # add nlayer basic blocks
-                for _ in range(nlayer):
-                    self.features.add(DarknetBasicBlockV3(channel // 2,
-                                                          norm_layer=norm_layer,
-                                                          norm_kwargs=norm_kwargs))
-            # output
-            self.output = nn.Dense(classes)
+            # add nlayer basic blocks
+            for _ in range(nlayer):
+                self.features.add(DarknetBasicBlockV3(channel // 2,
+                                                      norm_layer=norm_layer,
+                                                      norm_kwargs=norm_kwargs))
+        # output
+        self.output = nn.Dense(classes)
 
-    def hybrid_forward(self, F, x):
+    def forward(self, x):
         x = self.features(x)
-        x = F.Pooling(x, kernel=(7, 7), global_pool=True, pool_type='avg')
+        x = mx.npx.pooling(x, kernel=(7, 7), global_pool=True, pool_type='avg')
         return self.output(x)
 
 # default configurations

@@ -2,7 +2,7 @@
 """Model store which handles pretrained models from both
 mxnet.gluon.model_zoo.vision and gluoncv.models
 """
-# from .alexnet import *
+from .alexnet import *
 from .cifarresnet import *
 from .cifarresnext import *
 from .cifarwideresnet import *
@@ -12,7 +12,7 @@ from .densenet import *
 # from .dla import *
 # from .rcnn.faster_rcnn import *
 # from .fcn import *
-# from .googlenet import *
+from .googlenet import *
 # from .inception import *
 # from .rcnn.mask_rcnn import *
 from .mobilenet import *
@@ -31,9 +31,9 @@ from .senet import *
 # from .simple_pose.mobile_pose import *
 # from .squeezenet import *
 # from .ssd import *
-# from .vgg import *
+from .vgg import *
 # from .xception import *
-# from .yolo import *
+from .yolo import *
 # from .alpha_pose import *
 # from .action_recognition import *
 # from .center_net import *
@@ -73,22 +73,22 @@ _models = {
     'se_resnet50_v2': se_resnet50_v2,
     'se_resnet101_v2': se_resnet101_v2,
     'se_resnet152_v2': se_resnet152_v2,
-    # 'vgg11': vgg11,
-    # 'vgg13': vgg13,
-    # 'vgg16': vgg16,
-    # 'vgg19': vgg19,
-    # 'vgg11_bn': vgg11_bn,
-    # 'vgg13_bn': vgg13_bn,
-    # 'vgg16_bn': vgg16_bn,
-    # 'vgg19_bn': vgg19_bn,
-    # 'alexnet': alexnet,
+    'vgg11': vgg11,
+    'vgg13': vgg13,
+    'vgg16': vgg16,
+    'vgg19': vgg19,
+    'vgg11_bn': vgg11_bn,
+    'vgg13_bn': vgg13_bn,
+    'vgg16_bn': vgg16_bn,
+    'vgg19_bn': vgg19_bn,
+    'alexnet': alexnet,
     'densenet121': densenet121,
     'densenet161': densenet161,
     'densenet169': densenet169,
     'densenet201': densenet201,
     # 'squeezenet1.0': squeezenet1_0,
     # 'squeezenet1.1': squeezenet1_1,
-    # 'googlenet': googlenet,
+    'googlenet': googlenet,
     # 'inceptionv3': inception_v3,
     # 'xception': get_xcetption,
     # 'xception71': get_xcetption_71,
@@ -222,7 +222,7 @@ _models = {
     'se_resnext101e_64x4d': se_resnext101e_64x4d,
     'senet_154': senet_154,
     'senet_154e': senet_154e,
-    # 'darknet53': darknet53,
+    'darknet53': darknet53,
     # 'yolo3_darknet53_coco': yolo3_darknet53_coco,
     # 'yolo3_darknet53_voc': yolo3_darknet53_voc,
     # 'yolo3_darknet53_custom': yolo3_darknet53_custom,
