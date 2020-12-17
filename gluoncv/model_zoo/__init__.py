@@ -5,7 +5,7 @@ from .model_store import pretrained_model_list
 # from .rcnn.faster_rcnn import *
 # from .rcnn.mask_rcnn import *
 # from .ssd import *
-# from .yolo import *
+from .yolo import *
 from .cifarresnet import *
 from .cifarwideresnet import *
 # from .fcn import *
@@ -22,14 +22,14 @@ from .se_resnet import *
 # from .action_recognition import *
 # from .wideresnet import *
 
-# from .alexnet import *
+from .alexnet import *
 from .densenet import *
-# from .googlenet import *
+from .googlenet import *
 # from .inception import *
 # from .xception import *
 from .resnet import *
 # from .squeezenet import *
-# from .vgg import *
+from .vgg import *
 from .mobilenet import *
 from .residual_attentionnet import *
 # from .center_net import *
