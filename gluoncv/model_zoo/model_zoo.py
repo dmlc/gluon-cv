@@ -29,7 +29,7 @@ from .resnext import *
 from .senet import *
 # from .simple_pose.simple_pose_resnet import *
 # from .simple_pose.mobile_pose import *
-# from .squeezenet import *
+from .squeezenet import *
 # from .ssd import *
 # from .vgg import *
 # from .xception import *
@@ -86,8 +86,8 @@ _models = {
     # 'densenet161': densenet161,
     # 'densenet169': densenet169,
     # 'densenet201': densenet201,
-    # 'squeezenet1.0': squeezenet1_0,
-    # 'squeezenet1.1': squeezenet1_1,
+    'squeezenet1.0': squeezenet1_0,
+    'squeezenet1.1': squeezenet1_1,
     # 'googlenet': googlenet,
     # 'inceptionv3': inception_v3,
     # 'xception': get_xcetption,
