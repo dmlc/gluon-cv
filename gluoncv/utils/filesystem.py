@@ -56,6 +56,18 @@ def try_import_cv2():
         or `pip install opencv-python --user` (note that this is unofficial PYPI package)."
     return try_import('cv2', msg)
 
+def try_import_munkres():
+    """Try import munkres at runtime.
+
+    Returns
+    -------
+    munkres module if found. Raise ImportError otherwise
+    Munkres (Hungarian) algorithm for the Assignment Problem
+
+    """
+    msg = "munkres is required, you can install by `pip install munkres --user`. "
+    return try_import('munkres', msg)
+
 def try_import_colorama():
     """Try import colorama at runtime.
 

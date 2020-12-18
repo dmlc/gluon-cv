@@ -7,7 +7,7 @@ import mxnet as mx
 import numpy as np
 
 from .utils import timeit
-from .face_body_detector import FaceBodyJointDetector
+from .object_detector import JointObjectDetector
 
 
 class BaseAnchorBasedTracktor(ABC):
@@ -78,7 +78,7 @@ class GluonSSDMultiClassTracktor(BaseAnchorBasedTracktor):
     """
     def __init__(self, gpu_id, detector_thresh=0.5):
 
-        self.detector = FaceBodyJointDetector(gpu_id, data_shape=1080)
+        self.detector = JointObjectDetector(gpu_id, data_shape=1080)
         self._anchor_tensor = None
         self._detector_thresh = detector_thresh
         self._ctx = mx.gpu(gpu_id)

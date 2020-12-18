@@ -64,7 +64,7 @@ def get_bifpn_net(classes,
     return net
 
 
-class FaceBodyJointDetector:
+class JointObjectDetector:
     """
     Define the face-body joint detector.
     """

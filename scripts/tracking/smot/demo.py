@@ -8,7 +8,7 @@ import logging
 import numpy as np
 import cv2
 
-from gluoncv.model_zoo.smot import fartracker as Tracker
+from gluoncv.model_zoo.smot import smot_tracker as Tracker
 from gluoncv.model_zoo.smot.tracktors import GluonSSDMultiClassTracktor
 
 
@@ -79,11 +79,11 @@ if __name__ == '__main__':
     logging.info('Trackor is loaded')
 
     # get tracker
-    tracker = Tracker.FARTracker(match_top_k=5,
-                                 motion_model=args.motion,
-                                 use_motion=args.use_motion,
-                                 anchor_assignment_method='iou',
-                                 track_keep_alive_thresh=args.track_thresh)
+    tracker = Tracker.SMOTTracker(match_top_k=5,
+                                  motion_model=args.motion,
+                                  use_motion=args.use_motion,
+                                  anchor_assignment_method='iou',
+                                  track_keep_alive_thresh=args.track_thresh)
     logging.info('Tracker is defined')
 
     # get MOT results

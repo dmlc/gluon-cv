@@ -7,7 +7,6 @@ from __future__ import absolute_import
 import logging
 import time
 import numpy as np
-from munkres import Munkres
 
 import mxnet as mx
 from gluoncv.utils.bbox import bbox_iou
@@ -70,9 +69,9 @@ def gpu_iou(bbox_a_tensor, bbox_b_tensor):
     return area_i / (area_a.expand_dims(1) + area_b.expand_dims(0) - area_i)
 
 
-class FARTracker:
+class SMOTTracker:
     """
-    Implementation of the FAR tracker
+    Implementation of the SMOT tracker
     The steps to use the tracker is:
     0. Set anchors from the SSD
     1. First call tracker.predict(new_frame)
@@ -538,6 +537,8 @@ class FARTracker:
 
         matching_cost = get_cost(head_kp, face_bboxes)
 
+        from ...utils.filesystem import try_import_munkres
+        Munkres = try_import_munkres()
         m = Munkres()
         indexes = m.compute(matching_cost.tolist())
         d2d = dict()
