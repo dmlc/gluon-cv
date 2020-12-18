@@ -5,10 +5,10 @@ In this tutorial, we present a method,
 called `Single-Shot Multi Object Tracking (SMOT) <https://arxiv.org/abs/2010.16031>`_, to perform multi-object tracking.
 SMOT is a new tracking framework that converts any single-shot detector (SSD) model into an online multiple object tracker,
 which emphasizes simultaneously detecting and tracking of the object paths.
-
-Below, we will demonstrate how to load a pre-trained SMOT model
-from :ref:`gluoncv-model-zoo`
+As an example below, we directly use the SSD-Mobilenet object detector pretrained on COCO from :ref:`gluoncv-model-zoo`
 and perform multiple object tracking on an arbitrary video.
+We want to point out that, SMOT is very efficient, its runtime is close to the runtime of the chosen detector.
+
 """
 
 ######################################################################
@@ -22,7 +22,7 @@ video_path = 'https://motchallenge.net/sequenceVideos/MOT17-02-FRCNN-raw.webm'
 im_video = utils.download(video_path)
 
 ################################################################
-# Then you can simply use our provided script to obtain the multi-object tracking result.
+# Then you can simply use our provided script under `/scripts/tracking/smot/demo.py` to obtain the multi-object tracking result.
 #
 # ::
 #
@@ -43,5 +43,4 @@ im_video = utils.download(video_path)
 
 ################################################################
 # Our model is able to track multiple persons even when they are partially occluded.
-# In addtion, SMOT is efficient and is able to generate tracklets with a constant per-frame runtime.
 # Try it on your own video and see the results!

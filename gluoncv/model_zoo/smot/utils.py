@@ -111,7 +111,7 @@ class TrackState:
 
 class Track:
     """
-    This class represents a track/tracklet used in the FAR Tracker
+    This class represents a track/tracklet used in the SMOT Tracker
     It has the following properties
 
     *******************************************************
