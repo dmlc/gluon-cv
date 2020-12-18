@@ -1,12 +1,12 @@
+"""
+Motion estimation module for MOT
+"""
+# pylint: disable=unused-argument,arguments-differ,missing-class-docstring
 import time
 import logging
+from abc import ABC, abstractmethod
 import cv2
 import numpy as np
-import mxnet as mx
-
-from abc import ABC, abstractmethod
-from gluoncv.nn.coder import NormalizedBoxCenterDecoder
-from .utils import timeit_context, remap_bboxes
 
 
 class MotionEstimator(ABC):
@@ -55,6 +55,7 @@ class MotionEstimator(ABC):
         -------
 
         """
+        # pylint: disable=notimplemented-raised,raising-bad-type
         raise NotImplemented
 
 
@@ -135,6 +136,7 @@ class BaseFlowMotionEstimator(MotionEstimator):
         -------
 
         """
+        # pylint: disable=notimplemented-raised,raising-bad-type
         raise NotImplementedError
 
     @abstractmethod
@@ -157,6 +159,7 @@ class BaseFlowMotionEstimator(MotionEstimator):
         -------
 
         """
+        # pylint: disable=logging-format-interpolation,bare-except
         flow_shape = flow_map.shape
 
         flow_h, flow_w, _ = flow_shape

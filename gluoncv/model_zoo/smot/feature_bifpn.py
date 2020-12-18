@@ -1,12 +1,15 @@
+"""
+Network utiliy functions
+"""
+# pylint: disable=line-too-long,unused-argument,missing-function-docstring
 from __future__ import absolute_import
+import logging
 
 import mxnet as mx
-import logging
 from mxnet.gluon import HybridBlock
 from mxnet.gluon import nn
 from mxnet.gluon.contrib import nn as contrib_nn
 
-from ..model_store import get_model_file
 from .mobilenet import get_mobilenet, Mish
 
 
@@ -141,7 +144,7 @@ class FPNFeatureExpander(HybridBlock):
             bi_fpn_feat.append(f_fuse)
 
         deform_feat = []
-        for i in range(len(bi_fpn_feat)):
+        for i, _ in enumerate(bi_fpn_feat):
             deform_feat.append(self.deconv_feat[i](bi_fpn_feat[i]))
 
         return deform_feat, bi_fpn_feat

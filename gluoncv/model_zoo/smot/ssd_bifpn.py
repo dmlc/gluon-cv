@@ -2,7 +2,7 @@
 MXNet implementation of tracktor in SMOT: Single-Shot Multi Object Tracking
 https://arxiv.org/abs/2010.16031
 """
-# pylint: disable=unused-argument,unused-variable
+# pylint: disable=unused-argument,unused-variable,ungrouped-imports
 from __future__ import absolute_import
 
 import os

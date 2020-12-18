@@ -2,17 +2,16 @@
 MXNet implementation of tracktor in SMOT: Single-Shot Multi Object Tracking
 https://arxiv.org/abs/2010.16031
 """
+# pylint: disable=line-too-long,logging-format-interpolation,unused-argument,missing-function-docstring
 from __future__ import absolute_import
-
-import numpy as np
 import logging
 import time
-import cv2
+import numpy as np
 from munkres import Munkres
 
 import mxnet as mx
 from gluoncv.utils.bbox import bbox_iou
-from .utils import timeit, Track, TrackState
+from .utils import timeit, Track
 from .motion_estimation import FarneBeckFlowMotionEstimator
 from .motion_estimation import DummyMotionEstimator
 
@@ -474,13 +473,13 @@ class FARTracker:
         # get the top-k closest anchors instead of 1
         if method == 'max':
             tracking_anchor_ious, tracking_anchor_indices = mx.nd.topk(anchor_track_iou, axis=0, k=1,
-                                                 ret_typ='both', dtype='int32')
+                                                                       ret_typ='both', dtype='int32')
             tracking_anchor_ious = tracking_anchor_ious.T.asnumpy()
             tracking_anchor_indices = tracking_anchor_indices.T.asnumpy()
             tracking_anchor_weights = np.ones_like(tracking_anchor_indices)
         elif method == 'avg':
             tracking_anchor_ious, tracking_anchor_indices = mx.nd.topk(anchor_track_iou, axis=0, k=self.k,
-                                                 ret_typ='both', dtype='int32')
+                                                                       ret_typ='both', dtype='int32')
             tracking_anchor_ious = tracking_anchor_ious.T.asnumpy()
             tracking_anchor_indices = tracking_anchor_indices.T.asnumpy()
             tracking_anchor_weights = np.ones_like(tracking_anchor_indices) / self.k
