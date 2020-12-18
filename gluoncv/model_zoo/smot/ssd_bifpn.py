@@ -2,18 +2,15 @@
 MXNet implementation of tracktor in SMOT: Single-Shot Multi Object Tracking
 https://arxiv.org/abs/2010.16031
 """
+# pylint: disable=unused-argument,unused-variable
 from __future__ import absolute_import
 
 import os
-import time
-import warnings
 import mxnet as mx
-from mxnet import autograd
-from mxnet.gluon import nn
+from mxnet.gluon import nn, HybridBlock
 from gluoncv.nn.feature import FeatureExpander
 from gluoncv.nn.predictor import ConvPredictor
 from gluoncv.nn.coder import MultiPerClassDecoder, NormalizedBoxCenterDecoder
-from mxnet.gluon import HybridBlock
 from mxnet.gluon.contrib.nn import SyncBatchNorm
 
 from .anchor import SSDAnchorGenerator
@@ -25,7 +22,7 @@ __all__ = ['SSD', 'get_ssd']
 
 
 class SSDDetectorHead(HybridBlock):
-
+    """SSD detector head"""
     def __init__(self, num_layers, base_size, sizes, ratios,
                  steps, classes,
                  stds=(0.1, 0.1, 0.2, 0.2), nms_thresh=0.3, nms_topk=10000, post_nms=3000,
@@ -86,12 +83,9 @@ class SSDDetectorHead(HybridBlock):
                     local_seq.add(ConvPredictor(num_anchors * self._embedding_dim * len(self.classes)))
                     local_seq.add(nn.BatchNorm(prefix='embedding_norm_{}_'.format(i)))
                     local_seq.add(nn.LeakyReLU(alpha=0.25))
-                    local_seq.add(nn.Conv2D(
-                        num_anchors * self._embedding_dim * len(self.classes), (1, 1),
-                        weight_initializer=mx.init.Xavier(magnitude=2),
-                        bias_initializer='zeros', groups=num_anchors * len(self.classes),
-                    ),
-                    )
+                    local_seq.add(nn.Conv2D(num_anchors * self._embedding_dim * len(self.classes), (1, 1),
+                                            weight_initializer=mx.init.Xavier(magnitude=2),
+                                            bias_initializer='zeros', groups=num_anchors * len(self.classes)))
                     self.embedding_predictors.add(local_seq)
 
             self.bbox_decoder = NormalizedBoxCenterDecoder(stds)
@@ -102,6 +96,7 @@ class SSDDetectorHead(HybridBlock):
                 self.keypoint_decoder = GeneralNormalizedKeyPointsDecoder(1)
 
     def hybrid_forward(self, F, *inputs, **kwargs):
+        """forward of both detection and tracking"""
         offset = 0
         features = inputs[offset:offset + self._num_layers]
         offset += self._num_layers
@@ -354,7 +349,7 @@ class SSD(HybridBlock):
                  reduce_ratio=1.0, min_depth=128, global_pool=False, pretrained=False,
                  stds=(0.1, 0.1, 0.2, 0.2), nms_thresh=0.3, nms_topk=10000, post_nms=3000,
                  anchor_alloc_size=640, ctx=mx.cpu(),
-                 norm_layer='SyncBatchNorm', norm_kwargs=None, is_fpn=False,
+                 norm_layer=SyncBatchNorm, norm_kwargs=None, is_fpn=False,
                  fpn_filters=256, is_multitask=False, use_pose=False,
                  use_keypoints=False, num_keypoints=1,
                  use_embedding=False, embedding_dim=128, return_intermediate_features=False,
@@ -422,10 +417,10 @@ class SSD(HybridBlock):
                             global_pool=global_pool, pretrained=pretrained, ctx=ctx)
 
             self.detector_head = SSDDetectorHead(num_layers, base_size, sizes, ratios, steps, classes,
-                                                  stds, nms_thresh, nms_topk, post_nms,
-                                                  anchor_alloc_size, is_multitask, use_pose,
-                                                  use_keypoints, num_keypoints, use_embedding, embedding_dim,
-                                                  return_intermediate_features, **kwargs)
+                                                 stds, nms_thresh, nms_topk, post_nms,
+                                                 anchor_alloc_size, is_multitask, use_pose,
+                                                 use_keypoints, num_keypoints, use_embedding, embedding_dim,
+                                                 return_intermediate_features, **kwargs)
 
     @property
     def num_classes(self):
@@ -487,12 +482,11 @@ class SSD(HybridBlock):
 
 
 def get_ssd(name, base_size, features, ssd_filters, sizes, ratios, steps, classes,
-            dataset, pretrained=False, pretrained_dir= '', pretrained_base=True, ctx=mx.cpu(),
+            dataset, pretrained=False, pretrained_dir='', pretrained_base=True, ctx=mx.cpu(),
             root=os.path.join('~', '.mxnet', 'models'), is_fpn=False, fpn_filters=256,
             is_multitask=False, use_pose=False, use_keypoints=False, num_keypoints=1,
             use_embedding=False, embedding_dim=128, return_features=False,
-            use_mish=False,
-            **kwargs):
+            use_mish=False, **kwargs):
     """Get SSD models.
 
     Parameters

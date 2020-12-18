@@ -1,3 +1,7 @@
+"""
+Utility functions for SMOT: Single-Shot Multi Object Tracking
+https://arxiv.org/abs/2010.16031
+"""
 import time
 import logging
 from contextlib import contextmanager

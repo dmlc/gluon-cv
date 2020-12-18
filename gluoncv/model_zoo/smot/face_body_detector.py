@@ -1,3 +1,7 @@
+"""
+MXNet implementation of SMOT: Single-Shot Multi Object Tracking
+https://arxiv.org/abs/2010.16031
+"""
 import os
 import numpy as np
 import mxnet as mx
@@ -5,7 +9,7 @@ from mxnet.gluon.contrib.nn import SyncBatchNorm
 
 from ..model_store import get_model_file
 from .ssd_bifpn import get_ssd as get_bifpn_ssd
-from .utils import mxnet_frame_preprocessing, timeit, timeit_context
+from .utils import mxnet_frame_preprocessing, timeit_context
 from .utils import remap_bboxes as _remap_bboxes
 
 
@@ -17,6 +21,9 @@ def get_bifpn_net(classes,
                   root=os.path.join('~', '.mxnet', 'models'),
                   ctx=None,
                   **kwargs):
+    """
+    Load bifpn_ssd model with mobilenet backbone
+    """
 
     anchor_sizes = [[.02 * data_shape],
                     [.04 * data_shape, .06 * data_shape],
@@ -58,7 +65,9 @@ def get_bifpn_net(classes,
 
 
 class FaceBodyJointDetector:
-
+    """
+    Define the face-body joint detector.
+    """
     def __init__(self, gpu_id, data_shape,
                  aspect_ratio=16/9., network_param=None):
         self.ctx = mx.gpu(gpu_id)

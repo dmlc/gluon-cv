@@ -11,6 +11,8 @@ from .face_body_detector import FaceBodyJointDetector
 
 
 class BaseAnchorBasedTracktor(ABC):
+    """Base tracktor class
+    """
 
     @abstractmethod
     def anchors(self):
@@ -95,6 +97,7 @@ class GluonSSDMultiClassTracktor(BaseAnchorBasedTracktor):
         return None
 
     @timeit
+    #pylint: disable=arguments-differ
     def detect_and_track(self, frame, tracking_anchor_indices, tracking_anchor_weights, tracking_object_classes):
 
         with_tracking = len(tracking_anchor_indices) > 0
@@ -107,8 +110,7 @@ class GluonSSDMultiClassTracktor(BaseAnchorBasedTracktor):
             tracking_classes = tracking_indices = tracking_weights = self._dummy_ti
 
         ids, scores, bboxes, voted_tracking_bboxes, detection_anchor_indices = \
-            self.detector.run_detection(
-            frame, tracking_indices, tracking_weights, tracking_classes)
+            self.detector.run_detection(frame, tracking_indices, tracking_weights, tracking_classes)
 
         valid_det_num = (scores > self._detector_thresh).sum().astype(int).asnumpy()[0]
 
@@ -122,7 +124,6 @@ class GluonSSDMultiClassTracktor(BaseAnchorBasedTracktor):
             # no detection
             detection_output = np.array([])
             anchor_indices_output = np.array([])
-            valid_kp = np.array([])
 
         tracking_response = voted_tracking_bboxes.asnumpy() \
             if with_tracking else np.array([])

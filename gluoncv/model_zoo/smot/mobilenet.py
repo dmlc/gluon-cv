@@ -36,7 +36,6 @@ __modify__ = 'dwSun'
 __modified_date__ = '18/04/18'
 
 import mxnet as mx
-import mxnet.ndarray as F
 from mxnet.gluon import nn
 from mxnet.gluon.nn import BatchNorm
 from mxnet.context import cpu
@@ -57,7 +56,7 @@ class Mish(mx.gluon.HybridBlock):
         super(Mish, self).__init__()
 
     def hybrid_forward(self, F, x):
-        return x * F.tanh(F.Activation(data = x, act_type = 'softrelu'))
+        return x * F.tanh(F.Activation(data=x, act_type='softrelu'))
 
 
 # Helpers

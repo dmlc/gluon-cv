@@ -1,5 +1,7 @@
-import mxnet as mx
-import numpy as np
+"""
+MXNet implementation of SMOT: Single-Shot Multi Object Tracking
+https://arxiv.org/abs/2010.16031
+"""
 from mxnet import gluon
 from gluoncv.nn.bbox import BBoxCenterToCorner
 
@@ -35,6 +37,7 @@ class NormalizedLandmarkCenterDecoder(gluon.HybridBlock):
             self.center_to_conner = None
 
     def hybrid_forward(self, F, x, anchors):
+        """center decoder forward"""
         if self.center_to_conner is not None:
             a = self.center_to_conner(anchors)
         else:
@@ -87,6 +90,7 @@ class GeneralNormalizedKeyPointsDecoder(gluon.HybridBlock):
             self.center_to_conner = None
 
     def hybrid_forward(self, F, x, anchors):
+        """key point decoder forward"""
         if self.center_to_conner is not None:
             a = self.center_to_conner(anchors)
         else:

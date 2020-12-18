@@ -42,6 +42,7 @@ class SSDAnchorGenerator(gluon.HybridBlock):
         self.anchors = self.params.get_constant('anchor_%d'%(index), anchors)
 
     def _generate_anchors(self, sizes, ratios, step, alloc_size, offsets):
+        # pylint: disable=unused-argument,too-many-function-args
         """Generate anchors for once. Anchors are stored with (center_x, center_y, w, h) format."""
         anchors = []
         for i in range(alloc_size[0]):
