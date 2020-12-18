@@ -141,6 +141,7 @@ class BaseFlowMotionEstimator(MotionEstimator):
 
     @abstractmethod
     def prepare_frame(self, frame):
+        # pylint: disable=notimplemented-raised,raising-bad-type
         raise not NotImplementedError
 
     @classmethod

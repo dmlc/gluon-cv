@@ -303,7 +303,7 @@ class FARTracker:
         Returns
         -------
         """
-
+        # pylint: disable=too-many-nested-blocks
         t_pose_processing = time.time()
 
         logging.info("tracking predictions 's shape is {}".format(tracking_predictions.shape))
