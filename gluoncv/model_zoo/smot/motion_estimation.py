@@ -108,12 +108,7 @@ class BaseFlowMotionEstimator(MotionEstimator):
             logging.info("flow computation runtime: {:.05f}".format(e_flow))
 
             t_start_pred = time.time()
-            try:
-                predicted_bboxes = self._warp_bbox(new_frame.shape, prev_bboxes, flow_map)
-            except:
-                import pdb
-                pdb.set_trace()
-                raise
+            predicted_bboxes = self._warp_bbox(new_frame.shape, prev_bboxes, flow_map)
             e_pred = time.time() - t_start_pred
             logging.info("bounding box prediction runtime: {:.05f}".format(e_pred))
             return predicted_bboxes, prepared_new_frame
@@ -198,11 +193,7 @@ class BaseFlowMotionEstimator(MotionEstimator):
             if np.isnan(dx) or np.isnan(dy):
                 warped_bboxes.append(raw_bbox)
             else:
-                try:
-                    warped_bboxes.append([raw_bbox[0] + dx, raw_bbox[1] + dy, raw_bbox[2] + dx, raw_bbox[3] + dy])
-                except:
-                    import pdb
-                    pdb.set_trace()
+                warped_bboxes.append([raw_bbox[0] + dx, raw_bbox[1] + dy, raw_bbox[2] + dx, raw_bbox[3] + dy])
         logging.info("bbox warping runtime cost {}".format(time.time() - t0))
 
         return np.array(warped_bboxes)

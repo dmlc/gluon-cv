@@ -66,7 +66,7 @@ def get_bifpn_net(classes,
 
 class JointObjectDetector:
     """
-    Define the face-body joint detector.
+    Define the general single shot object detector
     """
     def __init__(self, gpu_id, data_shape,
                  aspect_ratio=16/9., network_param=None):
