@@ -9,7 +9,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-latest, windows-latest, ubuntu-latest]
+#        os: [macos-latest, windows-latest, ubuntu-latest]
+        os:[ubuntu-latest]
     steps:
       - name: Checkout repository(For push)
         if: ${{ github.event_name == 'push' }}
