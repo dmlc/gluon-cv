@@ -1,0 +1,62 @@
+name: unittests
+on:
+  push:
+    branches:
+    - master
+  pull_request:
+jobs:
+  unittests:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
+    steps:
+      - name: Checkout repository(For push)
+        if: ${{ github.event_name == 'push' }}
+        uses: actions/checkout@v2
+      - name: Checkout Pull Request Repository(For pull request)
+        if: ${{ github.event_name == 'pull_request' || github.event_name == 'pull_request_target' }}
+        uses: actions/checkout@v2
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
+      - name: Setup Miniconda
+        uses: conda-incubator/setup-miniconda@v2.0.0
+        with:
+          auto-update-conda: true
+          python-version: 3.7
+#      - name: sanity-check
+#        shell: bash -l {0}
+#        run: |
+#          conda env create -n gluon_cv_lint -f ./tests/pylint.yml
+#          conda env update -n gluon-cv-lint -f ./tests/pylint.yml --prune
+#          conda activate gluon-cv-lint
+#          conda list
+#          make clean
+#          make pylint
+#      - name: unit-test
+#        shell: bash -l {0}
+#        run: |
+#          conda env create -n gluon_cv_py3_test -f tests/py3_mxnet_ci.yml
+#          conda env update -n gluon_cv_py3_test -f tests/py3_mxnet_ci.yml --prune
+#          conda activate gluon_cv_py3_test
+#          conda list
+#          export CUDA_VISIBLE_DEVICES=0
+#          export KMP_DUPLICATE_LIB_OK=TRUE
+#          make clean
+#          pip install --upgrade --force-reinstall --no-deps .
+#          env
+#          export LD_LIBRARY_PATH=/usr/local/cuda-10.0/lib64
+#          export MPLBACKEND=Agg
+#          export MXNET_CUDNN_AUTOTUNE_DEFAULT=0
+#          export TINY_COCO=~/.mxnet/datasets/tiny_coco
+#          export TINY_MOTORBIKE=~/.mxnet/datasets/tiny_motorbike
+#          mkdir -p $TINY_COCO/annotations
+#          curl -s https://gluoncv-ci.s3-us-west-2.amazonaws.com/mini_coco/sub_val.zip --output sub_val.zip
+#          unzip -q sub_val.zip -d $TINY_COCO
+#          mv $TINY_COCO/sub_val $TINY_COCO/val2017
+#          curl -s https://gluoncv-ci.s3-us-west-2.amazonaws.com/mini_coco/instances_val2017_tiny.json --output instances_val2017_tiny.json
+#          mv instances_val2017_tiny.json $TINY_COCO/annotations
+#          curl -s https://gluoncv-ci.s3-us-west-2.amazonaws.com/tiny_motorbike.zip --output tiny_motorbike.zip
+#          unzip -q tiny_motorbike.zip -d $TINY_MOTORBIKE
+#          nosetests --with-timer --timer-ok 5 --timer-warning 20 -x --with-coverage --cover-package gluoncv -v tests/unittests
