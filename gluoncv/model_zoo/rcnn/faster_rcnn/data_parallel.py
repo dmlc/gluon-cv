@@ -31,6 +31,8 @@ class ForwardBackwardTask(Parallelizable):
                  mix_ratio, amp_enabled):
         super(ForwardBackwardTask, self).__init__()
         self.net = net
+        ctx = list(net.collect_params().values())[0].list_ctx()
+        self.net.target_generator.collect_params().reset_ctx(ctx)
         self._optimizer = optimizer
         self.rpn_cls_loss = rpn_cls_loss
         self.rpn_box_loss = rpn_box_loss

@@ -4,6 +4,7 @@ import os
 import math
 
 import mxnet as mx
+from mxnet import nd
 from mxnet import gluon
 from mxnet.gluon.data.vision import transforms
 from ....data import imagenet

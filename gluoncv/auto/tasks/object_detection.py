@@ -25,27 +25,27 @@ __all__ = ['ObjectDetection']
 
 @dataclass
 class LiteConfig:
-    transfer : Union[str, ag.Space] = ag.Categorical('ssd_512_mobilenet1.0_coco', 'yolo3_mobilenet1.0_coco')
+    transfer : Union[str, ag.Space, type(None)] = ag.Categorical('ssd_512_mobilenet1.0_coco', 'yolo3_mobilenet1.0_coco')
     lr : Union[ag.Space, float] = 1e-3
     num_trials : int = 1
-    epochs : int = 5
+    epochs : Union[ag.Space, int] = 5
     nthreads_per_trial : int = 32
     ngpus_per_trial : int = 0
     time_limits : int = 3600
-    search_strategy : str = 'random'
-    dist_ip_addrs : Union[None, list, Tuple] = None
+    search_strategy : Union[str, ag.Space] = 'random'
+    dist_ip_addrs : Union[type(None), list, Tuple] = None
 
 @dataclass
 class DefaultConfig:
-    transfer : Union[ag.Space, str] = ag.Categorical('yolo3_darknet53_coco', 'ssd_512_resnet50_v1_voc')
+    transfer : Union[ag.Space, str, type(None)] = ag.Categorical('yolo3_darknet53_coco', 'ssd_512_resnet50_v1_voc')
     lr : Union[ag.Space, float] = ag.Categorical(1e-3, 5e-3)
     num_trials : int = 3
-    epochs : int = 10
+    epochs : Union[ag.Space, int] = 10
     nthreads_per_trial : int = 128
     ngpus_per_trial : int = 8
     time_limits : int = 3600
-    search_strategy : str = 'random'
-    dist_ip_addrs : Union[None, list, Tuple] = None
+    search_strategy : Union[str, ag.Space] = 'random'
+    dist_ip_addrs : Union[type(None), list, Tuple] = None
 
 
 @ag.args()

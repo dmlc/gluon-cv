@@ -284,6 +284,12 @@ Object Tracking
 
         SiamRPN training on VID、DET、COCO、Youtube_bb and test on Otb2015
 
+    .. card::
+        :title: Pre-trained SMOT Models
+        :link: ../build/examples_tracking/demo_smot.html
+
+        Perform Multi-Object Tracking in real-world video with pre-trained SMOT models.
+
 
 Depth Prediction
 ---------------------

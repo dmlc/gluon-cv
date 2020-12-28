@@ -374,7 +374,8 @@ _models = {
     'monodepth2_resnet18_kitti_mono_640x192': get_monodepth2_resnet18_kitti_mono_640x192,
     'monodepth2_resnet18_kitti_mono_stereo_640x192': get_monodepth2_resnet18_kitti_mono_stereo_640x192,
     'monodepth2_resnet18_posenet_kitti_mono_640x192': get_monodepth2_resnet18_posenet_kitti_mono_640x192,
-    'monodepth2_resnet18_posenet_kitti_mono_stereo_640x192': get_monodepth2_resnet18_posenet_kitti_mono_stereo_640x192
+    'monodepth2_resnet18_posenet_kitti_mono_stereo_640x192': get_monodepth2_resnet18_posenet_kitti_mono_stereo_640x192,
+    'i3d_slow_resnet101_f16s4_kinetics700': i3d_slow_resnet101_f16s4_kinetics700
 }
 
 

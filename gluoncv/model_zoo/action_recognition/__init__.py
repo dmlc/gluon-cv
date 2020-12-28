@@ -12,3 +12,4 @@ from .i3d_resnet import *
 from .i3d_inceptionv1 import *
 from .i3d_inceptionv3 import *
 from .slowfast import *
+from .i3d_slow import *
