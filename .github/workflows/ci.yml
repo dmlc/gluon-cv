@@ -8,21 +8,27 @@ jobs:
   model_zoo_mxnet:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository(For push)
-        if: ${{ github.event_name == 'push' }}
-        uses: actions/checkout@v2
-      - name: Checkout Pull Request Repository(For pull request)
-        if: ${{ github.event_name == 'pull_request' || github.event_name == 'pull_request_target' }}
-        uses: actions/checkout@v2
-        with:
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-          ref: ${{ github.event.pull_request.head.ref }}
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.GLUONCV_DEV_ACCESS_ID }}
-          aws-secret-access-key: ${{ secrets.GLUONCV_DEV_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
+      - name: Log
+        run: |
+          echo event: ${{ github.event.workflow_run.event }}
+          echo ref: ${{ github.event.workflow_run.ref }}
+          echo repo: ${{ github.event.workflow_run.repository }}
+      
+#      - name: Checkout repository(For push)
+#        if: ${{ github.event_name == 'push' }}
+#        uses: actions/checkout@v2
+#      - name: Checkout Pull Request Repository(For pull request)
+#        if: ${{ github.event_name == 'pull_request' || github.event_name == 'pull_request_target' }}
+#        uses: actions/checkout@v2
+#        with:
+#          repository: ${{ github.event.pull_request.head.repo.full_name }}
+#          ref: ${{ github.event.pull_request.head.ref }}
+#      - name: Configure AWS Credentials
+#        uses: aws-actions/configure-aws-credentials@v1
+#        with:
+#          aws-access-key-id: ${{ secrets.GLUONCV_DEV_ACCESS_ID }}
+#          aws-secret-access-key: ${{ secrets.GLUONCV_DEV_SECRET_ACCESS_KEY }}
+#          aws-region: us-east-1
 #      - name: Install dependencies
 #        run: |
 #          pip install --upgrade --force-reinstall --no-deps .
@@ -203,6 +209,6 @@ jobs:
 #        with:
 #          issue-number: ${{ github.event.number }}
 #          body: |
-#            Job PR-${{ github.event.number }}-${{ steps.vars.outputs.sha_short }} is done. 
-#            Docs are uploaded to http://gluon-vision-staging.s3-website-us-west-2.amazonaws.com/PR-${{ github.event.number }}/${{ steps.vars.outputs.sha_short }}/index.html 
+#            Job PR-${{ github.event.number }}-${{ steps.vars.outputs.sha_short }} is done.
+#            Docs are uploaded to http://gluon-vision-staging.s3-website-us-west-2.amazonaws.com/PR-${{ github.event.number }}/${{ steps.vars.outputs.sha_short }}/index.html
                         
