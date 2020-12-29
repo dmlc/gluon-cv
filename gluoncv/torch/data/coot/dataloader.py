@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import List
 import re
 
-import h5py
 import numpy as np
 import torch
 import torch.utils.data as data
@@ -14,6 +13,10 @@ from tqdm import tqdm
 from gluoncv.torch.utils import coot_utils
 
 
+def load_h5file(h5_path):
+    import h5py
+    return h5py.File(h5_path, "r")
+
 class BertTextFeatureLoader:
     def __init__(
             self, dataset_path_dict: EasyDict, ids: List[str], preload=True):
@@ -22,7 +25,7 @@ class BertTextFeatureLoader:
         self.lens = json.load(lens_file.open("rt", encoding="utf8"))
         self.cached_data = None
         if preload:
-            h5file = h5py.File(self.h5_path, "r")
+            h5file = load_h5file(self.h5_path)
             self.cached_data = {}
             for id_ in tqdm(ids, desc="preload text"):
                 np_array = h5file[id_]
@@ -33,7 +36,7 @@ class BertTextFeatureLoader:
     def __getitem__(self, id_):
         lens = self.lens[id_]
         if self.cached_data is None:
-            h5file = h5py.File(self.h5_path, "r")
+            h5file = load_h5file(self.h5_path)
             features = np.array(h5file[id_])
             h5file.close()
             return features, lens
@@ -72,7 +75,7 @@ class Youcook2VideoFeatureLoader:
         self.cached_data = None
         if preload:
             self.cached_data = {}
-            h5file = h5py.File(self.h5_path, "r")
+            h5file = load_h5file(self.h5_path)
             for id_ in tqdm(ids, desc="preload videos"):
                 np_array = h5file[id_]
                 shared_array = coot_utils.make_shared_array(np_array)
@@ -80,7 +83,7 @@ class Youcook2VideoFeatureLoader:
 
     def __getitem__(self, id_):
         if self.cached_data is None:
-            h5file = h5py.File(self.h5_path, "r")
+            h5file = load_h5file(self.h5_path)
             features = np.array(h5file[id_])
             h5file.close()
             return features
