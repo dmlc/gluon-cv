@@ -118,3 +118,4 @@ ENV/
 .idea/*
 *.sh
 brazil.code-workspace
+/logs/
