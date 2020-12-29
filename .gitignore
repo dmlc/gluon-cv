@@ -119,3 +119,4 @@ ENV/
 *.sh
 brazil.code-workspace
 /logs/
+*.code-workspace 

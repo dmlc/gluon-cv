@@ -169,7 +169,7 @@ def get_dali_dataset(dataset_name, devices, args):
 
     return train_dataset, val_dataset, val_metric
 
-def get_dali_dataloader(net, train_dataset, val_dataset, data_shape, global_batch_size, num_workers, devices, ctx, horovod, seed):
+def get_dali_dataloader(net, train_dataset, val_dataset, data_shape, global_batch_size, num_workers, devices, ctx, horovod):
     width, height = data_shape, data_shape
     with autograd.train_mode():
         _, _, anchors = net(mx.nd.zeros((1, 3, height, width), ctx=ctx))
@@ -179,16 +179,14 @@ def get_dali_dataloader(net, train_dataset, val_dataset, data_shape, global_batc
         batch_size = global_batch_size // hvd.size()
         pipelines = [SSDDALIPipeline(device_id=hvd.local_rank(), batch_size=batch_size,
                                      data_shape=data_shape, anchors=anchors,
-                                     num_workers=num_workers, dataset_reader = train_dataset[0],
-                                     seed=seed)]
+                                     num_workers=num_workers, dataset_reader = train_dataset[0])]
     else:
         num_devices = len(devices)
         batch_size = global_batch_size // num_devices
         pipelines = [SSDDALIPipeline(device_id=device_id, batch_size=batch_size,
                                      data_shape=data_shape, anchors=anchors,
                                      num_workers=num_workers,
-                                     dataset_reader = train_dataset[i],
-                                     seed=seed) for i, device_id in enumerate(devices)]
+                                     dataset_reader = train_dataset[i]) for i, device_id in enumerate(devices)]
 
     epoch_size = train_dataset[0].size()
     if horovod:
@@ -407,7 +405,7 @@ if __name__ == '__main__':
         train_dataset, val_dataset, eval_metric = get_dali_dataset(args.dataset, devices, args)
         train_data, val_data = get_dali_dataloader(
             async_net, train_dataset, val_dataset, args.data_shape, args.batch_size, args.num_workers,
-            devices, ctx[0], args.horovod, args.seed)
+            devices, ctx[0], args.horovod)
     else:
         train_dataset, val_dataset, eval_metric = get_dataset(args.dataset, args)
         batch_size = (args.batch_size // hvd.size()) if args.horovod else args.batch_size

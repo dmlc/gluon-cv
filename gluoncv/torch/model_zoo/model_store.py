@@ -31,6 +31,7 @@ _model_sha1 = {name: checksum for checksum, name in [
     ('0520323165727d59002c6c62071bc1dc28248469', 'slowfast_16x8_resnet50_sthsthv2'),
     ('078c817bf18d702891de553de61c9115e27c4afd', 'i3d_slow_resnet50_f32s2_kinetics400'),
     ('a3e419f1b9cde3b57b9b19a9bd93281bb819a871', 'i3d_slow_resnet50_f16s4_kinetics400'),
+    ('b5be1a2e32158748a7efc675081affd32006fe9a', 'i3d_slow_resnet101_f16s4_kinetics700'),
     ('1c3d98a1831ee477def36d6085635c2860db0b77', 'i3d_slow_resnet50_f8s8_kinetics400'),
     ('db37cd518eab5f1cc394d0f44117c392d0174602', 'i3d_slow_resnet101_f32s2_kinetics400'),
     ('cb6b78d9e58f7724efb63f705be7c8a12fe8f5ce', 'i3d_slow_resnet101_f16s4_kinetics400'),
