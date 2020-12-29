@@ -486,20 +486,20 @@ def i3d_slow_resnet101_f16s4_kinetics400(cfg):
                                                         tag=cfg.CONFIG.MODEL.PRETRAINED)))
     return model
 
-def i3d_slow_resnet101_f16s4_kinetics700(cfg):	
-    model = ResNet_SlowFast(num_classes=cfg.CONFIG.DATA.NUM_CLASSES,	
-                            depth=101,	
-                            pretrained=cfg.CONFIG.MODEL.PRETRAINED,	
-                            pretrained_base=cfg.CONFIG.MODEL.PRETRAINED_BASE,	
-                            feat_ext=cfg.CONFIG.INFERENCE.FEAT,	
-                            bn_eval=cfg.CONFIG.MODEL.BN_EVAL,	
-                            partial_bn=cfg.CONFIG.MODEL.PARTIAL_BN,	
-                            bn_frozen=cfg.CONFIG.MODEL.BN_FROZEN)	
+def i3d_slow_resnet101_f16s4_kinetics700(cfg):
+    model = ResNet_SlowFast(num_classes=cfg.CONFIG.DATA.NUM_CLASSES,
+                            depth=101,
+                            pretrained=cfg.CONFIG.MODEL.PRETRAINED,
+                            pretrained_base=cfg.CONFIG.MODEL.PRETRAINED_BASE,
+                            feat_ext=cfg.CONFIG.INFERENCE.FEAT,
+                            bn_eval=cfg.CONFIG.MODEL.BN_EVAL,
+                            partial_bn=cfg.CONFIG.MODEL.PARTIAL_BN,
+                            bn_frozen=cfg.CONFIG.MODEL.BN_FROZEN)
 
-    if cfg.CONFIG.MODEL.PRETRAINED:	
-        from ..model_store import get_model_file	
-        model.load_state_dict(torch.load(get_model_file('i3d_slow_resnet101_f16s4_kinetics700',	
-                                                        tag=cfg.CONFIG.MODEL.PRETRAINED)))	
+    if cfg.CONFIG.MODEL.PRETRAINED:
+        from ..model_store import get_model_file
+        model.load_state_dict(torch.load(get_model_file('i3d_slow_resnet101_f16s4_kinetics700',
+                                                        tag=cfg.CONFIG.MODEL.PRETRAINED)))
     return model
 
 def i3d_slow_resnet101_f8s8_kinetics400(cfg):
