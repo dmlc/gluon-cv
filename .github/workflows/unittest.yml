@@ -69,6 +69,6 @@ jobs:
         run: |
           echo "${{ github.event.pull_request.head.ref }}\n${{ github.repository }}\n${{ github.event.number }}" > artifact.txt
       - name: Upload artifact
-      - uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v2
         with:
           path: artifact.txt
