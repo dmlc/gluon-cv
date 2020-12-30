@@ -62,9 +62,9 @@ jobs:
 #          curl -s https://gluoncv-ci.s3-us-west-2.amazonaws.com/tiny_motorbike.zip --output tiny_motorbike.zip
 #          unzip -q tiny_motorbike.zip -d $TINY_MOTORBIKE
 #          nosetests --with-timer --timer-ok 5 --timer-warning 20 -x --with-coverage --cover-package gluoncv -v tests/unittests
-        - name: Save context info(For push)
-          run: |
-            echo "${{ github.ref }}\n${{ github.repository }}" > artifact.txt
-        - name: Save context info(For pull request)
-          run: |
-            echo "${{ github.event.pull_request.head.ref }}\n${{ github.repository }}\n${{ github.event.number }}" > artifact.txt
+      - name: Save context info(For push)
+        run: |
+          echo "${{ github.ref }}\n${{ github.repository }}" > artifact.txt
+      - name: Save context info(For pull request)
+        run: |
+          echo "${{ github.event.pull_request.head.ref }}\n${{ github.repository }}\n${{ github.event.number }}" > artifact.txt
