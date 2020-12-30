@@ -51,10 +51,10 @@ jobs:
           echo "Start submitting job"
           python ./tools/batch/submit-job.py --region us-east-1 \
                                              --job-type p3.2x \
-                                             --name GluonCV-GPU-ModelZooMxnet-$REF \
-                                             --source-ref $REF \
+                                             --name GluonCV-GPU-ModelZooMxnet-${{ env.REF }} \
+                                             --source-ref ${{ env.REF }} \
                                              --work-dir . \
-                                             --remote https://github.com/$REPO \
+                                             --remote https://github.com/${{ env.REPO }} \
                                              --command "chmod +x ./.github/workflows/gpu_test.sh && ./.github/workflows/gpu_test.sh gluoncv tests/model_zoo" \
                                              --wait
 #      - name: Test model_zoo_mxnet on AWS Batch(For pull request)
@@ -98,10 +98,10 @@ jobs:
           echo "Start submitting job"
           python ./tools/batch/submit-job.py --region us-east-1 \
                                              --job-type p3.2x \
-                                             --name GluonCV-GPU-ModelZooTorch-$REF \
-                                             --source-ref $REF \
+                                             --name GluonCV-GPU-ModelZooTorch-${{ env.REF }} \
+                                             --source-ref ${{ env.REF }} \
                                              --work-dir . \
-                                             --remote https://github.com/$REPO \
+                                             --remote https://github.com/${{ env.REPO }} \
                                              --command "chmod +x ./.github/workflows/gpu_test.sh && ./.github/workflows/gpu_test.sh gluoncv/torch tests/model_zoo_torch" \
                                              --wait
 #      - name: Test model_zoo_torch on AWS Batch(For pull request)
@@ -145,10 +145,10 @@ jobs:
           echo "Start submitting job"
           python ./tools/batch/submit-job.py --region us-east-1 \
                                              --job-type p3.2x \
-                                             --name GluonCV-GPU-Auto-$REF \
-                                             --source-ref $REF \
+                                             --name GluonCV-GPU-Auto-${{ env.REF }} \
+                                             --source-ref ${{ env.REF }} \
                                              --work-dir . \
-                                             --remote https://github.com/$REPO \
+                                             --remote https://github.com/${{ env.REPO }} \
                                              --command "chmod +x ./.github/workflows/gpu_test.sh && ./.github/workflows/gpu_test.sh gluoncv tests/auto" \
                                              --wait
 #      - name: Test model_zoo_torch on AWS Batch(For pull request)
