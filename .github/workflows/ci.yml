@@ -25,7 +25,7 @@ jobs:
 #        with:
       - name: View artifact
         run: |
-          cat artifact.txt
+          cat artifact/artifact.txt
       
 #      - name: Checkout repository(For push)
 #        if: ${{ github.event_name == 'push' }}
