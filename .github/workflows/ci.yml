@@ -14,15 +14,10 @@ jobs:
         run: |
           echo hello
           echo "$GITHUB_CONTEXT"
-      - name: Download artifact(For push)
-#        if: ${{ github.workflow_run.event == 'push' }}
+      - name: Download artifact
         uses: dawidd6/action-download-artifact@v2
         with:
           workflow: unittest.yml
-#      - name: Download artifact(For pull request)
-#        if: ${{ github.workflow_run.event == 'pull_request' || github.workflow_run.event == 'pull_request_target' }}
-#        uses: dawidd6/action-download-artifact@v2
-#        with:
       - name: Get git context(For push)
         if: ${{ github.event.workflow_run.event == 'push' }}
         run: |
@@ -30,43 +25,38 @@ jobs:
           repo=$(head -n 1 artifact/repo.atf)
           echo "REF=$ref" >> $GITHUB_ENV
           echo "REPO=$repo" >> $GITHUB_ENV
-      - name: Test
-        run: |
-          echo $REF
-          echo $REPO
-      
-#      - name: Checkout repository(For push)
+      - name: Checkout repository(For push)
 #        if: ${{ github.event_name == 'push' }}
-#        uses: actions/checkout@v2
+        uses: actions/checkout@v2
 #      - name: Checkout Pull Request Repository(For pull request)
 #        if: ${{ github.event_name == 'pull_request' || github.event_name == 'pull_request_target' }}
 #        uses: actions/checkout@v2
 #        with:
 #          repository: ${{ github.event.pull_request.head.repo.full_name }}
 #          ref: ${{ github.event.pull_request.head.ref }}
-#      - name: Configure AWS Credentials
-#        uses: aws-actions/configure-aws-credentials@v1
-#        with:
-#          aws-access-key-id: ${{ secrets.GLUONCV_DEV_ACCESS_ID }}
-#          aws-secret-access-key: ${{ secrets.GLUONCV_DEV_SECRET_ACCESS_KEY }}
-#          aws-region: us-east-1
-#      - name: Install dependencies
-#        run: |
-#          pip install --upgrade --force-reinstall --no-deps .
-#          pip install boto3
-#      - name: Test model_zoo_mxnet on AWS Batch(For push)
-#        shell: bash -l {0}
-#        if: ${{ github.event_name == 'push' }}
-#        run: |
-#          echo "Start submitting job"
-#          python ./tools/batch/submit-job.py --region us-east-1 \
-#                                             --job-type p3.2x \
-#                                             --name GluonCV-GPU-ModelZooMxnet-${{ github.ref }} \
-#                                             --source-ref ${{ github.ref }} \
-#                                             --work-dir . \
-#                                             --remote https://github.com/${{ github.repository }} \
-#                                             --command "chmod +x ./.github/workflows/gpu_test.sh && ./.github/workflows/gpu_test.sh gluoncv tests/model_zoo" \
-#                                             --wait
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.GLUONCV_DEV_ACCESS_ID }}
+          aws-secret-access-key: ${{ secrets.GLUONCV_DEV_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+      - name: Install dependencies
+        run: |
+          pip install --upgrade --force-reinstall --no-deps .
+          pip install boto3
+      - name: Test model_zoo_mxnet on AWS Batch(For push)
+        shell: bash -l {0}
+        if: ${{ github.event_name == 'push' }}
+        run: |
+          echo "Start submitting job"
+          python ./tools/batch/submit-job.py --region us-east-1 \
+                                             --job-type p3.2x \
+                                             --name GluonCV-GPU-ModelZooMxnet-$REF \
+                                             --source-ref $REF \
+                                             --work-dir . \
+                                             --remote https://github.com/$REPO \
+                                             --command "chmod +x ./.github/workflows/gpu_test.sh && ./.github/workflows/gpu_test.sh gluoncv tests/model_zoo" \
+                                             --wait
 #      - name: Test model_zoo_mxnet on AWS Batch(For pull request)
 #        if: ${{ github.event_name == 'pull_request' || github.event_name == 'pull_request_target' }}
 #        run: |
@@ -79,41 +69,41 @@ jobs:
 #                                             --remote https://github.com/${{ github.event.pull_request.head.repo.full_name }} \
 #                                             --command "chmod +x ./.github/workflows/gpu_test.sh && ./.github/workflows/gpu_test.sh gluoncv tests/model_zoo" \
 #                                             --wait
-#  model_zoo_torch:
-#    runs-on: ubuntu-latest
-#    steps:
-#      - name: Checkout repository(For push)
+  model_zoo_torch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository(For push)
 #        if: ${{ github.event_name == 'push' }}
-#        uses: actions/checkout@v2
+        uses: actions/checkout@v2
 #      - name: Checkout Pull Request Repository(For pull request)
 #        if: ${{ github.event_name == 'pull_request' || github.event_name == 'pull_request_target' }}
 #        uses: actions/checkout@v2
 #        with:
 #          repository: ${{ github.event.pull_request.head.repo.full_name }}
 #          ref: ${{ github.event.pull_request.head.ref }}
-#      - name: Configure AWS Credentials
-#        uses: aws-actions/configure-aws-credentials@v1
-#        with:
-#          aws-access-key-id: ${{ secrets.GLUONCV_DEV_ACCESS_ID }}
-#          aws-secret-access-key: ${{ secrets.GLUONCV_DEV_SECRET_ACCESS_KEY }}
-#          aws-region: us-east-1
-#      - name: Install dependencies
-#        run: |
-#          pip install --upgrade --force-reinstall --no-deps .
-#          pip install boto3
-#      - name: Test model_zoo_torch on AWS Batch(For push)
-#        shell: bash -l {0}
-#        if: ${{ github.event_name == 'push' }}
-#        run: |
-#          echo "Start submitting job"
-#          python ./tools/batch/submit-job.py --region us-east-1 \
-#                                             --job-type p3.2x \
-#                                             --name GluonCV-GPU-ModelZooTorch-${{ github.ref }} \
-#                                             --source-ref ${{ github.ref }} \
-#                                             --work-dir . \
-#                                             --remote https://github.com/${{ github.repository }} \
-#                                             --command "chmod +x ./.github/workflows/gpu_test.sh && ./.github/workflows/gpu_test.sh gluoncv/torch tests/model_zoo_torch" \
-#                                             --wait
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.GLUONCV_DEV_ACCESS_ID }}
+          aws-secret-access-key: ${{ secrets.GLUONCV_DEV_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+      - name: Install dependencies
+        run: |
+          pip install --upgrade --force-reinstall --no-deps .
+          pip install boto3
+      - name: Test model_zoo_torch on AWS Batch(For push)
+        shell: bash -l {0}
+        if: ${{ github.event_name == 'push' }}
+        run: |
+          echo "Start submitting job"
+          python ./tools/batch/submit-job.py --region us-east-1 \
+                                             --job-type p3.2x \
+                                             --name GluonCV-GPU-ModelZooTorch-$REF \
+                                             --source-ref $REF \
+                                             --work-dir . \
+                                             --remote https://github.com/$REPO \
+                                             --command "chmod +x ./.github/workflows/gpu_test.sh && ./.github/workflows/gpu_test.sh gluoncv/torch tests/model_zoo_torch" \
+                                             --wait
 #      - name: Test model_zoo_torch on AWS Batch(For pull request)
 #        if: ${{ github.event_name == 'pull_request' || github.event_name == 'pull_request_target' }}
 #        run: |
@@ -126,41 +116,41 @@ jobs:
 #                                             --remote https://github.com/${{ github.event.pull_request.head.repo.full_name }} \
 #                                             --command "chmod +x ./.github/workflows/gpu_test.sh && ./.github/workflows/gpu_test.sh gluoncv/torch tests/model_zoo_torch" \
 #                                             --wait
-#  auto:
-#    runs-on: ubuntu-latest
-#    steps:
-#      - name: Checkout repository(For push)
+  auto:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository(For push)
 #        if: ${{ github.event_name == 'push' }}
-#        uses: actions/checkout@v2
+        uses: actions/checkout@v2
 #      - name: Checkout Pull Request Repository(For pull request)
 #        if: ${{ github.event_name == 'pull_request' || github.event_name == 'pull_request_target' }}
 #        uses: actions/checkout@v2
 #        with:
 #          repository: ${{ github.event.pull_request.head.repo.full_name }}
 #          ref: ${{ github.event.pull_request.head.ref }}
-#      - name: Configure AWS Credentials
-#        uses: aws-actions/configure-aws-credentials@v1
-#        with:
-#          aws-access-key-id: ${{ secrets.GLUONCV_DEV_ACCESS_ID }}
-#          aws-secret-access-key: ${{ secrets.GLUONCV_DEV_SECRET_ACCESS_KEY }}
-#          aws-region: us-east-1
-#      - name: Install dependencies
-#        run: |
-#          pip install --upgrade --force-reinstall --no-deps .
-#          pip install boto3
-#      - name: Test model_zoo_torch on AWS Batch(For push)
-#        shell: bash -l {0}
-#        if: ${{ github.event_name == 'push' }}
-#        run: |
-#          echo "Start submitting job"
-#          python ./tools/batch/submit-job.py --region us-east-1 \
-#                                             --job-type p3.2x \
-#                                             --name GluonCV-GPU-Auto-${{ github.ref }} \
-#                                             --source-ref ${{ github.ref }} \
-#                                             --work-dir . \
-#                                             --remote https://github.com/${{ github.repository }} \
-#                                             --command "chmod +x ./.github/workflows/gpu_test.sh && ./.github/workflows/gpu_test.sh gluoncv tests/auto" \
-#                                             --wait
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.GLUONCV_DEV_ACCESS_ID }}
+          aws-secret-access-key: ${{ secrets.GLUONCV_DEV_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+      - name: Install dependencies
+        run: |
+          pip install --upgrade --force-reinstall --no-deps .
+          pip install boto3
+      - name: Test model_zoo_torch on AWS Batch(For push)
+        shell: bash -l {0}
+        if: ${{ github.event_name == 'push' }}
+        run: |
+          echo "Start submitting job"
+          python ./tools/batch/submit-job.py --region us-east-1 \
+                                             --job-type p3.2x \
+                                             --name GluonCV-GPU-Auto-$REF \
+                                             --source-ref $REF \
+                                             --work-dir . \
+                                             --remote https://github.com/$REPO \
+                                             --command "chmod +x ./.github/workflows/gpu_test.sh && ./.github/workflows/gpu_test.sh gluoncv tests/auto" \
+                                             --wait
 #      - name: Test model_zoo_torch on AWS Batch(For pull request)
 #        if: ${{ github.event_name == 'pull_request' || github.event_name == 'pull_request_target' }}
 #        run: |
