@@ -24,7 +24,7 @@ jobs:
 #        uses: dawidd6/action-download-artifact@v2
 #        with:
       - name: Get git context(For push)
-        if: ${{ github.workflow_run.event == 'push' }}
+        if: ${{ github.event.workflow_run.event == 'push' }}
         run: |
           exec 5< artifact/artifact.txt
           read ref <&5
