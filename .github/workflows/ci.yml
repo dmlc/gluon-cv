@@ -15,16 +15,16 @@ jobs:
           echo hello
           echo "$GITHUB_CONTEXT"
       - name: Download artifact(For push)
-#        if: ${{ github.workflow_run.event = 'push' }}
+#        if: ${{ github.workflow_run.event == 'push' }}
         uses: dawidd6/action-download-artifact@v2
         with:
           workflow: unittest.yml
 #      - name: Download artifact(For pull request)
-#        if: ${{ github.workflow_run.event = 'pull_request' || github.workflow_run.event = 'pull_request_target' }}
+#        if: ${{ github.workflow_run.event == 'pull_request' || github.workflow_run.event == 'pull_request_target' }}
 #        uses: dawidd6/action-download-artifact@v2
 #        with:
       - name: Get git context(For push)
-        if: ${{ github.workflow_run.event = 'push' }}
+        if: ${{ github.workflow_run.event == 'push' }}
         run: |
           exec 5< artifact/artifact.txt
           read ref <&5
