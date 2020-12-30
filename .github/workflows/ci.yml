@@ -26,13 +26,14 @@ jobs:
       - name: Get git context(For push)
         if: ${{ github.event.workflow_run.event == 'push' }}
         run: |
-          exec 5< artifact/artifact.txt
-          read ref <&5
-          read repo <&5
-          exec 5<&-
+          ref=$(head -n 1 artifact/ref.txt)
+          repo=$(head -n 1 artifact/repo.txt)
           echo "REF=$ref" >> $GITHUB_ENV
+          echo "REPO=$repo" >> $GITHUB_ENV
       - name: Test
-        run: echo $REF
+        run: |
+          echo $REF
+          echo $REPO
       
 #      - name: Checkout repository(For push)
 #        if: ${{ github.event_name == 'push' }}
