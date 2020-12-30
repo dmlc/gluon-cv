@@ -23,9 +23,16 @@ jobs:
 #        if: ${{ github.workflow_run.event = 'pull_request' || github.workflow_run.event = 'pull_request_target' }}
 #        uses: dawidd6/action-download-artifact@v2
 #        with:
-      - name: View artifact
+      - name: Get git context(For push)
+        if: ${{ github.workflow_run.event = 'push' }}
         run: |
-          cat artifact/artifact.txt
+          exec 5< artifact/artifact.txt
+          read ref <&5
+          read repo <&5
+          exec 5<&-
+          echo "REF=$ref" >> $GITHUB_ENV
+      - name: Test
+        run: echo $REF
       
 #      - name: Checkout repository(For push)
 #        if: ${{ github.event_name == 'push' }}

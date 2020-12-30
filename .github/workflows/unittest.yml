@@ -63,11 +63,13 @@ jobs:
 #          unzip -q tiny_motorbike.zip -d $TINY_MOTORBIKE
 #          nosetests --with-timer --timer-ok 5 --timer-warning 20 -x --with-coverage --cover-package gluoncv -v tests/unittests
       - name: Save context info(For push)
+        if: ${{ github.event_name == 'push' }}
         run: |
           echo "${{ github.ref }}"
           echo "${{ github.repository }}"
           echo "${{ github.ref }}\n${{ github.repository }}" > artifact.txt
       - name: Save context info(For pull request)
+        if: ${{ github.event_name == 'pull_request' || github.event_name == 'pull_request_target' }}
         run: |
           echo "${{ github.event.pull_request.head.ref }}"
           echo "${{ github.repository }}"
