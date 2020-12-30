@@ -69,7 +69,7 @@ jobs:
           echo "${{ github.repository }}"
           mkdir git_context
           echo "${{ github.ref }}" > git_context/ref.atf
-          echo "${{ github.repository }}" > repo.atf
+          echo "${{ github.repository }}" > git_context/repo.atf
       - name: Save github context info(For pull request)
         if: ${{ github.event_name == 'pull_request' || github.event_name == 'pull_request_target' }}
         run: |
@@ -77,9 +77,9 @@ jobs:
           echo "${{ github.repository }}"
           echo "${{ github.event.number }}"
           mkdir git_context
-          echo "${{ github.event.pull_request.head.ref }}" > ref.atf
-          echo ${{ github.repository }}" > repo.atf
-          echo "${{ github.event.number }}" > pr.atf
+          echo "${{ github.event.pull_request.head.ref }}" > git_context/ref.atf
+          echo ${{ github.repository }}" > git_context/repo.atf
+          echo "${{ github.event.number }}" > git_context/pr.atf
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
