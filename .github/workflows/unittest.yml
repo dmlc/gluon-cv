@@ -64,9 +64,14 @@ jobs:
 #          nosetests --with-timer --timer-ok 5 --timer-warning 20 -x --with-coverage --cover-package gluoncv -v tests/unittests
       - name: Save context info(For push)
         run: |
+          echo "${{ github.ref }}"
+          echo "${{ github.repository }}"
           echo "${{ github.ref }}\n${{ github.repository }}" > artifact.txt
       - name: Save context info(For pull request)
         run: |
+          echo "${{ github.event.pull_request.head.ref }}"
+          echo "${{ github.repository }}"
+          echo "${{ github.event.number }}"
           echo "${{ github.event.pull_request.head.ref }}\n${{ github.repository }}\n${{ github.event.number }}" > artifact.txt
       - name: Upload artifact
         uses: actions/upload-artifact@v2
