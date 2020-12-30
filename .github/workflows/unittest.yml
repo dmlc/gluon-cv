@@ -67,18 +67,18 @@ jobs:
         run: |
           echo "${{ github.ref }}"
           echo "${{ github.repository }}"
-          echo "${{ github.ref }}" > ref.txt
-          echo "${{ github.repository }}" > repo.txt
+          echo "${{ github.ref }}" > ref.atf
+          echo "${{ github.repository }}" > repo.atf
       - name: Save context info(For pull request)
         if: ${{ github.event_name == 'pull_request' || github.event_name == 'pull_request_target' }}
         run: |
           echo "${{ github.event.pull_request.head.ref }}"
           echo "${{ github.repository }}"
           echo "${{ github.event.number }}"
-          echo "${{ github.event.pull_request.head.ref }}" > ref.txt
-          echo ${{ github.repository }}" > repo.txt
-          echo "${{ github.event.number }}" > pr.txt
+          echo "${{ github.event.pull_request.head.ref }}" > ref.atf
+          echo ${{ github.repository }}" > repo.atf
+          echo "${{ github.event.number }}" > pr.atf
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
-          path: artifact.txt
+          path: *.atf

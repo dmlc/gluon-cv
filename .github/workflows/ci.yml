@@ -26,8 +26,8 @@ jobs:
       - name: Get git context(For push)
         if: ${{ github.event.workflow_run.event == 'push' }}
         run: |
-          ref=$(head -n 1 artifact/ref.txt)
-          repo=$(head -n 1 artifact/repo.txt)
+          ref=$(head -n 1 artifact/ref.atf)
+          repo=$(head -n 1 artifact/repo.atf)
           echo "REF=$ref" >> $GITHUB_ENV
           echo "REPO=$repo" >> $GITHUB_ENV
       - name: Test
