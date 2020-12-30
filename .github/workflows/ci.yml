@@ -13,6 +13,18 @@ jobs:
           GITHUB_CONTEXT: ${{ toJson(github) }}
         run: |
           echo "$GITHUB_CONTEXT"
+      - name: Download artifact(For push)
+#        if: ${{ github.workflow_run.event = 'push' }}
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow: unittest.yml
+#      - name: Download artifact(For pull request)
+#        if: ${{ github.workflow_run.event = 'pull_request' || github.workflow_run.event = 'pull_request_target' }}
+#        uses: dawidd6/action-download-artifact@v2
+#        with:
+      - name: View artifact
+        run: |
+          cat artifact.txt
       
 #      - name: Checkout repository(For push)
 #        if: ${{ github.event_name == 'push' }}
