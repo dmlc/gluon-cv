@@ -46,7 +46,7 @@ jobs:
           pip install boto3
       - name: Test model_zoo_mxnet on AWS Batch(For push)
         shell: bash -l {0}
-        if: ${{ github.event_name == 'push' }}
+        if: ${{ github.event.workflow_run.event == 'push' }}
         run: |
           echo "Start submitting job"
           python ./tools/batch/submit-job.py --region us-east-1 \
@@ -93,7 +93,7 @@ jobs:
           pip install boto3
       - name: Test model_zoo_torch on AWS Batch(For push)
         shell: bash -l {0}
-        if: ${{ github.event_name == 'push' }}
+        if: ${{ github.event.workflow_run.event == 'push' }}
         run: |
           echo "Start submitting job"
           python ./tools/batch/submit-job.py --region us-east-1 \
@@ -140,7 +140,7 @@ jobs:
           pip install boto3
       - name: Test model_zoo_torch on AWS Batch(For push)
         shell: bash -l {0}
-        if: ${{ github.event_name == 'push' }}
+        if: ${{ github.event.workflow_run.event == 'push' }}
         run: |
           echo "Start submitting job"
           python ./tools/batch/submit-job.py --region us-east-1 \
