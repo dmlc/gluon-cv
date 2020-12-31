@@ -1,5 +1,4 @@
 from collections import OrderedDict
-from easydict import EasyDict
 import os
 import numpy as np
 import torch
@@ -10,7 +9,7 @@ from gluoncv.torch.utils.coot_utils import truncated_normal_fill
 
 class MultiModalTransformer:
     def __init__(self,
-                 cfg: EasyDict,
+                 cfg,
                  use_cuda: bool = True,
                  use_multi_gpu: bool = False):
         self.use_cuda = use_cuda
@@ -236,7 +235,7 @@ class LayerNormalization(nn.Module):
         return self.gain * (x - mean) / (std + self.epsilon) + self.bias
 
 
-def parse_pooler(input_dim, cfg: EasyDict) -> nn.Module:
+def parse_pooler(input_dim, cfg) -> nn.Module:
     if cfg.POOLER == "atn":
         return AtnPool(input_dim, cfg.ATN_POOL_DIM, cfg.ATN_POOL_HEADS,
                        cfg.DROPOUT)
@@ -249,7 +248,7 @@ def parse_pooler(input_dim, cfg: EasyDict) -> nn.Module:
 
 
 class Transformer(nn.Module):
-    def __init__(self, cfg: EasyDict, feature_dim: int):
+    def __init__(self, cfg, feature_dim: int):
         super(Transformer, self).__init__()
 
         self.input_norm = LayerNormalization(feature_dim)
