@@ -5,7 +5,14 @@ on:
     types:
       - completed
 jobs:
+  pre-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail if unittests failed
+        if: ${{ github.event.workflow_run.conclusion != 'success' }}
+        run: exit 1
   model_zoo_mxnet:
+    needs: pre-check
     runs-on: ubuntu-latest
     steps:
       - name: Log
@@ -77,6 +84,7 @@ jobs:
 #        uses: dawidd6/action-download-artifact@v2
 #        with:
 #          workflow: unittest.yml
+#          run_id: ${{ github.event.workflow_run.id }}
 #      - name: Get git context(For push)
 #        if: ${{ github.event.workflow_run.event == 'push' }}
 #        run: |
@@ -135,6 +143,7 @@ jobs:
 #        uses: dawidd6/action-download-artifact@v2
 #        with:
 #          workflow: unittest.yml
+#          run_id: ${{ github.event.workflow_run.id }}
 #      - name: Get git context(For push)
 #        if: ${{ github.event.workflow_run.event == 'push' }}
 #        run: |
