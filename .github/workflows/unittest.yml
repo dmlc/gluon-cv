@@ -82,10 +82,14 @@ jobs:
           echo "${{ github.event.pull_request.head.ref }}"
           echo "${{ github.event.pull_request.head.repo.full_name }}"
           echo "${{ github.event.number }}"
+          echo "$GITHUB_SHA"
+          SHORT_SHA=$(git rev-parse --short "$GITHUB_SHA")
+          echo "$SHORT_SHA"
           mkdir git_context
           echo "${{ github.event.pull_request.head.ref }}" > git_context/ref.atf
           echo "${{ github.event.pull_request.head.repo.full_name }}" > git_context/repo.atf
           echo "${{ github.event.number }}" > git_context/pr.atf
+          echo "$SHORT_SHA" > git_context/sha.atf
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
