@@ -68,7 +68,7 @@ jobs:
 #                                             --command "chmod +x ./.github/workflows/gpu_test.sh && ./.github/workflows/gpu_test.sh gluoncv tests/model_zoo" \
 #                                             --wait
 #      - name: Test model_zoo_mxnet on AWS Batch(For pull request)
-#        if: ${{ github.event_name == 'pull_request' }}
+#        if: ${{ github.event.workflow_run.event == 'pull_request' }}
 #        run: |
 #          echo "Start submitting job"
 #          python ./tools/batch/submit-job.py --region us-east-1 \
@@ -130,7 +130,7 @@ jobs:
 #                                             --command "chmod +x ./.github/workflows/gpu_test.sh && ./.github/workflows/gpu_test.sh gluoncv/torch tests/model_zoo_torch" \
 #                                             --wait
 #      - name: Test model_zoo_torch on AWS Batch(For pull request)
-#        if: ${{ github.event_name == 'pull_request' }}
+#        if: ${{ github.event.workflow_run.event == 'pull_request' }}
 #        run: |
 #          echo "Start submitting job"
 #          python ./tools/batch/submit-job.py --region us-east-1 \
@@ -192,7 +192,7 @@ jobs:
 #                                             --command "chmod +x ./.github/workflows/gpu_test.sh && ./.github/workflows/gpu_test.sh gluoncv tests/auto" \
 #                                             --wait
 #      - name: Test model_zoo_torch on AWS Batch(For pull request)
-#        if: ${{ github.event_name == 'pull_request' }}
+#        if: ${{ github.event.workflow_run.event == 'pull_request' }}
 #        run: |
 #          echo "Start submitting job"
 #          python ./tools/batch/submit-job.py --region us-east-1 \
@@ -242,7 +242,7 @@ jobs:
           pip install boto3
 #      - name: Build docs on AWS Batch(For push)
 #        shell: bash -l {0}
-#        if: ${{ github.event_name == 'push' }}
+#        if: ${{ github.event.workflow_run.event == 'push' }}
 #        run: |
 #          echo "Start submitting job"
 #          python ./tools/batch/submit-job.py --region us-east-1 \
@@ -254,7 +254,7 @@ jobs:
 #                                             --command "chmod +x ./.github/workflows/build_docs.sh && ./.github/workflows/build_docs.sh ${{ env.REF }} ${{ env.SHORT_SHA }} ${{ env.REPO }} ${{ env.PR }}" \
 #                                             --wait
 #      - name: Build docs on AWS Batch(For pull request)
-#        if: ${{ github.event_name == 'pull_request' || github.event_name == 'pull_request_target' }}
+#        if: ${{ github.event.workflow_run.event == 'pull_request' }}
 #        run: |
 #          echo "Start submitting job"
 #          python ./tools/batch/submit-job.py --region us-east-1 \
@@ -266,7 +266,7 @@ jobs:
 #                                             --command "chmod +x ./.github/workflows/build_docs.sh && ./.github/workflows/build_docs.sh ${{ env.REF }} ${{ env.SHORT_SHA }} ${{ env.REPO }} ${{ env.PR }} " \
 #                                             --wait
       - name: Comment on PR
-        if: ${{ github.event_name == 'pull_request' }}
+        if: ${{ github.event.workflow_run.event == 'pull_request' }}
         uses: peter-evans/create-or-update-comment@v1.4.3
         with:
           issue-number: ${{ env.PR }}
@@ -274,4 +274,3 @@ jobs:
             Job PR-${{ env.PR }}-${{ env.SHORT_SHA }} is done.
             Docs are uploaded to http://gluon-vision-staging.s3-website-us-west-2.amazonaws.com/PR-${{ env.PR }}/${{ env.SHORT_SHA }}/index.html
                         
-
