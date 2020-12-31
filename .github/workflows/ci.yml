@@ -18,6 +18,7 @@ jobs:
         uses: dawidd6/action-download-artifact@v2
         with:
           workflow: unittest.yml
+          run_id: ${{ github.event.workflow_run.check_suite_id }}
       - name: Get git context(For push)
         if: ${{ github.event.workflow_run.event == 'push' }}
         run: |
@@ -72,6 +73,17 @@ jobs:
   model_zoo_torch:
     runs-on: ubuntu-latest
     steps:
+      - name: Download artifact
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow: unittest.yml
+      - name: Get git context(For push)
+        if: ${{ github.event.workflow_run.event == 'push' }}
+        run: |
+          ref=$(head -n 1 artifact/ref.atf)
+          repo=$(head -n 1 artifact/repo.atf)
+          echo "REF=$ref" >> $GITHUB_ENV
+          echo "REPO=$repo" >> $GITHUB_ENV
       - name: Checkout repository(For push)
 #        if: ${{ github.event_name == 'push' }}
         uses: actions/checkout@v2
@@ -119,6 +131,17 @@ jobs:
   auto:
     runs-on: ubuntu-latest
     steps:
+      - name: Download artifact
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow: unittest.yml
+      - name: Get git context(For push)
+        if: ${{ github.event.workflow_run.event == 'push' }}
+        run: |
+          ref=$(head -n 1 artifact/ref.atf)
+          repo=$(head -n 1 artifact/repo.atf)
+          echo "REF=$ref" >> $GITHUB_ENV
+          echo "REPO=$repo" >> $GITHUB_ENV
       - name: Checkout repository(For push)
 #        if: ${{ github.event_name == 'push' }}
         uses: actions/checkout@v2
@@ -167,6 +190,17 @@ jobs:
 #    needs: [model_zoo_mxnet, model_zoo_torch, auto]
 #    runs-on: ubuntu-latest
 #    steps:
+#      - name: Download artifact
+#        uses: dawidd6/action-download-artifact@v2
+#        with:
+#          workflow: unittest.yml
+#      - name: Get git context(For push)
+#        if: ${{ github.event.workflow_run.event == 'push' }}
+#        run: |
+#          ref=$(head -n 1 artifact/ref.atf)
+#          repo=$(head -n 1 artifact/repo.atf)
+#          echo "REF=$ref" >> $GITHUB_ENV
+#          echo "REPO=$repo" >> $GITHUB_ENV
 #      - name: Checkout repository(For push)
 #        if: ${{ github.event_name == 'push' }}
 #        uses: actions/checkout@v2
