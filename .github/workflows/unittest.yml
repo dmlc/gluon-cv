@@ -12,6 +12,12 @@ jobs:
 #      matrix:
 #        os: [macos-latest, windows-latest, ubuntu-latest]
     steps:
+      - name: Log
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: |
+          echo hello
+          echo "$GITHUB_CONTEXT"
       - name: Checkout repository(For push)
         if: ${{ github.event_name == 'push' }}
         uses: actions/checkout@v2
