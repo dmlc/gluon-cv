@@ -1,4 +1,4 @@
-name: CI workflow
+name: GPU Test
 on: 
   workflow_run:
     workflows: ["unittests"]
@@ -11,200 +11,21 @@ jobs:
       - name: Fail if unittests failed
         if: ${{ github.event.workflow_run.conclusion != 'success' }}
         run: exit 1
-  model_zoo_mxnet:
-    needs: pre-check
-    runs-on: ubuntu-latest
-    steps:
-      - name: Log
-        env:
-          GITHUB_CONTEXT: ${{ toJson(github) }}
-        run: |
-          echo hello
-          echo "$GITHUB_CONTEXT"
-      - name: Download artifact
-        uses: dawidd6/action-download-artifact@v2
-        with:
-          workflow: unittest.yml
-          run_id: ${{ github.event.workflow_run.id }}
-      - name: Get git context(For push)
-        if: ${{ github.event.workflow_run.event == 'push' }}
-        run: |
-          ref=$(head -n 1 artifact/ref.atf)
-          repo=$(head -n 1 artifact/repo.atf)
-          echo "REF=$ref" >> $GITHUB_ENV
-          echo "REPO=$repo" >> $GITHUB_ENV
-      - name: Checkout repository(For push)
-#        if: ${{ github.event_name == 'push' }}
-        uses: actions/checkout@v2
-#      - name: Checkout Pull Request Repository(For pull request)
-#        if: ${{ github.event_name == 'pull_request' || github.event_name == 'pull_request_target' }}
-#        uses: actions/checkout@v2
-#        with:
-#          repository: ${{ github.event.pull_request.head.repo.full_name }}
-#          ref: ${{ github.event.pull_request.head.ref }}
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.GLUONCV_DEV_ACCESS_ID }}
-          aws-secret-access-key: ${{ secrets.GLUONCV_DEV_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
-      - name: Install dependencies
-        run: |
-          pip install --upgrade --force-reinstall --no-deps .
-          pip install boto3
-      - name: Test model_zoo_mxnet on AWS Batch(For push)
-        shell: bash -l {0}
-        if: ${{ github.event.workflow_run.event == 'push' }}
-        run: |
-          echo "Start submitting job"
-          python ./tools/batch/submit-job.py --region us-east-1 \
-                                             --job-type p3.2x \
-                                             --name GluonCV-GPU-ModelZooMxnet-${{ env.REF }} \
-                                             --source-ref ${{ env.REF }} \
-                                             --work-dir . \
-                                             --remote https://github.com/${{ env.REPO }} \
-                                             --command "chmod +x ./.github/workflows/gpu_test.sh && ./.github/workflows/gpu_test.sh gluoncv tests/model_zoo" \
-                                             --wait
-#      - name: Test model_zoo_mxnet on AWS Batch(For pull request)
-#        if: ${{ github.event_name == 'pull_request' || github.event_name == 'pull_request_target' }}
-#        run: |
-#          echo "Start submitting job"
-#          python ./tools/batch/submit-job.py --region us-east-1 \
-#                                             --job-type p3.2x \
-#                                             --name GluonCV-GPU-ModelZooMxnet-PR#${{ github.event.number }} \
-#                                             --source-ref ${{ github.event.pull_request.head.ref }} \
-#                                             --work-dir . \
-#                                             --remote https://github.com/${{ github.event.pull_request.head.repo.full_name }} \
-#                                             --command "chmod +x ./.github/workflows/gpu_test.sh && ./.github/workflows/gpu_test.sh gluoncv tests/model_zoo" \
-#                                             --wait
-  model_zoo_torch:
-    needs: pre-check
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download artifact
-        uses: dawidd6/action-download-artifact@v2
-        with:
-          workflow: unittest.yml
-          run_id: ${{ github.event.workflow_run.id }}
-      - name: Get git context(For push)
-        if: ${{ github.event.workflow_run.event == 'push' }}
-        run: |
-          ref=$(head -n 1 artifact/ref.atf)
-          repo=$(head -n 1 artifact/repo.atf)
-          echo "REF=$ref" >> $GITHUB_ENV
-          echo "REPO=$repo" >> $GITHUB_ENV
-      - name: Checkout repository(For push)
-#        if: ${{ github.event_name == 'push' }}
-        uses: actions/checkout@v2
-#      - name: Checkout Pull Request Repository(For pull request)
-#        if: ${{ github.event_name == 'pull_request' || github.event_name == 'pull_request_target' }}
-#        uses: actions/checkout@v2
-#        with:
-#          repository: ${{ github.event.pull_request.head.repo.full_name }}
-#          ref: ${{ github.event.pull_request.head.ref }}
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.GLUONCV_DEV_ACCESS_ID }}
-          aws-secret-access-key: ${{ secrets.GLUONCV_DEV_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
-      - name: Install dependencies
-        run: |
-          pip install --upgrade --force-reinstall --no-deps .
-          pip install boto3
-      - name: Test model_zoo_torch on AWS Batch(For push)
-        shell: bash -l {0}
-        if: ${{ github.event.workflow_run.event == 'push' }}
-        run: |
-          echo "Start submitting job"
-          python ./tools/batch/submit-job.py --region us-east-1 \
-                                             --job-type p3.2x \
-                                             --name GluonCV-GPU-ModelZooTorch-${{ env.REF }} \
-                                             --source-ref ${{ env.REF }} \
-                                             --work-dir . \
-                                             --remote https://github.com/${{ env.REPO }} \
-                                             --command "chmod +x ./.github/workflows/gpu_test.sh && ./.github/workflows/gpu_test.sh gluoncv/torch tests/model_zoo_torch" \
-                                             --wait
-#      - name: Test model_zoo_torch on AWS Batch(For pull request)
-#        if: ${{ github.event_name == 'pull_request' || github.event_name == 'pull_request_target' }}
-#        run: |
-#          echo "Start submitting job"
-#          python ./tools/batch/submit-job.py --region us-east-1 \
-#                                             --job-type p3.2x \
-#                                             --name GluonCV-GPU-ModelZooTorch-PR#${{ github.event.number }} \
-#                                             --source-ref ${{ github.event.pull_request.head.ref }} \
-#                                             --work-dir . \
-#                                             --remote https://github.com/${{ github.event.pull_request.head.repo.full_name }} \
-#                                             --command "chmod +x ./.github/workflows/gpu_test.sh && ./.github/workflows/gpu_test.sh gluoncv/torch tests/model_zoo_torch" \
-#                                             --wait
-  auto:
-    needs: pre-check
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download artifact
-        uses: dawidd6/action-download-artifact@v2
-        with:
-          workflow: unittest.yml
-          run_id: ${{ github.event.workflow_run.id }}
-      - name: Get git context(For push)
-        if: ${{ github.event.workflow_run.event == 'push' }}
-        run: |
-          ref=$(head -n 1 artifact/ref.atf)
-          repo=$(head -n 1 artifact/repo.atf)
-          echo "REF=$ref" >> $GITHUB_ENV
-          echo "REPO=$repo" >> $GITHUB_ENV
-      - name: Checkout repository(For push)
-#        if: ${{ github.event_name == 'push' }}
-        uses: actions/checkout@v2
-#      - name: Checkout Pull Request Repository(For pull request)
-#        if: ${{ github.event_name == 'pull_request' || github.event_name == 'pull_request_target' }}
-#        uses: actions/checkout@v2
-#        with:
-#          repository: ${{ github.event.pull_request.head.repo.full_name }}
-#          ref: ${{ github.event.pull_request.head.ref }}
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.GLUONCV_DEV_ACCESS_ID }}
-          aws-secret-access-key: ${{ secrets.GLUONCV_DEV_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
-      - name: Install dependencies
-        run: |
-          pip install --upgrade --force-reinstall --no-deps .
-          pip install boto3
-      - name: Test model_zoo_torch on AWS Batch(For push)
-        shell: bash -l {0}
-        if: ${{ github.event.workflow_run.event == 'push' }}
-        run: |
-          echo "Start submitting job"
-          python ./tools/batch/submit-job.py --region us-east-1 \
-                                             --job-type p3.2x \
-                                             --name GluonCV-GPU-Auto-${{ env.REF }} \
-                                             --source-ref ${{ env.REF }} \
-                                             --work-dir . \
-                                             --remote https://github.com/${{ env.REPO }} \
-                                             --command "chmod +x ./.github/workflows/gpu_test.sh && ./.github/workflows/gpu_test.sh gluoncv tests/auto" \
-                                             --wait
-      - name: Test model_zoo_torch on AWS Batch(For pull request)
-        if: ${{ github.event_name == 'pull_request' || github.event_name == 'pull_request_target' }}
-        run: |
-          echo "Start submitting job"
-          python ./tools/batch/submit-job.py --region us-east-1 \
-                                             --job-type p3.2x \
-                                             --name GluonCV-GPU-Auto-PR#${{ github.event.number }} \
-                                             --source-ref ${{ github.event.pull_request.head.ref }} \
-                                             --work-dir . \
-                                             --remote https://github.com/${{ github.event.pull_request.head.repo.full_name }} \
-                                             --command "chmod +x ./.github/workflows/gpu_test.sh && ./.github/workflows/gpu_test.sh gluoncv tests/auto" \
-                                             --wait
-#  build-docs:
-#    needs: [pre-check, model_zoo_mxnet, model_zoo_torch, auto]
+#  model_zoo_mxnet:
+#    needs: pre-check
 #    runs-on: ubuntu-latest
 #    steps:
+#      - name: Log
+#        env:
+#          GITHUB_CONTEXT: ${{ toJson(github) }}
+#        run: |
+#          echo hello
+#          echo "$GITHUB_CONTEXT"
 #      - name: Download artifact
 #        uses: dawidd6/action-download-artifact@v2
 #        with:
 #          workflow: unittest.yml
+#          run_id: ${{ github.event.workflow_run.id }}
 #      - name: Get git context(For push)
 #        if: ${{ github.event.workflow_run.event == 'push' }}
 #        run: |
@@ -212,15 +33,17 @@ jobs:
 #          repo=$(head -n 1 artifact/repo.atf)
 #          echo "REF=$ref" >> $GITHUB_ENV
 #          echo "REPO=$repo" >> $GITHUB_ENV
-#      - name: Checkout repository(For push)
-#        if: ${{ github.event_name == 'push' }}
+#      - name: Get git context(For pull request)
+#        if: ${{ github.event.workflow_run.event == 'pull_request' }}
+#        run: |
+#          ref=$(head -n 1 artifact/ref.atf)
+#          repo=$(head -n 1 artifact/repo.atf)
+#          pr=$(head -n 1 artifact/pr.arf)
+#          echo "REF=$ref" >> $GITHUB_ENV
+#          echo "REPO=$repo" >> $GITHUB_ENV
+#          echo "PR=$pr" >> $GITHUB_ENV
+#      - name: Checkout repository
 #        uses: actions/checkout@v2
-#      - name: Checkout Pull Request Repository(For pull request)
-#        if: ${{ github.event_name == 'pull_request' || github.event_name == 'pull_request_target' }}
-#        uses: actions/checkout@v2
-#        with:
-#          repository: ${{ github.event.pull_request.head.repo.full_name }}
-#          ref: ${{ github.event.pull_request.head.ref }}
 #      - name: Configure AWS Credentials
 #        uses: aws-actions/configure-aws-credentials@v1
 #        with:
@@ -231,9 +54,192 @@ jobs:
 #        run: |
 #          pip install --upgrade --force-reinstall --no-deps .
 #          pip install boto3
-#      - name: Set SHA outputs
-#        id: vars
-#        run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+#      - name: Test model_zoo_mxnet on AWS Batch(For push)
+#        shell: bash -l {0}
+#        if: ${{ github.event.workflow_run.event == 'push' }}
+#        run: |
+#          echo "Start submitting job"
+#          python ./tools/batch/submit-job.py --region us-east-1 \
+#                                             --job-type p3.2x \
+#                                             --name GluonCV-GPU-ModelZooMxnet-${{ env.REF }} \
+#                                             --source-ref ${{ env.REF }} \
+#                                             --work-dir . \
+#                                             --remote https://github.com/${{ env.REPO }} \
+#                                             --command "chmod +x ./.github/workflows/gpu_test.sh && ./.github/workflows/gpu_test.sh gluoncv tests/model_zoo" \
+#                                             --wait
+#      - name: Test model_zoo_mxnet on AWS Batch(For pull request)
+#        if: ${{ github.event_name == 'pull_request' }}
+#        run: |
+#          echo "Start submitting job"
+#          python ./tools/batch/submit-job.py --region us-east-1 \
+#                                             --job-type p3.2x \
+#                                             --name GluonCV-GPU-ModelZooMxnet-PR#${{ env.PR }} \
+#                                             --source-ref ${{ env.REF }} \
+#                                             --work-dir . \
+#                                             --remote https://github.com/${{ env.REPO }} \
+#                                             --command "chmod +x ./.github/workflows/gpu_test.sh && ./.github/workflows/gpu_test.sh gluoncv tests/model_zoo" \
+#                                             --wait
+#  model_zoo_torch:
+#    needs: pre-check
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Download artifact
+#        uses: dawidd6/action-download-artifact@v2
+#        with:
+#          workflow: unittest.yml
+#          run_id: ${{ github.event.workflow_run.id }}
+#      - name: Get git context(For push)
+#        if: ${{ github.event.workflow_run.event == 'push' }}
+#        run: |
+#          ref=$(head -n 1 artifact/ref.atf)
+#          repo=$(head -n 1 artifact/repo.atf)
+#          echo "REF=$ref" >> $GITHUB_ENV
+#          echo "REPO=$repo" >> $GITHUB_ENV
+#      - name: Get git context(For pull request)
+#        if: ${{ github.event.workflow_run.event == 'pull_request' }}
+#        run: |
+#          ref=$(head -n 1 artifact/ref.atf)
+#          repo=$(head -n 1 artifact/repo.atf)
+#          pr=$(head -n 1 artifact/pr.arf)
+#          echo "REF=$ref" >> $GITHUB_ENV
+#          echo "REPO=$repo" >> $GITHUB_ENV
+#          echo "PR=$pr" >> $GITHUB_ENV
+#      - name: Checkout repository
+#        uses: actions/checkout@v2
+#      - name: Configure AWS Credentials
+#        uses: aws-actions/configure-aws-credentials@v1
+#        with:
+#          aws-access-key-id: ${{ secrets.GLUONCV_DEV_ACCESS_ID }}
+#          aws-secret-access-key: ${{ secrets.GLUONCV_DEV_SECRET_ACCESS_KEY }}
+#          aws-region: us-east-1
+#      - name: Install dependencies
+#        run: |
+#          pip install --upgrade --force-reinstall --no-deps .
+#          pip install boto3
+#      - name: Test model_zoo_torch on AWS Batch(For push)
+#        shell: bash -l {0}
+#        if: ${{ github.event.workflow_run.event == 'push' }}
+#        run: |
+#          echo "Start submitting job"
+#          python ./tools/batch/submit-job.py --region us-east-1 \
+#                                             --job-type p3.2x \
+#                                             --name GluonCV-GPU-ModelZooTorch-${{ env.REF }} \
+#                                             --source-ref ${{ env.REF }} \
+#                                             --work-dir . \
+#                                             --remote https://github.com/${{ env.REPO }} \
+#                                             --command "chmod +x ./.github/workflows/gpu_test.sh && ./.github/workflows/gpu_test.sh gluoncv/torch tests/model_zoo_torch" \
+#                                             --wait
+#      - name: Test model_zoo_torch on AWS Batch(For pull request)
+#        if: ${{ github.event_name == 'pull_request' }}
+#        run: |
+#          echo "Start submitting job"
+#          python ./tools/batch/submit-job.py --region us-east-1 \
+#                                             --job-type p3.2x \
+#                                             --name GluonCV-GPU-ModelZooTorch-PR#${{ env.PR }} \
+#                                             --source-ref ${{ env.REF }} \
+#                                             --work-dir . \
+#                                             --remote https://github.com/${{ env.REPO }} \
+#                                             --command "chmod +x ./.github/workflows/gpu_test.sh && ./.github/workflows/gpu_test.sh gluoncv/torch tests/model_zoo_torch" \
+#                                             --wait
+#  auto:
+#    needs: pre-check
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Download artifact
+#        uses: dawidd6/action-download-artifact@v2
+#        with:
+#          workflow: unittest.yml
+#          run_id: ${{ github.event.workflow_run.id }}
+#      - name: Get git context(For push)
+#        if: ${{ github.event.workflow_run.event == 'push' }}
+#        run: |
+#          ref=$(head -n 1 artifact/ref.atf)
+#          repo=$(head -n 1 artifact/repo.atf)
+#          echo "REF=$ref" >> $GITHUB_ENV
+#          echo "REPO=$repo" >> $GITHUB_ENV
+#      - name: Get git context(For pull request)
+#        if: ${{ github.event.workflow_run.event == 'pull_request' }}
+#        run: |
+#          ref=$(head -n 1 artifact/ref.atf)
+#          repo=$(head -n 1 artifact/repo.atf)
+#          pr=$(head -n 1 artifact/pr.arf)
+#          echo "REF=$ref" >> $GITHUB_ENV
+#          echo "REPO=$repo" >> $GITHUB_ENV
+#          echo "PR=$pr" >> $GITHUB_ENV
+#      - name: Checkout repository
+#        uses: actions/checkout@v2
+#      - name: Configure AWS Credentials
+#        uses: aws-actions/configure-aws-credentials@v1
+#        with:
+#          aws-access-key-id: ${{ secrets.GLUONCV_DEV_ACCESS_ID }}
+#          aws-secret-access-key: ${{ secrets.GLUONCV_DEV_SECRET_ACCESS_KEY }}
+#          aws-region: us-east-1
+#      - name: Install dependencies
+#        run: |
+#          pip install --upgrade --force-reinstall --no-deps .
+#          pip install boto3
+#      - name: Test model_zoo_torch on AWS Batch(For push)
+#        shell: bash -l {0}
+#        if: ${{ github.event.workflow_run.event == 'push' }}
+#        run: |
+#          echo "Start submitting job"
+#          python ./tools/batch/submit-job.py --region us-east-1 \
+#                                             --job-type p3.2x \
+#                                             --name GluonCV-GPU-Auto-${{ env.REF }} \
+#                                             --source-ref ${{ env.REF }} \
+#                                             --work-dir . \
+#                                             --remote https://github.com/${{ env.REPO }} \
+#                                             --command "chmod +x ./.github/workflows/gpu_test.sh && ./.github/workflows/gpu_test.sh gluoncv tests/auto" \
+#                                             --wait
+#      - name: Test model_zoo_torch on AWS Batch(For pull request)
+#        if: ${{ github.event_name == 'pull_request' }}
+#        run: |
+#          echo "Start submitting job"
+#          python ./tools/batch/submit-job.py --region us-east-1 \
+#                                             --job-type p3.2x \
+#                                             --name GluonCV-GPU-Auto-PR#${{ env.PR }} \
+#                                             --source-ref ${{ env.REF }} \
+#                                             --work-dir . \
+#                                             --remote https://github.com/${{ env.REPO }} \
+#                                             --command "chmod +x ./.github/workflows/gpu_test.sh && ./.github/workflows/gpu_test.sh gluoncv tests/auto" \
+#                                             --wait
+  build-docs:
+#    needs: [pre-check, model_zoo_mxnet, model_zoo_torch, auto]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifact
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow: unittest.yml
+      - name: Get git context(For push)
+        if: ${{ github.event.workflow_run.event == 'push' }}
+        run: |
+          ref=$(head -n 1 artifact/ref.atf)
+          repo=$(head -n 1 artifact/repo.atf)
+          echo "REF=$ref" >> $GITHUB_ENV
+          echo "REPO=$repo" >> $GITHUB_ENV
+      - name: Get git context(For pull request)
+        if: ${{ github.event.workflow_run.event == 'pull_request' }}
+        run: |
+          ref=$(head -n 1 artifact/ref.atf)
+          repo=$(head -n 1 artifact/repo.atf)
+          pr=$(head -n 1 artifact/pr.arf)
+          echo "REF=$ref" >> $GITHUB_ENV
+          echo "REPO=$repo" >> $GITHUB_ENV
+          echo "PR=$pr" >> $GITHUB_ENV
+          echo "SHORT_SHA=`echo ${{ github.event.workflow_run.pull_requests.head.sha }} | cut -c1-7`" >> $GITHUB_ENV
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.GLUONCV_DEV_ACCESS_ID }}
+          aws-secret-access-key: ${{ secrets.GLUONCV_DEV_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+      - name: Install dependencies
+        run: |
+          pip install --upgrade --force-reinstall --no-deps .
+          pip install boto3
 #      - name: Build docs on AWS Batch(For push)
 #        shell: bash -l {0}
 #        if: ${{ github.event_name == 'push' }}
@@ -241,11 +247,11 @@ jobs:
 #          echo "Start submitting job"
 #          python ./tools/batch/submit-job.py --region us-east-1 \
 #                                             --job-type p3.2x \
-#                                             --name GluonCV-GPU-BuildDocs-${{ github.ref }} \
-#                                             --source-ref ${{ github.ref }} \
+#                                             --name GluonCV-GPU-BuildDocs-${{ env.REF }} \
+#                                             --source-ref ${{ env.REF }} \
 #                                             --work-dir . \
-#                                             --remote https://github.com/${{ github.repository }} \
-#                                             --command "chmod +x ./.github/workflows/build_docs.sh && ./.github/workflows/build_docs.sh ${{ github.ref }} ${{ steps.vars.outputs.sha_short }} ${{ github.repository }} ${{ github.event.number }}" \
+#                                             --remote https://github.com/${{ env.REPO }} \
+#                                             --command "chmod +x ./.github/workflows/build_docs.sh && ./.github/workflows/build_docs.sh ${{ env.REF }} ${{ env.SHORT_SHA }} ${{ env.REPO }} ${{ env.PR }}" \
 #                                             --wait
 #      - name: Build docs on AWS Batch(For pull request)
 #        if: ${{ github.event_name == 'pull_request' || github.event_name == 'pull_request_target' }}
@@ -253,18 +259,18 @@ jobs:
 #          echo "Start submitting job"
 #          python ./tools/batch/submit-job.py --region us-east-1 \
 #                                             --job-type p3.2x \
-#                                             --name GluonCV-GPU-BuildDocs-PR#${{ github.event.number }} \
-#                                             --source-ref ${{ github.event.pull_request.head.ref }} \
+#                                             --name GluonCV-GPU-BuildDocs-PR#${{ env.PR }} \
+#                                             --source-ref ${{ env.REF }} \
 #                                             --work-dir . \
-#                                             --remote https://github.com/${{ github.event.pull_request.head.repo.full_name }} \
-#                                             --command "chmod +x ./.github/workflows/build_docs.sh && ./.github/workflows/build_docs.sh ${{ github.event.pull_request.head.ref }} ${{ steps.vars.outputs.sha_short }} ${{ github.event.pull_request.head.repo.full_name }} ${{ github.event.number }} " \
+#                                             --remote https://github.com/${{ env.REPO }} \
+#                                             --command "chmod +x ./.github/workflows/build_docs.sh && ./.github/workflows/build_docs.sh ${{ env.REF }} ${{ env.SHORT_SHA }} ${{ env.REPO }} ${{ env.PR }} " \
 #                                             --wait
-#      - name: Comment on PR
-#        if: ${{ github.event_name == 'pull_request' || github.event_name == 'pull_request_target' }}
-#        uses: peter-evans/create-or-update-comment@v1.4.3
-#        with:
-#          issue-number: ${{ github.event.number }}
-#          body: |
-#            Job PR-${{ github.event.number }}-${{ steps.vars.outputs.sha_short }} is done.
-#            Docs are uploaded to http://gluon-vision-staging.s3-website-us-west-2.amazonaws.com/PR-${{ github.event.number }}/${{ steps.vars.outputs.sha_short }}/index.html
+      - name: Comment on PR
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: peter-evans/create-or-update-comment@v1.4.3
+        with:
+          issue-number: ${{ env.PR }}
+          body: |
+            Job PR-${{ env.PR }}-${{ env.SHORT_SHA }} is done.
+            Docs are uploaded to http://gluon-vision-staging.s3-website-us-west-2.amazonaws.com/PR-${{ env.PR }}/${{ env.SHORT_SHA }}/index.html
                         
