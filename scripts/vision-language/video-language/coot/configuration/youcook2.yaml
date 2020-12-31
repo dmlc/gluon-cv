@@ -30,7 +30,7 @@ CONFIG:
     LR_POLICY: 'LR_Warmup'
     RESUME_EPOCH: -1
     LOSS_CYCLE_CONS_W: 0.001 # Cycle-consistency loss weight
-    LOSS_CONTRASTIVE_CLIP_W: 1.2 # Clip-Sentence alignment loss weight
+    LOSS_CONTRASTIVE_CLIP_W: 1 # Clip-Sentence alignment loss weight
 
   VAL:
     FREQ: 1

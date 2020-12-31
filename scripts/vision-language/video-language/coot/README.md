@@ -39,7 +39,7 @@ that were achieved by running this code on AWS machine with one Tesla T4 GPU.
 ### Results on Youcook2 dataset with HowTo100m features
 | Model                             | Paragraph->Video R@1 | R@5  | R@10  | MR   | Sentence->Clip R@1 | R@5  | R@10 | MR   | 
 | --------------------------------- | -------------------- | ---- | ----- | ---- | ------------------ | ---- | ---- | ---- | 
-| COOT      | 74.3                 | 94.7 | 98.2  | 1    | 17.8              | 40.9 | 53.0 | 9    | 
+| COOT      | 78.3                 | 96.2 | 97.8  | 1    | 16.9               | 40.5 | 52.5 | 9    | 
 
 ## Citation
 
@@ -51,3 +51,12 @@ that were achieved by running this code on AWS machine with one Tesla T4 GPU.
   year={2020}
 }
 ```
+
+MeanR |  MedR |    Sum
+1231 120755 INFO Par2Vid | 0.761 | 0.939 | 0.963 | 0.996 |   1.0 |   1.5 |  2.696
+1231 120755 INFO Vid2Par | 0.770 | 0.950 | 0.967 | 0.996 |   1.0 |   1.4 |  2.716
+1231 120756 INFO Retriev | R@1   | R@5   | R@10  | R@50  | MeanR |  MedR |    Sum
+1231 120756 INFO Sen2Shot | 0.164 | 0.419 | 0.542 | 0.784 |   8.5 |  69.9 |  1.367
+1231 120756 INFO Shot2Sen | 0.149 | 0.401 | 0.534 | 0.793 |   9.0 |  71.4 |  1.344
+1231 120756 INFO ---------- Validating epoch 57 ----------
+
