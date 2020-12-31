@@ -29,6 +29,8 @@ CONFIG:
     COOLDOWN: 3
     LR_POLICY: 'LR_Warmup'
     RESUME_EPOCH: -1
+    LOSS_CYCLE_CONS_W: 0.001 # Cycle-consistency loss weight
+    LOSS_CONTRASTIVE_CLIP_W: 1.2 # Clip-Sentence alignment loss weight
 
   VAL:
     FREQ: 1
@@ -36,8 +38,8 @@ CONFIG:
 
   COOT_DATA:
     DATASET_NAME: 'youcook2'
-    DATA_PATH: '/mnt/efs/fs1/workspace/datasets/coot_data/youcook2'
-    FEATURE: 'howto100m'
+    DATA_PATH: /data/youcook2 # Change this according to your data path.
+    FEATURE: '100m'
     TRAIN_SPLIT: 'train'
     VALIDATION_SPLIT: 'val'
     MAX_FRAMES: 80

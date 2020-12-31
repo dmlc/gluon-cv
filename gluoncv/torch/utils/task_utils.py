@@ -210,7 +210,7 @@ def test_classification(model, test_loader, criterion, cfg, file):
             f.write(line)
 
 
-def train_coot(base_iter,
+def train_coot(config, base_iter,
                model,
                dataloader,
                epoch,
@@ -261,10 +261,10 @@ def train_coot(base_iter,
                                                  par_cap_len, sent_num,
                                                  sent_cap_vectors,
                                                  sent_cap_mask, sent_cap_len)
-        loss = compute_constrastive_loss(constrastive_loss, vid_emb, par_emb,
+        loss = compute_constrastive_loss(config, constrastive_loss, vid_emb, par_emb,
                                          clip_emb, sent_emb, vid_context,
                                          par_context)
-        loss += compute_cmc_loss(cmc_loss, 0.01, clip_emb_reshape,
+        loss += compute_cmc_loss(cmc_loss, config.CONFIG.TRAIN.LOSS_CYCLE_CONS_W, clip_emb_reshape,
                                  clip_emb_mask, clip_emb_lens,
                                  sent_emb_reshape, sent_emb_mask,
                                  sent_emb_lens)
@@ -297,7 +297,7 @@ def train_coot(base_iter,
     return base_iter
 
 
-def validate_coot(model,
+def validate_coot(config, model,
                   val_loader,
                   epoch,
                   constrastive_loss,
@@ -348,10 +348,10 @@ def validate_coot(model,
                                                  par_cap_len, sent_num,
                                                  sent_cap_vectors,
                                                  sent_cap_mask, sent_cap_len)
-        loss = compute_constrastive_loss(constrastive_loss, vid_emb, par_emb,
+        loss = compute_constrastive_loss(config, constrastive_loss, vid_emb, par_emb,
                                          clip_emb, sent_emb, vid_context,
                                          par_context)
-        loss += compute_cmc_loss(cmc_loss, 0.01, clip_emb_reshape,
+        loss += compute_cmc_loss(cmc_loss, config.CONFIG.TRAIN.LOSS_CYCLE_CONS_W, clip_emb_reshape,
                                  clip_emb_mask, clip_emb_lens,
                                  sent_emb_reshape, sent_emb_mask,
                                  sent_emb_lens)

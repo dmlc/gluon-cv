@@ -90,13 +90,13 @@ def main_worker(cfg):
     for epoch in range(cfg.CONFIG.TRAIN.EPOCH_NUM):
 
         ## ======== Training step ===============
-        base_iter = train_coot(base_iter, model, train_loader, epoch,
+        base_iter = train_coot(cfg, base_iter, model, train_loader, epoch,
                                criterion_alignment, criterion_cycleconsistency,
                                optimizer, writer, logger)
 
         ## ======= Validation step ================
         if epoch % cfg.CONFIG.VAL.FREQ == 0 or epoch == cfg.CONFIG.TRAIN.EPOCH_NUM - 1:
-            vid_metrics, clip_metrics = validate_coot(
+            vid_metrics, clip_metrics = validate_coot(cfg, 
                 model, val_loader, epoch, criterion_alignment,
                 criterion_cycleconsistency, writer, logger, True)
 

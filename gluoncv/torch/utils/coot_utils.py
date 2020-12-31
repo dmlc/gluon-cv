@@ -24,7 +24,7 @@ EVALHEADER = "Retriev | R@1   | R@5   | R@10  | R@50  | MeanR |  MedR |    Sum"
 def create_dataloader_path(data_root,
                            dataset_name='youcook2',
                            text_feature_name='default',
-                           video_feature_name='howto_h100m'):
+                           video_feature_name='100m'):
     """create the path to meta file and features
 
     Args:
@@ -34,15 +34,15 @@ def create_dataloader_path(data_root,
         [Dict]: [path to meta data and video/language features]
     """
 
-    meta_data_path = Path(os.path.join(data_root, "meta", "meta.json"))
+    meta_data_path = Path(os.path.join(data_root, "meta_{}.json".format(video_feature_name)))
     video_feat_path = Path(
-        os.path.join(data_root, "video_features",
-                     "{}.h5".format(video_feature_name)))
+        os.path.join(data_root, 
+                     "video_feat_{}.h5".format(video_feature_name)))
     language_feat_path = Path(
-        os.path.join(data_root, "language_features",
+        os.path.join(data_root,
                      "text_{}.h5".format(text_feature_name)))
     meta_text_len_path = Path(
-        os.path.join(data_root, "language_features",
+        os.path.join(data_root,
                      "text_lens_{}.json".format(text_feature_name)))
 
     return {
@@ -294,7 +294,7 @@ def unpack_data(data_dict, use_cuda):
     ]
 
 
-def compute_constrastive_loss(contrastive_loss, vid_emb, par_emb, clip_emb,
+def compute_constrastive_loss(config, contrastive_loss, vid_emb, par_emb, clip_emb,
                               sent_emb, vid_context, par_context):
     """Normalize embeddings and calculate alignment loss in different levels:
      Video-paragraph, clip-sentence, global context
@@ -319,7 +319,7 @@ def compute_constrastive_loss(contrastive_loss, vid_emb, par_emb, clip_emb,
     par_emb_norm = F.normalize(par_emb)
 
     loss = contrastive_loss(vid_emb_norm, par_emb_norm)
-    loss += contrastive_loss(clip_emb_norm, sent_emb_norm)
+    loss += config.CONFIG.TRAIN.LOSS_CONTRASTIVE_CLIP_W * contrastive_loss(clip_emb_norm, sent_emb_norm)
     loss += contrastive_loss(vid_context_norm, par_context_norm)
     loss += (contrastive_loss(vid_emb_norm, vid_emb_norm) +
              contrastive_loss(par_emb_norm, par_emb_norm)) / 2
