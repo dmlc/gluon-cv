@@ -6,7 +6,8 @@ by Simon Ging\*, Mohammadreza Zolfaghari\*, Hamed Pirsiavash\*, and Thomas Brox.
 
 ## Introduction
 In this we release code and models from the paper [COOT: Cooperative Hierarchical Transformer for Video-Text Representation Learning](https://arxiv.org/pdf/2011.00597v1.pdf).
-Overview of the model: 
+
+Many real-world video-text tasks involve different levels of granularity, such as frames and words, clip and sentences or videos and paragraphs, each with distinct semantics. In this paper, we propose a Cooperative hierarchical Transformer (COOT) to leverage this hierarchy information and model the interactions between different levels of granularity and different modalities. The method consists of three major components: an attention-aware feature aggregation layer, which leverages the local temporal context (intra-level, e.g., within a clip), a contextual transformer to learn the interactions between low-level and high-level semantics (inter-level, e.g. clip-video, sentence-paragraph), and a cross-modal cycle-consistency loss to connect video and text. The resulting method compares favorably to the state of the art on several benchmarks while having few parameters.
 
 <p align="center"><img src="misc/thumbnail.png" alt="Method" title="Method" /></p>
 
