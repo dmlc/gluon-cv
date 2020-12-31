@@ -7,7 +7,6 @@ import re
 import numpy as np
 import torch
 import torch.utils.data as data
-from easydict import EasyDict
 from tqdm import tqdm
 
 from gluoncv.torch.utils import coot_utils
@@ -19,7 +18,7 @@ def load_h5file(h5_path):
 
 class BertTextFeatureLoader:
     def __init__(
-            self, dataset_path_dict: EasyDict, ids: List[str], preload=True):
+            self, dataset_path_dict, ids: List[str], preload=True):
         self.h5_path = dataset_path_dict["language_feats"]
         lens_file = dataset_path_dict["meta_text_len"]
         self.lens = json.load(lens_file.open("rt", encoding="utf8"))
@@ -69,7 +68,7 @@ class ActivityNetVideoFeatureLoader:
 
 class Youcook2VideoFeatureLoader:
     def __init__(
-            self, dataset_path_dict: EasyDict, ids: List[str],
+            self, dataset_path_dict, ids: List[str],
             preload: bool):
         self.h5_path = dataset_path_dict["video_feats"]
         self.cached_data = None
@@ -93,7 +92,7 @@ class Youcook2VideoFeatureLoader:
 
 class VideoDatasetFeatures(data.Dataset):
     def __init__(
-            self, dataset_path_dict: EasyDict,
+            self, dataset_path_dict,
             split: str, max_frames: int, is_train: bool,
             preload_vid_feat: bool, preload_text_feat: bool,
             frames_noise: float):
@@ -354,7 +353,7 @@ class VideoDatasetFeatures(data.Dataset):
 
 
 def create_datasets(
-        dataset_path_dict: EasyDict, cfg: EasyDict, preload_vid_feat: bool,
+        dataset_path_dict, cfg, preload_vid_feat: bool,
         preload_text_feat: bool, eval=False):
     
     if eval:
