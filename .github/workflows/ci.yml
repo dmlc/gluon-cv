@@ -224,10 +224,11 @@ jobs:
           ref=$(head -n 1 artifact/ref.atf)
           repo=$(head -n 1 artifact/repo.atf)
           pr=$(head -n 1 artifact/pr.atf)
+          short_sha=$(head -n 1 artifact/sha.atf)
           echo "REF=$ref" >> $GITHUB_ENV
           echo "REPO=$repo" >> $GITHUB_ENV
           echo "PR=$pr" >> $GITHUB_ENV
-          echo "SHORT_SHA=`echo ${{ github.event.workflow_run.pull_requests.head.sha }} | cut -c1-7`" >> $GITHUB_ENV
+          echo "SHORT_SHA=$short-sha" >> $GITHUB_ENV
       - name: Checkout repository
         uses: actions/checkout@v2
       - name: Configure AWS Credentials
