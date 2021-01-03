@@ -162,11 +162,13 @@ _C.CONFIG.LOG.DISPLAY_FREQ = 1
 # ---------------------------------------------------------------------------- #
 
 _C.CONFIG.COOT_DATA = CN(new_allowed=True)
-
 _C.CONFIG.COOT_MODEL = CN(new_allowed=True)
-_C.CONFIG.COOT_MODEL.NAME = 'COOT-MultiModalTransformer-d384'
 _C.CONFIG.COOT_MODEL.MODEL_CONFIG = CN(new_allowed=True)
-
+_C.CONFIG.COOT_MODEL.MODEL_CONFIG.VIDEO_POOLER = CN(new_allowed=True)
+_C.CONFIG.COOT_MODEL.MODEL_CONFIG.VIDEO_SEQUENCER = CN(new_allowed=True)
+_C.CONFIG.COOT_MODEL.MODEL_CONFIG.TEXT_POOLER = CN(new_allowed=True)
+_C.CONFIG.COOT_MODEL.MODEL_CONFIG.TEXT_SEQUENCER = CN(new_allowed=True)
+_C.CONFIG.COOT_MODEL.MODEL_CONFIG.TEXT_ENCODER = CN(new_allowed=True)
 
 def get_cfg_defaults():
     """Get a yacs CfgNode object with default values for your project."""
