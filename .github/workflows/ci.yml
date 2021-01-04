@@ -8,6 +8,7 @@ jobs:
   pre-check:
     runs-on: ubuntu-latest
     steps:
+      - uses: haya14busa/action-workflow_run-status@v1
       - name: Fail if unittests failed
         if: ${{ github.event.workflow_run.conclusion != 'success' }}
         run: exit 1
@@ -207,6 +208,7 @@ jobs:
 #    needs: [pre-check, model_zoo_mxnet, model_zoo_torch, auto]
     runs-on: ubuntu-latest
     steps:
+      - uses: haya14busa/action-workflow_run-status@v1
       - name: Download artifact
         uses: dawidd6/action-download-artifact@v2
         with:
@@ -274,4 +276,3 @@ jobs:
           body: |
             Job PR-${{ env.PR }}-${{ env.SHORT_SHA }} is done.
             Docs are uploaded to http://gluon-vision-staging.s3-website-us-west-2.amazonaws.com/PR-${{ env.PR }}/${{ env.SHORT_SHA }}/index.html
-                        
