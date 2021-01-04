@@ -8,6 +8,9 @@ jobs:
   unittests:
 #    runs-on: windows-latest
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
     strategy:
       matrix:
         os: [macos-latest, windows-latest, ubuntu-latest]
