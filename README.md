@@ -148,7 +148,7 @@ All tutorials are available at [our website](https://gluon-cv.mxnet.io/index.htm
 
 Check out how to use GluonCV for your own research or projects.
 
-- For background knowledge of deep learning or CV, please refer to the open source book [*Dive into Deep Learning*](http://diveintodeeplearning.org/). If you are new to Gluon, please check out [our 60-minute crash course](http://gluon-crash-course.mxnet.io/).
+- For background knowledge of deep learning or CV, please refer to the open source book [*Dive into Deep Learning*](http://d2l.ai/). If you are new to Gluon, please check out [our 60-minute crash course](http://gluon-crash-course.mxnet.io/).
 - For getting started quickly, refer to notebook runnable examples at [Examples](https://gluon-cv.mxnet.io/build/examples_classification/index.html).
 - For advanced examples, check out our [Scripts](http://gluon-cv.mxnet.io/master/scripts/index.html).
 - For experienced users, check out our [API Notes](https://gluon-cv.mxnet.io/api/data.datasets.html#).
