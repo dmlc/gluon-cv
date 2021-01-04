@@ -20,7 +20,6 @@ jobs:
         run: |
           echo "$GITHUB_CONTEXT"
       - name: Checkout repository
-        if: ${{ github.event_name == 'push' }}
         uses: actions/checkout@v2
       - name: Setup Miniconda
         uses: conda-incubator/setup-miniconda@v2.0.0
