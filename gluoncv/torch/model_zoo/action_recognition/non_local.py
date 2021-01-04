@@ -1,20 +1,22 @@
 # pylint: disable=missing-function-docstring, unused-argument
 """
-Non-local module from Non-local Neural Networks
+PyTorch implementation of the non-local module from Non-local Neural Networks
 CVPR 2018, https://arxiv.org/abs/1711.07971
 Code adapted from https://github.com/open-mmlab/mmaction
+and https://github.com/AlexHex7/Non-local_pytorch
 """
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn import BatchNorm3d
 
+from ...utils.utils import constant_init, normal_init
+
 
 def build_nonlocal_block(cfg):
     """ Build nonlocal block from
     `"Non-local Neural Networks"
     <https://arxiv.org/abs/1711.07971>`_ paper.
-    Code adapted from mmaction.
     """
     assert isinstance(cfg, dict)
     cfg_ = cfg.copy()
@@ -25,9 +27,21 @@ class NonLocal(nn.Module):
     """
     Non-local module from Non-local Neural Networks
     CVPR 2018, https://arxiv.org/abs/1711.07971
+
+    Args:
+        in_channels (int): Channels of the input feature map.
+        nonlocal_type (str): Types of design for non-local block,
+                             such as 'gaussian', 'dot' and 'concat'.
+        dim (int): 2D or 3D non-local block..
+        embed_dim (int): Channels of the intermediate feature map,
+                         usually are half of the in_channels.
+        sub_sample (bool): Default: False. Whether to apply max pooling after pairwise
+                           function (Note that the `sub_sample` is applied on spatial only).
+        use_bn (bool): Default: True. Whether to use a batch normalization layer
+                       inside a non-local block.
     """
     def __init__(self, in_channels=1024, nonlocal_type="gaussian", dim=3,
-                 embed=True, embed_dim=None, sub_sample=False, use_bn=True,
+                 embed=True, embed_dim=None, sub_sample=False, use_bn=False,
                  norm_layer=BatchNorm3d, norm_kwargs=None, **kwargs):
         super(NonLocal, self).__init__()
 
@@ -111,12 +125,34 @@ class NonLocal(nn.Module):
                                stride=(1, 1, 1),
                                padding=(0, 0, 0))
 
-        if use_bn:
-            # TODO: need to add zero initialized BN, also the conv output
+        if self.use_bn:
             self.bn = norm_layer(num_features=in_channels,
                                  momentum=0.9,
                                  **({} if norm_kwargs is None else norm_kwargs))
             self.W_bn = nn.Sequential(self.W, self.bn)
+
+        self.init_weights()
+
+    def init_weights(self, std=0.01, zeros_init=True):
+        if self.nonlocal_type != 'gaussian':
+            for m in [self.g, self.theta, self.phi]:
+                normal_init(m, std=std)
+        else:
+            normal_init(self.g, std=std)
+
+        # Zero init the last conv layer (or BN layer if there is) to ensure that the
+        # initial state of the entire non-local block is an identity mapping,
+        # so it can be inserted into any pre-trained networks while maintaining its initial behavior
+        if zeros_init:
+            if self.use_bn:
+                constant_init(self.bn, 0)
+            else:
+                constant_init(self.W, 0)
+        else:
+            if self.use_bn:
+                normal_init(self.bn, std=std)
+            else:
+                normal_init(self.W, std=std)
 
     def forward(self, x):
         if self.embed:
@@ -140,6 +176,7 @@ class NonLocal(nn.Module):
             g = g.view(theta_shape_5d[0], theta_shape_5d[1], -1)
 
             theta_phi = torch.bmm(theta.transpose(1, 2), phi)
+            # Normalizing the affinity tensor theta_phi before softmax.
             theta_phi = theta_phi * (self.embed_dim ** -.5)
             attn = F.softmax(theta_phi, dim=-1)
         elif self.non_local_type == 'concat':

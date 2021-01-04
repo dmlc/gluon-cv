@@ -1,5 +1,6 @@
 # pylint: disable=missing-function-docstring, missing-class-docstring, unused-argument, line-too-long
 """
+PyTorch implementation of the I3D model.
 Quo Vadis, Action Recognition? A New Model and the Kinetics Dataset
 CVPR 2017, https://arxiv.org/abs/1705.07750
 """

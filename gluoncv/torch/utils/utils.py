@@ -5,6 +5,7 @@ Utility functions, misc
 import os
 import time
 import numpy as np
+import torch.nn as nn
 
 
 def read_labelmap(labelmap_file):
@@ -180,3 +181,18 @@ def get_iou(bb1, bb2):
     assert iou >= 0.0
     assert iou <= 1.0
     return iou
+
+
+def constant_init(module, val, bias=0):
+    # Code adapted from https://github.com/open-mmlab/mmcv/blob/master/mmcv/cnn/utils/weight_init.py
+    if hasattr(module, 'weight') and module.weight is not None:
+        nn.init.constant_(module.weight, val)
+    if hasattr(module, 'bias') and module.bias is not None:
+        nn.init.constant_(module.bias, bias)
+
+
+def normal_init(module, mean=0, std=1, bias=0):
+    # Code adapted from https://github.com/open-mmlab/mmcv/blob/master/mmcv/cnn/utils/weight_init.py
+    nn.init.normal_(module.weight, mean, std)
+    if hasattr(module, 'bias') and module.bias is not None:
+        nn.init.constant_(module.bias, bias)
