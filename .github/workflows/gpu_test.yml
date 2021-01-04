@@ -31,7 +31,7 @@ jobs:
       - name: Get git context(For push)
         if: ${{ github.event.workflow_run.event == 'push' }}
         run: |
-          tr -d '\r' artifact/ref.atf artifact/ref.atf
+          tr -d '\r' < artifact/ref.atf > artifact/ref.atf
           ref=$(head -n 1 artifact/ref.atf)
           repo=$(head -n 1 artifact/repo.atf)
           echo "REF=$ref" >> $GITHUB_ENV
@@ -39,7 +39,7 @@ jobs:
       - name: Get git context(For pull request)
         if: ${{ github.event.workflow_run.event == 'pull_request' }}
         run: |
-          tr -d '\r' artifact/ref.atf artifact/ref.atfz
+          tr -d '\r' < artifact/ref.atf > artifact/ref.atf
           ref=$(head -n 1 artifact/ref.atf)
           repo=$(head -n 1 artifact/repo.atf)
           pr=$(head -n 1 artifact/pr.arf)
@@ -96,7 +96,7 @@ jobs:
       - name: Get git context(For push)
         if: ${{ github.event.workflow_run.event == 'push' }}
         run: |
-          tr -d '\r' artifact/ref.atf artifact/ref.atf
+          tr -d '\r' < artifact/ref.atf > artifact/ref.atf
           ref=$(head -n 1 artifact/ref.atf)
           repo=$(head -n 1 artifact/repo.atf)
           echo "REF=$ref" >> $GITHUB_ENV
@@ -104,7 +104,7 @@ jobs:
       - name: Get git context(For pull request)
         if: ${{ github.event.workflow_run.event == 'pull_request' }}
         run: |
-          tr -d '\r' artifact/ref.atf artifact/ref.atf
+          tr -d '\r' < artifact/ref.atf > artifact/ref.atf
           ref=$(head -n 1 artifact/ref.atf)
           repo=$(head -n 1 artifact/repo.atf)
           pr=$(head -n 1 artifact/pr.arf)
@@ -161,7 +161,7 @@ jobs:
       - name: Get git context(For push)
         if: ${{ github.event.workflow_run.event == 'push' }}
         run: |
-          tr -d '\r' artifact/ref.atf artifact/ref.atf
+          tr -d '\r' < artifact/ref.atf > artifact/ref.atf
           ref=$(head -n 1 artifact/ref.atf)
           repo=$(head -n 1 artifact/repo.atf)
           echo "REF=$ref" >> $GITHUB_ENV
@@ -169,7 +169,7 @@ jobs:
       - name: Get git context(For pull request)
         if: ${{ github.event.workflow_run.event == 'pull_request' }}
         run: |
-          tr -d '\r' artifact/ref.atf artifact/ref.atf
+          tr -d '\r' < artifact/ref.atf > artifact/ref.atf
           ref=$(head -n 1 artifact/ref.atf)
           repo=$(head -n 1 artifact/repo.atf)
           pr=$(head -n 1 artifact/pr.arf)
@@ -226,7 +226,7 @@ jobs:
       - name: Get git context(For push)
         if: ${{ github.event.workflow_run.event == 'push' }}
         run: |
-          tr -d '\r' artifact/ref.atf artifact/ref.atf
+          tr -d '\r' < artifact/ref.atf > artifact/ref.atf
           ref=$(head -n 1 artifact/ref.atf)
           repo=$(head -n 1 artifact/repo.atf)
           echo "REF=$ref" >> $GITHUB_ENV
@@ -234,7 +234,7 @@ jobs:
       - name: Get git context(For pull request)
         if: ${{ github.event.workflow_run.event == 'pull_request' }}
         run: |
-          tr -d '\r' artifact/ref.atf artifact/ref.atf
+          tr -d '\r' < artifact/ref.atf > artifact/ref.atf
           ref=$(head -n 1 artifact/ref.atf)
           repo=$(head -n 1 artifact/repo.atf)
           pr=$(head -n 1 artifact/pr.atf)
