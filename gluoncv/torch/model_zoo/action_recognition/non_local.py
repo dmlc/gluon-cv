@@ -41,7 +41,7 @@ class NonLocal(nn.Module):
                        inside a non-local block.
     """
     def __init__(self, in_channels=1024, nonlocal_type="gaussian", dim=3,
-                 embed=True, embed_dim=None, sub_sample=False, use_bn=False,
+                 embed=True, embed_dim=None, sub_sample=False, use_bn=True,
                  norm_layer=BatchNorm3d, norm_kwargs=None, **kwargs):
         super(NonLocal, self).__init__()
 
