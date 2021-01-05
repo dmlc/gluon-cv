@@ -9,7 +9,6 @@ from mxnet import ndarray
 from ..resnetv1b import ResNetV1b
 from ..resnetv1b import BasicBlockV1b
 from ..resnetv1b import BottleneckV1b
-mx.npx.reset_np()
 
 
 __all__ = ['resnet18_v1b_89', 'resnet50_v1d_86', 'resnet50_v1d_48', 'resnet50_v1d_37',
