@@ -61,7 +61,7 @@ jobs:
         run: |
           echo "Start submitting job"
           python ./tools/batch/submit-job.py --region us-east-1 \
-                                             --job-type p3.2x \
+                                             --job-type ci \
                                              --name GluonCV-GPU-ModelZooMxnet-${{ env.REF }} \
                                              --source-ref ${{ env.REF }} \
                                              --work-dir . \
@@ -73,7 +73,7 @@ jobs:
         run: |
           echo "Start submitting job"
           python ./tools/batch/submit-job.py --region us-east-1 \
-                                             --job-type p3.2x \
+                                             --job-type ci \
                                              --name GluonCV-GPU-ModelZooMxnet-PR#${{ env.PR }} \
                                              --source-ref ${{ env.REF }} \
                                              --work-dir . \
@@ -124,7 +124,7 @@ jobs:
         run: |
           echo "Start submitting job"
           python ./tools/batch/submit-job.py --region us-east-1 \
-                                             --job-type p3.2x \
+                                             --job-type ci \
                                              --name GluonCV-GPU-ModelZooTorch-${{ env.REF }} \
                                              --source-ref ${{ env.REF }} \
                                              --work-dir . \
@@ -136,7 +136,7 @@ jobs:
         run: |
           echo "Start submitting job"
           python ./tools/batch/submit-job.py --region us-east-1 \
-                                             --job-type p3.2x \
+                                             --job-type ci \
                                              --name GluonCV-GPU-ModelZooTorch-PR#${{ env.PR }} \
                                              --source-ref ${{ env.REF }} \
                                              --work-dir . \
@@ -187,7 +187,7 @@ jobs:
         run: |
           echo "Start submitting job"
           python ./tools/batch/submit-job.py --region us-east-1 \
-                                             --job-type p3.2x \
+                                             --job-type ci \
                                              --name GluonCV-GPU-Auto-${{ env.REF }} \
                                              --source-ref ${{ env.REF }} \
                                              --work-dir . \
@@ -199,7 +199,7 @@ jobs:
         run: |
           echo "Start submitting job"
           python ./tools/batch/submit-job.py --region us-east-1 \
-                                             --job-type p3.2x \
+                                             --job-type ci \
                                              --name GluonCV-GPU-Auto-PR#${{ env.PR }} \
                                              --source-ref ${{ env.REF }} \
                                              --work-dir . \
@@ -254,7 +254,7 @@ jobs:
         run: |
           echo "Start submitting job"
           python ./tools/batch/submit-job.py --region us-east-1 \
-                                             --job-type p3.2x \
+                                             --job-type ci \
                                              --name GluonCV-GPU-BuildDocs-${{ env.REF }} \
                                              --source-ref ${{ env.REF }} \
                                              --work-dir . \
@@ -266,7 +266,7 @@ jobs:
         run: |
           echo "Start submitting job"
           python ./tools/batch/submit-job.py --region us-east-1 \
-                                             --job-type p3.2x \
+                                             --job-type ci \
                                              --name GluonCV-GPU-BuildDocs-PR#${{ env.PR }} \
                                              --source-ref ${{ env.REF }} \
                                              --work-dir . \
@@ -281,4 +281,3 @@ jobs:
           body: |
             Job PR-${{ env.PR }}-${{ env.SHORT_SHA }} is done.
             Docs are uploaded to http://gluon-vision-staging.s3-website-us-west-2.amazonaws.com/PR-${{ env.PR }}/${{ env.SHORT_SHA }}/index.html
-

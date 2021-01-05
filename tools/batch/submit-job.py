@@ -47,13 +47,15 @@ session = boto3.Session(profile_name=args.profile, region_name=args.region)
 batch, cloudwatch = [session.client(service_name=sn) for sn in ['batch', 'logs']]
 
 response = batch.describe_job_definitions(status='ACTIVE')['jobDefinitions']
-instance_type_info = {}
+job_to_queue_map = {}
 for res in response:
     jobDefinition = res['jobDefinitionName'] # example: gluon-cv-p2_8xlarge:1
     instance = jobDefinition.split('-')[-1].split(':')[0].replace('large', '') # example: p2_8x
     job_queue = jobDefinition.split('-')[-1].split('_')[0] # example: p2
-    instance_type_info[instance] = {'job_definition': jobDefinition, 'job_queue': job_queue}
-
+    job_to_queue_map[instance] = {'job_definition': jobDefinition, 'job_queue': job_queue}
+# ci is a special case because the name of the job doesn't match any instance type
+# it uses job description g4dn_4x and job queue ci underneath
+job_to_queue_map['ci'] = {'job_definition': job_to_queue_map['g4dn_4x']['job_definition'], 'job_queue': 'ci'}
 
 def printLogs(logGroupName, logStreamName, startTime):
     kwargs = {'logGroupName': logGroupName,
@@ -90,14 +92,14 @@ def main():
     jobName = re.sub('[^A-Za-z0-9_\-]', '', args.name)[:128]  # Enforce AWS Batch jobName rules
     jobType = args.job_type.replace('.', '_')
     # check valid job type
-    while jobType not in instance_type_info:
-        instance_choices = instance_type_info.keys()
+    while jobType not in job_to_queue_map:
+        instance_choices = job_to_queue_map.keys()
         print("Please provide a valid job type. Choices are:")
         for choice in instance_choices:
             print(choice.replace('_', '.'))
         jobType = input("Your job type (ctrl+d to exit): ").replace('.', '_')
-    jobQueue = instance_type_info[jobType]['job_queue']
-    jobDefinition = instance_type_info[jobType]['job_definition']
+    jobQueue = job_to_queue_map[jobType]['job_queue']
+    jobDefinition = job_to_queue_map[jobType]['job_definition']
     wait = args.wait
 
     parameters = {
