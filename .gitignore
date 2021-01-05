@@ -118,5 +118,4 @@ ENV/
 .idea/*
 *.sh
 /logs/
-*.code-workspace 
 
