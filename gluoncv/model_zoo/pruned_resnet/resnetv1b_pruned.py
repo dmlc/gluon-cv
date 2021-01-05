@@ -122,9 +122,9 @@ def resnet50_v1d_86(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwar
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     """
-    
+
     model = ResNetV1b(BottleneckV1b, [3, 4, 6, 3], deep_stem=True, avg_down=True,
-                        name_prefix='resnetv1d_', **kwargs)
+                      name_prefix='resnetv1d_', **kwargs)
     dirname = os.path.dirname(__file__)
     json_filename = os.path.join(dirname, 'resnet%d_v%dd_%.1fx' % (50, 1, 1.8) + ".json")
     with open(json_filename, "r") as jsonFile:
