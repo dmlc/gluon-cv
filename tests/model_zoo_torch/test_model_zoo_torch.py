@@ -33,6 +33,7 @@ def test_get_all_models():
     cfg = get_cfg_defaults()
     names = get_model_list()
     for name in names:
+        if name == 'coot': continue
         cfg.CONFIG.MODEL.NAME = name
         net = get_model(cfg)
         assert isinstance(net, nn.Module), '{}'.format(name)
