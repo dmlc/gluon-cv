@@ -2,12 +2,14 @@
 from __future__ import division
 import json
 import os
+import mxnet as mx
 from mxnet.context import cpu
 from mxnet.gluon import nn
 from mxnet import ndarray
 from ..resnetv1b import ResNetV1b
 from ..resnetv1b import BasicBlockV1b
 from ..resnetv1b import BottleneckV1b
+mx.npx.set_np
 
 
 __all__ = ['resnet18_v1b_89', 'resnet50_v1d_86', 'resnet50_v1d_48', 'resnet50_v1d_37',
@@ -26,7 +28,7 @@ def prune_gluon_block(net, params_shapes, params=None, pretrained=False, ctx=cpu
     :param ctx: cpu(0)
     :return: "net"
     """
-    with np_shape(False):
+    with mx.np_shape(False):
         for _, layer in net._children.items():
             if isinstance(layer, nn.BatchNorm):
                 params_layer = layer._collect_params_with_prefix()
@@ -85,7 +87,7 @@ def resnet18_v1b_89(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwar
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     """
-    with np_shape(False):
+    with mx.np_shape(False):
         model = ResNetV1b(BasicBlockV1b, [2, 2, 2, 2], name_prefix='resnetv1b_', **kwargs)
         dirname = os.path.dirname(__file__)
         json_filename = os.path.join(dirname, 'resnet%d_v%db_%.1fx' % (18, 1, 2.6) + ".json")
@@ -121,7 +123,7 @@ def resnet50_v1d_86(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwar
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     """
-    with np_shape(False):
+    with mx.np_shape(False):
         model = ResNetV1b(BottleneckV1b, [3, 4, 6, 3], deep_stem=True, avg_down=True,
                           name_prefix='resnetv1d_', **kwargs)
         dirname = os.path.dirname(__file__)
@@ -159,7 +161,7 @@ def resnet50_v1d_48(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwar
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     """
-    with np_shape(False):
+    with mx.np_shape(False):
         model = ResNetV1b(BottleneckV1b, [3, 4, 6, 3], deep_stem=True, avg_down=True,
                           name_prefix='resnetv1d_', **kwargs)
         dirname = os.path.dirname(__file__)
@@ -197,7 +199,7 @@ def resnet50_v1d_37(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwar
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     """
-    with np_shape(False):
+    with mx.np_shape(False):
         model = ResNetV1b(BottleneckV1b, [3, 4, 6, 3], deep_stem=True, avg_down=True,
                           name_prefix='resnetv1d_', **kwargs)
         dirname = os.path.dirname(__file__)
@@ -235,7 +237,7 @@ def resnet50_v1d_11(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwar
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     """
-    with np_shape(False):
+    with mx.np_shape(False):
         model = ResNetV1b(BottleneckV1b, [3, 4, 6, 3], deep_stem=True, avg_down=True,
                           name_prefix='resnetv1d_', **kwargs)
         dirname = os.path.dirname(__file__)
@@ -273,7 +275,7 @@ def resnet101_v1d_76(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwa
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     """
-    with np_shape(False):
+    with mx.np_shape(False):
         model = ResNetV1b(BottleneckV1b, [3, 4, 23, 3], deep_stem=True, avg_down=True,
                           name_prefix='resnetv1d_', **kwargs)
         dirname = os.path.dirname(__file__)
@@ -311,7 +313,7 @@ def resnet101_v1d_73(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwa
     ctx : Context, default CPU
         The context in which to load the pretrained weights.
     """
-    with np_shape(False):
+    with mx.np_shape(False):
         model = ResNetV1b(BottleneckV1b, [3, 4, 23, 3], deep_stem=True, avg_down=True,
                           name_prefix='resnetv1d_', **kwargs)
         dirname = os.path.dirname(__file__)
