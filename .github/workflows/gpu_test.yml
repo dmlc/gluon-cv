@@ -39,7 +39,7 @@ jobs:
         run: |
           ref=$(head -n 1 artifact/ref.atf)
           repo=$(head -n 1 artifact/repo.atf)
-          pr=$(head -n 1 artifact/pr.arf)
+          pr=$(head -n 1 artifact/pr.atf)
           echo "REF=$ref" >> $GITHUB_ENV
           echo "REPO=$repo" >> $GITHUB_ENV
           echo "PR=$pr" >> $GITHUB_ENV
@@ -102,7 +102,7 @@ jobs:
         run: |
           ref=$(head -n 1 artifact/ref.atf)
           repo=$(head -n 1 artifact/repo.atf)
-          pr=$(head -n 1 artifact/pr.arf)
+          pr=$(head -n 1 artifact/pr.atf)
           echo "REF=$ref" >> $GITHUB_ENV
           echo "REPO=$repo" >> $GITHUB_ENV
           echo "PR=$pr" >> $GITHUB_ENV
@@ -165,7 +165,7 @@ jobs:
         run: |
           ref=$(head -n 1 artifact/ref.atf)
           repo=$(head -n 1 artifact/repo.atf)
-          pr=$(head -n 1 artifact/pr.arf)
+          pr=$(head -n 1 artifact/pr.atf)
           echo "REF=$ref" >> $GITHUB_ENV
           echo "REPO=$repo" >> $GITHUB_ENV
           echo "PR=$pr" >> $GITHUB_ENV
@@ -281,4 +281,3 @@ jobs:
           body: |
             Job PR-${{ env.PR }}-${{ env.SHORT_SHA }} is done.
             Docs are uploaded to http://gluon-vision-staging.s3-website-us-west-2.amazonaws.com/PR-${{ env.PR }}/${{ env.SHORT_SHA }}/index.html
-
