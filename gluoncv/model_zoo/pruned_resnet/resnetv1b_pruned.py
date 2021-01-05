@@ -32,7 +32,8 @@ def prune_gluon_block(net, params_shapes, params=None, pretrained=False, ctx=cpu
                 params_layer = layer._collect_params_with_prefix()
                 for param_name in ['beta', 'gamma', 'running_mean', 'running_var']:
                     if pretrained:
-                        param_val = params[layer.name.replace(prefix, "resnetv1d") + "_" + param_name]
+                        param_val = params[layer.name.replace(prefix,
+                                                              "resnetv1d") + "_" + param_name]
                         layer.params.get(param_name)._shape = param_val.shape
                         params_layer[param_name]._load_init(param_val, ctx=ctx)
                     else:
@@ -50,11 +51,13 @@ def prune_gluon_block(net, params_shapes, params=None, pretrained=False, ctx=cpu
                         layer.name.replace(prefix, "resnetv1d") + "_" + param_name]
                     layer.params.get(param_name)._shape = param_shape
                     if pretrained:
-                        param_val = params[layer.name.replace(prefix, "resnetv1d") + "_" + param_name]
+                        param_val = params[layer.name.replace(prefix,
+                                                              "resnetv1d") + "_" + param_name]
                         params_layer[param_name]._load_init(param_val, ctx=ctx)
 
             if isinstance(layer, nn.Dense):
-                layer._in_units = params_shapes[layer.name.replace(prefix, "resnetv1d") + "_weight"][1]
+                layer._in_units = params_shapes[layer.name.replace(prefix,
+                                                                   "resnetv1d") + "_weight"][1]
 
                 params_layer = layer._collect_params_with_prefix()
                 for param_name in ['weight', 'bias']:
@@ -62,7 +65,8 @@ def prune_gluon_block(net, params_shapes, params=None, pretrained=False, ctx=cpu
                         layer.name.replace(prefix, "resnetv1d") + "_" + param_name]
                     layer.params.get(param_name)._shape = param_shape
                     if pretrained:
-                        param_val = params[layer.name.replace(prefix, "resnetv1d") + "_" + param_name]
+                        param_val = params[layer.name.replace(prefix,
+                                                              "resnetv1d") + "_" + param_name]
                         params_layer[param_name]._load_init(param_val, ctx=ctx)
             else:
                 prune_gluon_block(layer, params_shapes, params, pretrained, ctx)
