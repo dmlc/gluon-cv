@@ -132,7 +132,7 @@ def resnet50_v1d_86(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwar
     if pretrained:
         from ..model_store import get_model_file
         params_file = get_model_file('resnet%d_v%dd_%.1fx' % (50, 1, 1.8), tag=pretrained,
-                                      root=root)
+                                     root=root)
         with mx.np_shape(False):
             prune_gluon_block(model, params_shapes, params=ndarray.load(params_file),
                               pretrained=True, ctx=ctx)
@@ -162,7 +162,7 @@ def resnet50_v1d_48(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwar
         The context in which to load the pretrained weights.
     """
     model = ResNetV1b(BottleneckV1b, [3, 4, 6, 3], deep_stem=True, avg_down=True,
-                        name_prefix='resnetv1d_', **kwargs)
+                      name_prefix='resnetv1d_', **kwargs)
     dirname = os.path.dirname(__file__)
     json_filename = os.path.join(dirname, 'resnet%d_v%dd_%.1fx' % (50, 1, 3.6) + ".json")
     with open(json_filename, "r") as jsonFile:
@@ -200,7 +200,7 @@ def resnet50_v1d_37(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwar
         The context in which to load the pretrained weights.
     """
     model = ResNetV1b(BottleneckV1b, [3, 4, 6, 3], deep_stem=True, avg_down=True,
-                        name_prefix='resnetv1d_', **kwargs)
+                      name_prefix='resnetv1d_', **kwargs)
     dirname = os.path.dirname(__file__)
     json_filename = os.path.join(dirname, 'resnet%d_v%dd_%.1fx' % (50, 1, 5.9) + ".json")
     with open(json_filename, "r") as jsonFile:
@@ -238,7 +238,7 @@ def resnet50_v1d_11(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwar
         The context in which to load the pretrained weights.
     """
     model = ResNetV1b(BottleneckV1b, [3, 4, 6, 3], deep_stem=True, avg_down=True,
-                        name_prefix='resnetv1d_', **kwargs)
+                      name_prefix='resnetv1d_', **kwargs)
     dirname = os.path.dirname(__file__)
     json_filename = os.path.join(dirname, 'resnet%d_v%dd_%.1fx' % (50, 1, 8.8) + ".json")
     with open(json_filename, "r") as jsonFile:
@@ -276,7 +276,7 @@ def resnet101_v1d_76(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwa
         The context in which to load the pretrained weights.
     """
     model = ResNetV1b(BottleneckV1b, [3, 4, 23, 3], deep_stem=True, avg_down=True,
-                        name_prefix='resnetv1d_', **kwargs)
+                      name_prefix='resnetv1d_', **kwargs)
     dirname = os.path.dirname(__file__)
     json_filename = os.path.join(dirname, 'resnet%d_v%dd_%.1fx' % (101, 1, 1.9) + ".json")
     with open(json_filename, "r") as jsonFile:
@@ -314,7 +314,7 @@ def resnet101_v1d_73(pretrained=False, root='~/.mxnet/models', ctx=cpu(0), **kwa
         The context in which to load the pretrained weights.
     """
     model = ResNetV1b(BottleneckV1b, [3, 4, 23, 3], deep_stem=True, avg_down=True,
-                        name_prefix='resnetv1d_', **kwargs)
+                      name_prefix='resnetv1d_', **kwargs)
     dirname = os.path.dirname(__file__)
     json_filename = os.path.join(dirname, 'resnet%d_v%dd_%.1fx' % (101, 1, 2.2) + ".json")
     with open(json_filename, "r") as jsonFile:
