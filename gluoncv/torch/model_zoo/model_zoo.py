@@ -3,6 +3,7 @@
 GluonCV-PyTorch model zoo
 """
 from .action_recognition import *
+from .video_language.coot_model import MultiModalTransformer
 
 
 __all__ = ['get_model', 'get_model_list']
@@ -55,6 +56,7 @@ _models = {
     'tpn_resnet101_f16s4_kinetics400': tpn_resnet101_f16s4_kinetics400,
     'tpn_resnet101_f32s2_kinetics400': tpn_resnet101_f32s2_kinetics400,
     'tpn_resnet50_f32s2_custom': tpn_resnet50_f32s2_custom,
+    'multimodaltransformer_coot': MultiModalTransformer,
 }
 
 

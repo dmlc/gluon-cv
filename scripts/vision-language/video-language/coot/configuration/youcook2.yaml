@@ -1,0 +1,109 @@
+
+DDP_CONFIG:
+  WORLD_SIZE: 1
+  WORLD_RANK: 0
+  GPU_WORLD_SIZE: 8
+  GPU_WORLD_RANK: 0
+  DIST_URL: 'tcp://172.31.72.195:23456'
+  WOLRD_URLS: ['172.31.72.195']
+  AUTO_RANK_MATCH: True
+  DIST_BACKEND: 'nccl'
+  GPU: 0
+  DISTRIBUTED: False
+
+CONFIG:
+  MODEL:
+    NAME: 'MultiModalTransformer_COOT'
+    PRETRAINED: False
+    PRETRAINED_BASE: False
+
+  TRAIN:
+    EPOCH_NUM: 100
+    BATCH_SIZE: 64
+    LR: 0.0009
+    MOMENTUM: 0.56
+    W_DECAY: 0.
+    USE_WARMUP: True
+    WARMUP_EPOCHS: 0
+    PATIENCE: 5
+    COOLDOWN: 3
+    LR_POLICY: 'LR_Warmup'
+    RESUME_EPOCH: -1
+    LOSS_CYCLE_CONS_W: 0.001 # Cycle-consistency loss weight
+    LOSS_CONTRASTIVE_CLIP_W: 1 # Clip-Sentence alignment loss weight
+
+  VAL:
+    FREQ: 1
+    BATCH_SIZE: 32
+
+  COOT_DATA:
+    DATASET_NAME: 'youcook2'
+    DATA_PATH: /data/youcook2 # Change this according to your data path.
+    FEATURE: '100m'
+    TRAIN_SPLIT: 'train'
+    VALIDATION_SPLIT: 'val'
+    MAX_FRAMES: 80
+    FEATURE_DIM: 512
+    WORD_EMB: 'bert'
+    VIDEO_PRELOAD: True
+    TEXT_PRELOAD: True
+
+  COOT_MODEL:
+    NAME: 'COOT-MultiModalTransformer-d384'
+    MODEL_CONFIG:
+        VIDEO_POOLER:
+            NAME: atn
+            OUTPUT_DIM: 384
+            INPUT_FC: true
+            INPUT_FC_OUTPUT_DIM: 384
+            NUM_LAYERS: 1
+            NUM_HEADS: 8
+            DROPOUT: 0.05
+            USE_CONTEXT: false
+            POOLER: atn
+            ATN_POOL_DIM: 768
+            ATN_POOL_HEADS: 2
+        VIDEO_SEQUENCER:
+            NAME: atn
+            OUTPUT_DIM: 384
+            INPUT_FC: false
+            NUM_LAYERS: 1
+            NUM_HEADS: 8
+            DROPOUT: 0.05
+            USE_CONTEXT: true
+            ATN_CTX_NUM_LAYERS: 1
+            ATN_CTX_NUM_HEADS: 8
+            POOLER: avg
+        TEXT_POOLER:
+            NAME: atn
+            OUTPUT_DIM: 384
+            INPUT_FC: true
+            INPUT_FC_OUTPUT_DIM: 384
+            NUM_LAYERS: 1
+            NUM_HEADS: 8
+            DROPOUT: 0.05
+            USE_CONTEXT: false
+            POOLER: atn
+            ATN_POOL_DIM: 768
+            ATN_POOL_HEADS: 2
+        TEXT_SEQUENCER:
+            NAME: atn
+            OUTPUT_DIM: 384
+            INPUT_FC: false
+            NUM_LAYERS: 1
+            NUM_HEADS: 8
+            DROPOUT: 0.05
+            USE_CONTEXT: true
+            ATN_CTX_NUM_LAYERS: 1
+            ATN_CTX_NUM_HEADS: 8
+            POOLER: avg
+        TEXT_ENCODER:
+            FEATURE_DIM: 1536
+  LOG:
+    BASE_PATH: './logs/coot'
+    LOG_DIR: 'tb_log'
+    SAVE_DIR: 'checkpoints'
+    EVAL_DIR: './logs/coot/eval'
+    SAVE_FREQ: 2
+
+

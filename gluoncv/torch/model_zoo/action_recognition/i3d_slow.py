@@ -15,8 +15,7 @@ from .non_local import build_nonlocal_block
 __all__ = ['ResNet_SlowFast', 'i3d_slow_resnet50_f32s2_kinetics400',
            'i3d_slow_resnet50_f16s4_kinetics400', 'i3d_slow_resnet50_f8s8_kinetics400',
            'i3d_slow_resnet101_f32s2_kinetics400', 'i3d_slow_resnet101_f16s4_kinetics400',
-           'i3d_slow_resnet101_f8s8_kinetics400', 'i3d_slow_resnet50_f32s2_custom',
-           'i3d_slow_resnet101_f16s4_kinetics700']
+           'i3d_slow_resnet101_f8s8_kinetics400', 'i3d_slow_resnet50_f32s2_custom', 'i3d_slow_resnet101_f16s4_kinetics700']
 
 
 def conv3x3x3(in_planes, out_planes, spatial_stride=1, temporal_stride=1, dilation=1):
@@ -487,7 +486,6 @@ def i3d_slow_resnet101_f16s4_kinetics400(cfg):
                                                         tag=cfg.CONFIG.MODEL.PRETRAINED)))
     return model
 
-
 def i3d_slow_resnet101_f16s4_kinetics700(cfg):
     model = ResNet_SlowFast(num_classes=cfg.CONFIG.DATA.NUM_CLASSES,
                             depth=101,
@@ -503,7 +501,6 @@ def i3d_slow_resnet101_f16s4_kinetics700(cfg):
         model.load_state_dict(torch.load(get_model_file('i3d_slow_resnet101_f16s4_kinetics700',
                                                         tag=cfg.CONFIG.MODEL.PRETRAINED)))
     return model
-
 
 def i3d_slow_resnet101_f8s8_kinetics400(cfg):
     model = ResNet_SlowFast(num_classes=cfg.CONFIG.DATA.NUM_CLASSES,

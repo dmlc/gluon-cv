@@ -25,7 +25,7 @@ def deploy_model(model, cfg):
             model = torch.nn.parallel.DistributedDataParallel(model, find_unused_parameters=True)
     elif cfg.DDP_CONFIG.GPU is not None:
         torch.cuda.set_device(cfg.DDP_CONFIG.GPU)
-        model = model.cuda(cfg.DDP_CONFIG.GPU)
+        model.cuda(cfg.DDP_CONFIG.GPU)
     else:
         # DataParallel will divide and allocate batch_size to all available GPUs
         model = torch.nn.DataParallel(model).cuda()
