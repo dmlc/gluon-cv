@@ -10,7 +10,7 @@ EFS=/mnt/efs
 mkdir -p ~/.mxnet/datasets
 for f in $EFS/.mxnet/datasets/*; do
     if [ -d "$f" ]; then
-        # Will not run if no directories are available
+        # Will not run if no directories are available 
         ln -s $f ~/.mxnet/datasets/$(basename "$f")
     fi
 done
@@ -26,13 +26,10 @@ sed -i.bak 's/2196f3/178dc9/g' build/html/_static/sphinx_materialdesign_theme.cs
 sed -i.bak 's/pre{padding:1rem;margin:1.5rem\\s0;overflow:auto;overflow-y:hidden}/pre{padding:1rem;margin:1.5rem 0;overflow:auto;overflow-y:scroll}/g' build/html/_static/sphinx_materialdesign_theme.css
 
 if [[ ($BRANCH == master) && ($GIT_REPO == dmlc/gluon-cv) ]]; then
-	# aws s3 cp s3://gluon-cv.mxnet.io/coverage.svg build/html/coverage.svg
 	aws s3 sync --delete build/html/ s3://gluon-cv.mxnet.io/ --acl public-read --cache-control max-age=7200
-	# aws s3 cp build/html/coverage.svg s3://gluon-cv.mxnet.io/coverage.svg --acl public-read --cache-control max-age=300
 	echo "Uploaded doc to http://gluon-cv.mxnet.io"
 	echo master
 else
-	# aws s3 cp s3://gluon-vision-staging/$PR_NUMBER/$COMMIT_SHA/coverage.svg build/html/coverage.svg
 	aws s3 sync --delete build/html/ s3://gluon-vision-staging/PR-$PR_NUMBER/$COMMIT_SHA/ --acl public-read
 	echo "Uploaded doc to http://gluon-vision-staging.s3-website-us-west-2.amazonaws.com/PR-$PR_NUMBER/$COMMIT_SHA/index.html"
 	echo $GIT_REPO: $BRANCH
