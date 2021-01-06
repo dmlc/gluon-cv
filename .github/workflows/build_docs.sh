@@ -10,7 +10,7 @@ EFS=/mnt/efs
 mkdir -p ~/.mxnet/datasets
 for f in $EFS/.mxnet/datasets/*; do
     if [ -d "$f" ]; then
-        # Will not run if no directories are available
+        # Will not run if no directories are available 
         ln -s $f ~/.mxnet/datasets/$(basename "$f")
     fi
 done
