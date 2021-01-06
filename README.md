@@ -1,6 +1,6 @@
 # Gluon CV Toolkit
 
-![Build Status](https://github.com/dmlc/gluon-cv/workflows/CI%20workflow/badge.svg?branch=master)
+![Build Status](https://github.com/yinweisu/gluon-cv/workflows/GPU%20Test/badge.svg?branch=master)
 [![GitHub license](docs/_static/apache2.svg)](./LICENSE)
 [![PyPI](https://img.shields.io/pypi/v/gluoncv.svg)](https://pypi.python.org/pypi/gluoncv)
 [![PyPI Pre-release](https://img.shields.io/badge/pypi--prerelease-v0.10.0-ff69b4.svg)](https://pypi.org/project/gluoncv/#history)

@@ -1,4 +1,4 @@
-name: GPU Test
+name: Build Test
 on: 
   workflow_run:
     workflows: ["Unit Test"]
