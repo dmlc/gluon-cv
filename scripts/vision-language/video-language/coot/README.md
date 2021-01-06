@@ -9,8 +9,6 @@ In this we release code and models from the paper [COOT: Cooperative Hierarchica
 
 Many real-world video-text tasks involve different levels of granularity, such as frames and words, clip and sentences or videos and paragraphs, each with distinct semantics. In this paper, we propose a Cooperative hierarchical Transformer (COOT) to leverage this hierarchy information and model the interactions between different levels of granularity and different modalities. The method consists of three major components: an attention-aware feature aggregation layer, which leverages the local temporal context (intra-level, e.g., within a clip), a contextual transformer to learn the interactions between low-level and high-level semantics (inter-level, e.g. clip-video, sentence-paragraph), and a cross-modal cycle-consistency loss to connect video and text. The resulting method compares favorably to the state of the art on several benchmarks while having few parameters.
 
-<p align="center"><img src="misc/thumbnail.png" alt="Method" title="Method" /></p>
-
 ## Installation
 
 Make sure you have `Python>=3.6` installed on your machine. For installing dependecies follow the instruction of GluonCV.
@@ -21,7 +19,7 @@ Download the following data with  ``` wget ``` and put all in a folder (e.g. `/d
 - Youcook2
   - Meta data [Link](https://yzaws-data-log.s3.amazonaws.com/shared/COOT/youcook2/meta_100m.json)
   - Text features [Link](https://yzaws-data-log.s3.amazonaws.com/shared/COOT/youcook2/text_default.h5)
-  - Text lens [Link](https://yzaws-data-log.s3.amazonaws.com/shared/COOT/youcook2/text_lens_default.json)
+  - Text lengths [Link](https://yzaws-data-log.s3.amazonaws.com/shared/COOT/youcook2/text_lens_default.json)
   - Video features [Link](https://yzaws-data-log.s3.amazonaws.com/shared/COOT/youcook2/video_feat_100m.h5)
 ## Training
 You can train the model on your dataset of interest. 
@@ -37,9 +35,9 @@ In this table we closely follow experiments from the coot paper and report resul
 that were achieved by running this code on AWS machine with one Tesla T4 GPU.
 
 ### Results on Youcook2 dataset with HowTo100m features
-| Model                             | Paragraph->Video R@1 | R@5  | R@10  | MR   | Sentence->Clip R@1 | R@5  | R@10 | MR   | 
-| --------------------------------- | -------------------- | ---- | ----- | ---- | ------------------ | ---- | ---- | ---- | 
-| COOT      | 78.3                 | 96.2 | 97.8  | 1    | 16.9               | 40.5 | 52.5 | 9    | 
+| Model | Paragraph->Video R@1 | R@5  | R@10 | MR  | Sentence->Clip R@1 | R@5  | R@10 | MR  |
+| ----- | -------------------- | ---- | ---- | --- | ------------------ | ---- | ---- | --- |
+| COOT  | 78.3                 | 96.2 | 97.8 | 1   | 16.9               | 40.5 | 52.5 | 9   |
 
 ## Citation
 
@@ -51,12 +49,4 @@ that were achieved by running this code on AWS machine with one Tesla T4 GPU.
   year={2020}
 }
 ```
-
-MeanR |  MedR |    Sum
-1231 120755 INFO Par2Vid | 0.761 | 0.939 | 0.963 | 0.996 |   1.0 |   1.5 |  2.696
-1231 120755 INFO Vid2Par | 0.770 | 0.950 | 0.967 | 0.996 |   1.0 |   1.4 |  2.716
-1231 120756 INFO Retriev | R@1   | R@5   | R@10  | R@50  | MeanR |  MedR |    Sum
-1231 120756 INFO Sen2Shot | 0.164 | 0.419 | 0.542 | 0.784 |   8.5 |  69.9 |  1.367
-1231 120756 INFO Shot2Sen | 0.149 | 0.401 | 0.534 | 0.793 |   9.0 |  71.4 |  1.344
-1231 120756 INFO ---------- Validating epoch 57 ----------
 

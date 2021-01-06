@@ -144,5 +144,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
     cfg = get_cfg_defaults()
     cfg.merge_from_file(args.config_file)
-    # spawn_workers(main_worker, cfg)
     main_worker(cfg)
