@@ -30,7 +30,7 @@ if [[ ($BRANCH == master) && ($GIT_REPO == dmlc/gluon-cv) ]]; then
 	echo "Uploaded doc to http://gluon-cv.mxnet.io"
 	echo master
 else
-#	aws s3 sync --delete build/html/ s3://gluon-vision-staging/PR-$PR_NUMBER/$COMMIT_SHA/ --acl public-read
+	aws s3 sync --delete build/html/ s3://gluon-vision-staging/PR-$PR_NUMBER/$COMMIT_SHA/ --acl public-read
 	echo "Uploaded doc to http://gluon-vision-staging.s3-website-us-west-2.amazonaws.com/PR-$PR_NUMBER/$COMMIT_SHA/index.html"
 	echo $GIT_REPO: $BRANCH
 fi;
