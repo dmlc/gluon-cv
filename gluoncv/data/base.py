@@ -26,7 +26,7 @@ class VisionDataset(dataset.Dataset):
         if not os.path.isdir(os.path.expanduser(root)):
             helper_msg = "{} is not a valid dir. Did you forget to initialize \
                          datasets described in: \
-                         `http://gluon-cv.mxnet.io/build/examples_datasets/index.html`? \
+                         `https://cv.gluon.ai/build/examples_datasets/index.html`? \
                          You need to initialize each dataset only once.".format(root)
             raise OSError(helper_msg)
 
