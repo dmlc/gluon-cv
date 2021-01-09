@@ -5,7 +5,6 @@ Motion estimation module for MOT
 import time
 import logging
 from abc import ABC, abstractmethod
-import cv2
 import numpy as np
 
 
@@ -206,11 +205,14 @@ class FarneBeckFlowMotionEstimator(BaseFlowMotionEstimator):
 
     def __init__(self, flow_scale=256):
         self.flow_scale = flow_scale
+        import cv2
+        self._cv2 = cv2
 
     def prepare_frame(self, frame):
         img_h, img_w, _ = frame.shape
         ratio = min(self.flow_scale / img_w, self.flow_scale / img_h)
         flow_h, flow_w = int(img_h * ratio), int(img_w * ratio)
+        cv2 = self._cv2
         resized_gray_frame = cv2.cvtColor(
             cv2.resize(frame, (flow_w, flow_h), interpolation=cv2.INTER_NEAREST),
             cv2.COLOR_BGR2GRAY)
@@ -218,6 +220,7 @@ class FarneBeckFlowMotionEstimator(BaseFlowMotionEstimator):
 
     def compute_flow(self, prev_frame_cache, prepared_new_frame):
         # Compute Farnebeck flow
+        cv2 = self._cv2
         flow_map = cv2.calcOpticalFlowFarneback(
             prev_frame_cache, prepared_new_frame, None, 0.5, 3, 15, 3, 5, 1.2, 0)
 
