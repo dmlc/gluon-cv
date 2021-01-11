@@ -279,6 +279,10 @@ def config_to_nested(config):
     else:
         assert issubclass(estimator, BaseEstimator)
 
+    # batch size is the power of 2
+    if config.get('batch_size', None):
+        config['batch_size'] = 2 ** config['batch_size']
+
     cfg_map = estimator._default_cfg.asdict()
 
     def _recursive_update(config, key, value):

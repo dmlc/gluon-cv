@@ -28,12 +28,12 @@ if __name__ == '__main__':
                                 'resnet50_v1b', 'resnet101_v1b',
                                 'resnest50', 'resnest101'),
         'lr': ag.Real(1e-4, 1e-2, log=True),
-        'batch_size': ag.Categorical(16, 32, 64, 128),
+        'batch_size': ag.Int(4, 7),  # [16, 32, 64, 128]
         'momentum': ag.Real(0.85, 0.95),
         'wd': ag.Real(1e-6, 1e-2, log=True),
         'epochs': 15,
         'num_trials': args.num_trials,
-        'search_strategy': 'skopt'
+        'search_strategy': 'bayesopt'
     }
 
     # specify learning task

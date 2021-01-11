@@ -31,12 +31,12 @@ if __name__ == '__main__':
                                    'faster_rcnn_fpn_syncbn_resnet101_v1d_coco',
                                    'faster_rcnn_fpn_syncbn_resnest101_coco'),
         'lr': ag.Real(1e-4, 1e-2, log=True),
-        'batch_size': ag.Categorical(8, 16, 32, 64),
+        'batch_size': ag.Int(3, 6),  # [8, 16, 32, 64]
         'momentum': ag.Real(0.85, 0.95),
         'wd': ag.Real(1e-6, 1e-2, log=True),
         'epochs': 20,
         'num_trials': args.num_trials,
-        'search_strategy': 'skopt'
+        'search_strategy': 'bayesopt'
     }
 
     # specify learning task

@@ -32,7 +32,7 @@ class LiteConfig:
     lr : Union[ag.Space, float] = 1e-2
     num_trials : int = 1
     epochs : Union[ag.Space, int] = 5
-    batch_size : Union[ag.Space, int] = 8
+    batch_size : Union[ag.Space, int] = 3  # 2 ** 3 == 8
     nthreads_per_trial : int = 32
     ngpus_per_trial : int = 0
     time_limits : int = 7 * 24 * 60 * 60  # 7 days
@@ -45,7 +45,7 @@ class DefaultConfig:
     lr : Union[ag.Space, float] = ag.Categorical(1e-2, 5e-2)
     num_trials : int = 3
     epochs : Union[ag.Space, int] = 15
-    batch_size : Union[ag.Space, int] = 16
+    batch_size : Union[ag.Space, int] = 4  # 2 ** 4 = 16
     nthreads_per_trial : int = 128
     ngpus_per_trial : int = 8
     time_limits : int = 7 * 24 * 60 * 60  # 7 days
@@ -187,6 +187,11 @@ class ImageClassification(BaseTask):
         if self.search_strategy == 'hyperband':
             self.scheduler_options.update({
                 'searcher': 'random',
+                'max_t': config.get('epochs', 50),
+                'grace_period': config.get('grace_period', config.get('epochs', 50) // 4)})
+        elif self.search_strategy == 'bayesopt_hyperband':
+            self.scheduler_options.update({
+                'searcher': 'bayesopt',
                 'max_t': config.get('epochs', 50),
                 'grace_period': config.get('grace_period', config.get('epochs', 50) // 4)})
 
