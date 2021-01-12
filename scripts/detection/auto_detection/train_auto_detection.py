@@ -29,9 +29,9 @@ if __name__ == '__main__':
         #                                'resnet18_v1b', 'resnet50_v1b', 'resnet101_v1b',
         #                                'resnest50', 'resnest101'),
         'transfer': ag.Categorical('ssd_512_vgg16_atrous_coco', 'ssd_512_resnet50_v1_coco',
-                                   'yolo3_darknet53_coco',
+                                   'yolo3_darknet53_voc', 'yolo3_darknet53_coco',
                                    'faster_rcnn_resnet50_v1b_coco', 'faster_rcnn_fpn_syncbn_resnest50_coco',
-                                   'center_net_resnet50_v1b_coco', 'center_net_dla34_coco'),
+                                   'center_net_resnet50_v1b_coco', 'center_net_resnet101_v1b_coco'),
         'lr': ag.Real(1e-4, 1e-2, log=True),
         'batch_size': ag.Int(3, 6),  # [8, 16, 32, 64]
         'momentum': ag.Real(0.85, 0.95),

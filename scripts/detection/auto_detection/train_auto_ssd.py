@@ -25,7 +25,7 @@ if __name__ == '__main__':
         'estimator': 'ssd',
         'base_network': None,
         'transfer': ag.Categorical('ssd_512_vgg16_atrous_coco',
-                                   'ssd_512_resnet18_v1_coco',
+                                   'ssd_300_resnet34_v1b_coco',
                                    'ssd_512_resnet50_v1_coco',
                                    'ssd_512_resnet101_v2_voc'),
         'lr': ag.Real(1e-4, 1e-2, log=True),

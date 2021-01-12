@@ -30,8 +30,7 @@ if __name__ == '__main__':
         'base_network': None,
         'transfer': ag.Categorical('center_net_resnet18_v1b_coco',
                                    'center_net_resnet50_v1b_coco',
-                                   'center_net_resnet101_v1b_coco',
-                                   'center_net_dla34_coco'),
+                                   'center_net_resnet101_v1b_coco'),
         'lr': ag.Real(1e-4, 1e-2, log=True),
         'batch_size': ag.Int(3, 6),  # [8, 16, 32, 64]
         'momentum': ag.Real(0.85, 0.95),

@@ -25,10 +25,10 @@ if __name__ == '__main__':
         'estimator': 'faster_rcnn',
         'base_network': None,
         'transfer': ag.Categorical('faster_rcnn_resnet50_v1b_coco',
-                                   'faster_rcnn_fpn_syncbn_resnet50_v1b_coco',
+                                   'faster_rcnn_fpn_resnet50_v1b_coco',
                                    'faster_rcnn_fpn_syncbn_resnest50_coco',
                                    'faster_rcnn_resnet101_v1d_coco',
-                                   'faster_rcnn_fpn_syncbn_resnet101_v1d_coco',
+                                   'faster_rcnn_fpn_resnet101_v1d_coco',
                                    'faster_rcnn_fpn_syncbn_resnest101_coco'),
         'lr': ag.Real(1e-4, 1e-2, log=True),
         'batch_size': ag.Int(3, 6),  # [8, 16, 32, 64]

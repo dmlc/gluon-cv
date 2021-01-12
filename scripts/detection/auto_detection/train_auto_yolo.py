@@ -24,7 +24,8 @@ if __name__ == '__main__':
         'dataset': args.dataset,
         'estimator': 'yolo3',
         'base_network': None,
-        'transfer': ag.Categorical('yolo3_darknet53_coco'),
+        'transfer': ag.Categorical('yolo3_darknet53_voc',
+                                   'yolo3_darknet53_coco'),
         'lr': ag.Real(1e-4, 1e-2, log=True),
         'batch_size': ag.Int(3, 6),  # [8, 16, 32, 64]
         'momentum': ag.Real(0.85, 0.95),
