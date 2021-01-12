@@ -162,7 +162,7 @@ class FasterRCNN(RCNN):
                  rpn_train_pre_nms=12000, rpn_train_post_nms=2000, rpn_test_pre_nms=6000,
                  rpn_test_post_nms=300, rpn_min_size=16, per_device_batch_size=1, num_sample=128,
                  pos_iou_thresh=0.5, pos_ratio=0.25, max_num_gt=300, additional_output=False,
-                 force_nms=False, minimal_opset=False, minimal_opset=False, **kwargs):
+                 force_nms=False, minimal_opset=False, **kwargs):
         super(FasterRCNN, self).__init__(
             features=features, top_features=top_features, classes=classes,
             box_features=box_features, short=short, max_size=max_size,
