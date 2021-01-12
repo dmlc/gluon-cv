@@ -138,11 +138,16 @@ batch_size = per_device_batch_size * num_gpus
 train_data = gluon.data.DataLoader(
     gluon.data.vision.CIFAR10(train=True).transform_first(transform_train),
     batch_size=batch_size, shuffle=True, last_batch='discard', num_workers=num_workers)
+# The DataLoader won't prefetch any data unless its __iter__() method is called.
+# Define and using its iter will provide a significant speedup, especially some
+# CPU heavy computation (e.g., autoaugment) is performed.
+itn = iter(train_data)
 
 # Set train=False for validation data
 val_data = gluon.data.DataLoader(
     gluon.data.vision.CIFAR10(train=False).transform_first(transform_test),
     batch_size=batch_size, shuffle=False, num_workers=num_workers)
+itl = iter(val_data)
 
 ################################################################
 # Optimizer, Loss and Metric
@@ -253,8 +258,10 @@ for epoch in range(epochs):
         trainer.set_learning_rate(trainer.learning_rate*lr_decay)
         lr_decay_count += 1
 
-    # Loop through each batch of training data
-    for i, batch in enumerate(train_data):
+    # Loop through each batch of training data, here we use `enumerate(itn)` since
+    # itn is the prefetched iter, using `enumerate(train_data)` is also acceptable
+    # but the training process may be a little bit slower.
+    for i, batch in enumerate(itn):
         # Extract data and label
         data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0)
         label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0)
@@ -274,10 +281,15 @@ for epoch in range(epochs):
         # Update metrics
         train_loss += sum([l.sum().asscalar() for l in loss])
         train_metric.update(label, output)
+    else:
+        # here we use an `else` clause to indicate that, we should call iter
+        # immediately after the iter is consumed.
+        itn = iter(train_data)
 
     name, acc = train_metric.get()
     # Evaluate on Validation data
-    name, val_acc = test(ctx, val_data)
+    name, val_acc = test(ctx, itv)
+    itv = iter(val_data)
 
     # Update history and print metrics
     train_history.update([1-acc, 1-val_acc])
