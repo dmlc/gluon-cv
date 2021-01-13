@@ -288,8 +288,8 @@ for epoch in range(epochs):
 
     name, acc = train_metric.get()
     # Evaluate on Validation data
-    name, val_acc = test(ctx, itv)
-    itv = iter(val_data)
+    name, val_acc = test(ctx, itl)
+    itl = iter(val_data)
 
     # Update history and print metrics
     train_history.update([1-acc, 1-val_acc])
