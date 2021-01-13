@@ -1,71 +1,84 @@
 # Action Recognition[1]
 [GluonCV Model Zoo](https://gluon-cv.mxnet.io/model_zoo/action_recognition.html)
 
-## Inference/Calibration Tutorial
-
-### FP32 inference
+If you feel our code or models helps in your research, kindly cite our papers:
 
 ```
-
-export CPUs=`lscpu | grep 'Core(s) per socket' | awk '{print $4}'`
-export OMP_NUM_THREADS=${CPUs}
-export KMP_AFFINITY=granularity=fine,noduplicates,compact,1,0
-
-# dummy data
-python test_recognizer.py --model inceptionv3_ucf101 --use-pretrained --mode hybrid --input-size 299 --new-height 340 --new-width 450 --num-segments 3 --batch-size 64 --benchmark
-
-# real data
-python test_recognizer.py --model inceptionv3_ucf101 --use-pretrained --mode hybrid --input-size 299 --new-height 340 --new-width 450 --num-segments 3 --batch-size 64
+@article{zhu_arxiv2020_comprehensiveVideo,
+  title={A Comprehensive Study of Deep Video Action Recognition},
+  author={Yi Zhu, Xinyu Li, Chunhui Liu, Mohammadreza Zolfaghari, Yuanjun Xiong, Chongruo Wu, Zhi Zhang, Joseph Tighe, R. Manmatha, Mu Li},
+  journal={arXiv preprint arXiv:2012.06567},
+  year={2020}
+}
 ```
 
-### Calibration
+## PyTorch Tutorial
 
-In naive mode, FP32 models are calibrated by using 5 mini-batches of data (32 images per batch). Quantized models will be saved into `./model/`.
-
-```
-# ucf101 dataset
-python test_recognizer.py --model inceptionv3_ucf101 --new-height 340 --new-width 450 --input-size 299 --num-segments 3 --use-pretrained --calibration
-
-# kinetics400 dataset
-python test_recognizer.py --dataset kinetics400 --data-dir path/to/datasets --model resnet18_v1b_kinetics400 --use-pretrained --num-classes 400 --new-height 256 --new-width 340 --input-size 224 --num-segments 7 --calibration
-```
-
-### INT8 Inference
+### [How to train?](https://cv.gluon.ai/build/examples_torch_action_recognition/finetune_custom.html)
 
 ```
-
-export CPUs=`lscpu | grep 'Core(s) per socket' | awk '{print $4}'`
-export OMP_NUM_THREADS=${CPUs}
-export KMP_AFFINITY=granularity=fine,noduplicates,compact,1,0
-
-# dummy data
-python test_recognizer.py --model inceptionv3_ucf101 --mode hybrid --input-size 299 --new-height 340 --new-width 450 --batch-size 64 --num-segments 3 --quantized --benchmark
-
-# real data
-python test_recognizer.py --model inceptionv3_ucf101 --mode hybrid --input-size 299 --new-height 340 --new-width 450 --batch-size 64 --num-segments 3 --quantized
-
-# deploy static model
-python test_recognizer.py --model inceptionv3_ucf101 --deploy --model-prefix ./model/inceptionv3_ucf101-quantized-naive --input-size 299 --new-height 340 --new-width 450 --batch-size 64 --num-segments 3 --benchmark
-
+python train_ddp_pytorch.py --config-file ./configuration/XXX.yaml
 ```
 
-Users are also recommended to bind processes to specific cores via `numactl` for better performance, like below:
+If multi-grid training is needed,
+```
+python train_ddp_shortonly_pytorch.py --config-file ./configuration/XXX.yaml
+```
+Note that we only use short-cycle here because it is stable and applies to a range of models.
+
+
+### [How to evaluate?](https://cv.gluon.ai/build/examples_torch_action_recognition/demo_i3d_kinetics400.html)
 
 ```
-numactl --physcpubind=0-27 --membind=0 python test_recognizer.py ...
+# Change PRETRAINED to True if using our pretraind model zoo
+python test_ddp_pytorch.py --config-file ./configuration/XXX.yaml
 ```
 
-## Performance
-Below results are collected based on Intel(R) VNNI enabled C5.12xlarge with 24 physical cores.
+### [How to extract features?](https://cv.gluon.ai/build/examples_torch_action_recognition/extract_feat.html)
 
-|model | fp32 Top-1 | int8 Top-1 |
-|-- | -- | -- |
-inceptionv3_ucf101          |86.92 | 86.55 |
-vgg16_ucf101                |81.86 | 81.41 |
-resnet18_v1b_kinetics400    |63.29 | 63.14 |
-resnet50_v1b_kinetics400    |68.08 | 68.15 |
-inceptionv3_kinetics400     |67.93 | 67.92 |
+```
+python feat_extract_pytorch.py --config-file ./configuration/XXX.yaml
+```
 
-## References
+### [How to get speed measurement?](https://cv.gluon.ai/build/examples_torch_action_recognition/speed.html)
 
-1. Limin Wang, Yuanjun Xiong, Zhe Wang and Yu Qiao. “Towards Good Practices for Very Deep Two-Stream ConvNets.” arXiv preprint arXiv:1507.02159, 2015.
+```
+python get_flops.py --config-file ./configuration/XXX.yaml
+python get_fps.py --config-file ./configuration/XXX.yaml
+```
+
+
+## MXNet Tutorial
+
+
+### [How to train?](https://cv.gluon.ai/build/examples_action_recognition/dive_deep_i3d_kinetics400.html)
+MXNet codebase adopts argparser, hence requiring many arguments. Please check [model zoo page](https://cv.gluon.ai/model_zoo/action_recognition.html) for detailed training command.
+
+```
+python train_recognizer.py
+```
+
+### [How to evaluate?](https://cv.gluon.ai/build/examples_action_recognition/demo_i3d_kinetics400.html)
+
+```
+python test_recognizer.py
+```
+
+### [How to extract features?](https://cv.gluon.ai/build/examples_action_recognition/feat_custom.html)
+
+```
+python feat_extract.py
+```
+
+### [How to do inference on your own video?](https://cv.gluon.ai/build/examples_action_recognition/demo_custom.html)
+
+```
+python inference.py
+```
+
+## MXNet calibration
+Please check out [CALIBRATION.md](https://raw.githubusercontent.com/dmlc/gluon-cv/master/scripts/action-recognition/CALIBRATION.md) for more information on INT8 model calibration and inference.
+
+## Reproducing our arXiv survey paper
+
+Please check out [ARXIV.md](https://raw.githubusercontent.com/dmlc/gluon-cv/master/scripts/action-recognition/ARXIV.md) for more information on how to get the same dataset and how to reproduce all the methods in our model zoo.

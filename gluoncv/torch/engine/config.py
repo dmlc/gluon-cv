@@ -45,6 +45,10 @@ _C.CONFIG.TRAIN.BATCH_SIZE = 8
 _C.CONFIG.TRAIN.LR = 0.01
 # Momentum.
 _C.CONFIG.TRAIN.MOMENTUM = 0.9
+# Adam Beta 2
+_C.CONFIG.TRAIN.ADAM_BETA2 = 0.98
+# Adam eps
+_C.CONFIG.TRAIN.ADAM_EPS = 1.5e-09
 # L2 regularization.
 _C.CONFIG.TRAIN.W_DECAY = 1e-4
 # Learning rate policy
@@ -115,7 +119,7 @@ _C.CONFIG.DATA.SHORT_SIDE_SIZE = 256
 _C.CONFIG.DATA.NEW_HEIGHT = 256
 # Pre-defined width for resizing input video frames.
 _C.CONFIG.DATA.NEW_WIDTH = 340
-
+_C.CONFIG.DATA.NUM_WORKERS = 0
 
 _C.CONFIG.MODEL = CN(new_allowed=True)
 # Model architecture. You can find available models in the model zoo.
@@ -152,6 +156,19 @@ _C.CONFIG.LOG.SAVE_FREQ = 1
 # Display the training log after every this number of iterations
 _C.CONFIG.LOG.DISPLAY_FREQ = 1
 
+
+# ---------------------------------------------------------------------------- #
+# Video-Language: COOT CONFIG
+# ---------------------------------------------------------------------------- #
+
+_C.CONFIG.COOT_DATA = CN(new_allowed=True)
+_C.CONFIG.COOT_MODEL = CN(new_allowed=True)
+_C.CONFIG.COOT_MODEL.MODEL_CONFIG = CN(new_allowed=True)
+_C.CONFIG.COOT_MODEL.MODEL_CONFIG.VIDEO_POOLER = CN(new_allowed=True)
+_C.CONFIG.COOT_MODEL.MODEL_CONFIG.VIDEO_SEQUENCER = CN(new_allowed=True)
+_C.CONFIG.COOT_MODEL.MODEL_CONFIG.TEXT_POOLER = CN(new_allowed=True)
+_C.CONFIG.COOT_MODEL.MODEL_CONFIG.TEXT_SEQUENCER = CN(new_allowed=True)
+_C.CONFIG.COOT_MODEL.MODEL_CONFIG.TEXT_ENCODER = CN(new_allowed=True)
 
 def get_cfg_defaults():
     """Get a yacs CfgNode object with default values for your project."""

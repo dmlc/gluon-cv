@@ -9,7 +9,7 @@ __all__ = ['resnet18_v1b_sthsthv2', 'resnet34_v1b_sthsthv2', 'resnet50_v1b_sthst
            'resnet101_v1b_sthsthv2', 'resnet152_v1b_sthsthv2', 'resnet18_v1b_kinetics400',
            'resnet34_v1b_kinetics400', 'resnet50_v1b_kinetics400', 'resnet101_v1b_kinetics400',
            'resnet152_v1b_kinetics400', 'resnet50_v1b_ucf101', 'resnet50_v1b_hmdb51',
-           'resnet50_v1b_custom']
+           'resnet50_v1b_custom', 'resnet18_v1b_custom']
 
 class ActionRecResNetV1b(HybridBlock):
     r"""ResNet models for video action recognition
@@ -688,6 +688,60 @@ def resnet50_v1b_custom(nclass=400, pretrained=False, pretrained_base=True,
     if use_kinetics_pretrain and not pretrained:
         from gluoncv.model_zoo import get_model
         kinetics_model = get_model('resnet50_v1b_kinetics400', nclass=400, pretrained=True)
+        source_params = kinetics_model.collect_params()
+        target_params = model.collect_params()
+        assert len(source_params.keys()) == len(target_params.keys())
+
+        pretrained_weights = []
+        for layer_name in source_params.keys():
+            pretrained_weights.append(source_params[layer_name].data())
+
+        for i, layer_name in enumerate(target_params.keys()):
+            if i + 2 == len(source_params.keys()):
+                # skip the last dense layer
+                break
+            target_params[layer_name].set_data(pretrained_weights[i])
+    model.collect_params().reset_ctx(ctx)
+    return model
+
+def resnet18_v1b_custom(nclass=400, pretrained=False, pretrained_base=True,
+                        use_tsn=False, partial_bn=False, use_kinetics_pretrain=True,
+                        num_segments=1, num_crop=1, root='~/.mxnet/models',
+                        ctx=mx.cpu(), **kwargs):
+    r"""ResNet18 model trained on Kinetics400 dataset.
+
+    Parameters
+    ----------
+    nclass : int.
+        Number of categories in the dataset.
+    pretrained : bool or str.
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True.
+        Load pretrained base network, the extra layers are randomized. Note that
+        if pretrained is `True`, this has no effect.
+    ctx : Context, default CPU.
+        The context in which to load the pretrained weights.
+    root : str, default $MXNET_HOME/models
+        Location for keeping the model parameters.
+    num_segments : int, default is 1.
+        Number of segments used to evenly divide a video.
+    num_crop : int, default is 1.
+        Number of crops used during evaluation, choices are 1, 3 or 10.
+    partial_bn : bool, default False.
+        Freeze all batch normalization layers during training except the first layer.
+    """
+    model = ActionRecResNetV1b(depth=18,
+                               nclass=nclass,
+                               partial_bn=partial_bn,
+                               num_segments=num_segments,
+                               num_crop=num_crop,
+                               dropout_ratio=0.5,
+                               init_std=0.01)
+
+    if use_kinetics_pretrain and not pretrained:
+        from gluoncv.model_zoo import get_model
+        kinetics_model = get_model('resnet18_v1b_kinetics400', nclass=400, pretrained=True)
         source_params = kinetics_model.collect_params()
         target_params = model.collect_params()
         assert len(source_params.keys()) == len(target_params.keys())

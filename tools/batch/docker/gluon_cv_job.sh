@@ -22,8 +22,10 @@ git fetch origin $SOURCE_REF:working
 git checkout working
 if [ $DEVICE == "cpu" ]; then
 	python3 -m pip install -U --quiet "mxnet==1.7.0.post1"
+    python3 -m pip install -U --quiet torch==1.6.0+cpu torchvision==0.7.0+cpu
 else
 	python3 -m pip install -U --quiet "mxnet-cu102==1.7.0"
+    python3 -m pip install -U --quiet torch==1.6.0 torchvision==0.7.0
 fi;
 
 python3 -m pip install --quiet -e .

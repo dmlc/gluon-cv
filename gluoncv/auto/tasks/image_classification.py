@@ -28,7 +28,7 @@ __all__ = ['ImageClassification']
 
 @dataclass
 class LiteConfig:
-    model : Union[str, ag.Space] = ag.Categorical('resnet18_v1b', 'mobilenetv3_small')
+    model : Union[str, ag.Space, type(None)] = ag.Categorical('resnet18_v1b', 'mobilenetv3_small')
     lr : Union[ag.Space, float] = 1e-2
     num_trials : int = 1
     epochs : Union[ag.Space, int] = 5
@@ -37,7 +37,7 @@ class LiteConfig:
     ngpus_per_trial : int = 0
     time_limits : int = 7 * 24 * 60 * 60  # 7 days
     search_strategy : str = 'random'
-    dist_ip_addrs : Union[None, list, Tuple] = None
+    dist_ip_addrs : Union[type(None), list, Tuple] = None
 
 @dataclass
 class DefaultConfig:
@@ -50,7 +50,7 @@ class DefaultConfig:
     ngpus_per_trial : int = 8
     time_limits : int = 7 * 24 * 60 * 60  # 7 days
     search_strategy : str = 'random'
-    dist_ip_addrs : Union[None, list, Tuple] = None
+    dist_ip_addrs : Union[type(None), list, Tuple] = None
 
 @ag.args()
 def _train_image_classification(args, reporter):

@@ -39,3 +39,4 @@ from .hrnet import *
 from .siamrpn import *
 from .fastscnn import *
 from .monodepthv2 import *
+from .smot import *

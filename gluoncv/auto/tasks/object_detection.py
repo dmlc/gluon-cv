@@ -27,7 +27,7 @@ __all__ = ['ObjectDetection']
 
 @dataclass
 class LiteConfig:
-    transfer : Union[None, str, ag.Space] = ag.Categorical('ssd_512_mobilenet1.0_coco', 'yolo3_mobilenet1.0_coco')
+    transfer : Union[type(None), str, ag.Space] = ag.Categorical('ssd_512_mobilenet1.0_coco', 'yolo3_mobilenet1.0_coco')
     lr : Union[ag.Space, float] = 1e-3
     num_trials : int = 1
     epochs : Union[ag.Space, int] = 5
@@ -39,8 +39,8 @@ class LiteConfig:
 
 @dataclass
 class DefaultConfig:
-    transfer : Union[None, ag.Space, str] = ag.Categorical('ssd_512_resnet50_v1_coco', 'yolo3_darknet53_coco',
-                                                           'faster_rcnn_resnet50_v1b_coco', 'center_net_resnet50_v1b_coco')
+    transfer : Union[type(None), ag.Space, str] = ag.Categorical('ssd_512_resnet50_v1_coco', 'yolo3_darknet53_coco',
+                                                                 'faster_rcnn_resnet50_v1b_coco', 'center_net_resnet50_v1b_coco')
     lr : Union[ag.Space, float] = ag.Categorical(1e-3, 5e-3)
     num_trials : int = 3
     epochs : Union[ag.Space, int] = 10
@@ -48,7 +48,7 @@ class DefaultConfig:
     ngpus_per_trial : int = 8
     time_limits : int = 7 * 24 * 60 * 60  # 7 days
     search_strategy : str = 'random'
-    dist_ip_addrs : Union[None, list, Tuple] = None
+    dist_ip_addrs : Union[type(None), list, Tuple] = None
 
 
 @ag.args()
