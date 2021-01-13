@@ -217,6 +217,11 @@ class ObjectDetection(BaseTask):
 
         # scheduler options
         self.search_strategy = config.get('search_strategy', 'random')
+        self.search_options = config.get('search_options', None)
+        if self.search_options:
+            self.search_options.update({'debug_log': True})
+        else:
+            self.search_options = {'debug_log': True}
         self.scheduler_options = {
             'resource': {'num_cpus': nthreads_per_trial, 'num_gpus': ngpus_per_trial},
             'checkpoint': config.get('checkpoint', 'checkpoint/exp1.ag'),
@@ -228,7 +233,7 @@ class ObjectDetection(BaseTask):
             'reward_attr': 'map_reward',
             'dist_ip_addrs': config.get('dist_ip_addrs', None),
             'searcher': self.search_strategy,
-            'search_options': config.get('search_options', None)}
+            'search_options': self.search_options}
         if self.search_strategy == 'hyperband':
             self.scheduler_options.update({
                 'searcher': 'random',
