@@ -4,6 +4,8 @@ from torch import nn
 from torch.nn.modules.utils import _pair
 from torchvision.ops import deform_conv2d
 
+__all__ = ['DeformConvWithChangeableStride']
+
 
 class _NewEmptyTensorOp(torch.autograd.Function):
     @staticmethod
@@ -47,6 +49,8 @@ class DeformConvWithChangeableStride(nn.Module):
         self.dilation = _pair(dilation)
         self.groups = groups
         self.deformable_groups = deformable_groups
+        # TODO(zhreshold): torchvision version of deform_conv limitation
+        assert self.deformable_groups == 1, "deformable_groups can only be 1 at this time"
         self.norm = norm
         self.activation = activation
 
@@ -85,8 +89,6 @@ class DeformConvWithChangeableStride(nn.Module):
             stride,
             self.padding,
             self.dilation,
-            self.groups,
-            self.deformable_groups,
         )
         if self.norm is not None:
             x = self.norm(x)

@@ -1,3 +1,4 @@
+"""Directpose implementation"""
 import math
 from typing import List, Dict
 import torch
@@ -6,16 +7,17 @@ from torch.nn import functional as F
 from torch.autograd import Variable
 import numpy as np
 
-from detectron2.layers import ShapeSpec, NaiveSyncBatchNorm
-from detectron2.modeling.proposal_generator.build import PROPOSAL_GENERATOR_REGISTRY
+from ...utils.comm import compute_locations
+from ...nn.shape_spec import ShapeSpec
+from ...nn.batch_norm import NaiveSyncBatchNorm
+from ...nn.deform_conv import DeformConvWithChangeableStride
+from ...nn.group_norm import NaiveGroupNorm
+from .directpose_outputs import DirectPoseOutputs
 
-from adet.layers import NaiveGroupNorm, DeformConvWithChangeableStride
-from adet.utils.comm import compute_locations
-from .directpose_outputs import DIRECTPOSEOutputs
-
-__all__ = ["DIRECTPOSE"]
+__all__ = ["DirectPose"]
 
 INF = 100000000
+
 
 class Scale(nn.Module):
     def __init__(self, init_value=1.0):
@@ -67,8 +69,7 @@ class Predictor(nn.Module):
         return predictor_offsets
 
 
-@PROPOSAL_GENERATOR_REGISTRY.register()
-class DIRECTPOSE(nn.Module):
+class DirectPose(nn.Module):
     """
     Implement DirectPose.
     """
