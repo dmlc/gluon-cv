@@ -28,7 +28,7 @@ __all__ = ['ImageClassification']
 
 @dataclass
 class LiteConfig:
-    model : Union[str, ag.Space, type(None)] = ag.Categorical('resnet18_v1b', 'mobilenetv3_small')
+    model : Union[type(None), str, ag.Space] = ag.Categorical('resnet18_v1b', 'mobilenetv3_small')
     lr : Union[ag.Space, float] = 1e-2
     num_trials : int = 1
     epochs : Union[ag.Space, int] = 5
@@ -41,7 +41,7 @@ class LiteConfig:
 
 @dataclass
 class DefaultConfig:
-    model : Union[ag.Space, str] = ag.Categorical('resnet50_v1b', 'resnest50')
+    model : Union[type(None), str, ag.Space] = ag.Categorical('resnet50_v1b', 'resnest50')
     lr : Union[ag.Space, float] = ag.Categorical(1e-2, 5e-2)
     num_trials : int = 3
     epochs : Union[ag.Space, int] = 15

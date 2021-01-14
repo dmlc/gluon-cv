@@ -35,11 +35,11 @@ class LiteConfig:
     ngpus_per_trial : int = 0
     time_limits : int = 7 * 24 * 60 * 60  # 7 days
     search_strategy : str = 'random'
-    dist_ip_addrs : Union[None, list, Tuple] = None
+    dist_ip_addrs : Union[type(None), list, Tuple] = None
 
 @dataclass
 class DefaultConfig:
-    transfer : Union[type(None), ag.Space, str] = ag.Categorical('ssd_512_resnet50_v1_coco', 'yolo3_darknet53_coco',
+    transfer : Union[type(None), str, ag.Space] = ag.Categorical('ssd_512_resnet50_v1_coco', 'yolo3_darknet53_coco',
                                                                  'faster_rcnn_resnet50_v1b_coco', 'center_net_resnet50_v1b_coco')
     lr : Union[ag.Space, float] = ag.Categorical(1e-3, 5e-3)
     num_trials : int = 3
