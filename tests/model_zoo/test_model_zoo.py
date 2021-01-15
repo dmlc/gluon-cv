@@ -143,7 +143,7 @@ def test_imagenet_models():
               'mobilenetv3_large', 'mobilenetv3_small',
             #   'densenet121', 'densenet161', 'densenet169', 'densenet201',
               'darknet53',
-            #   'alexnet', 'googlenet',
+              'alexnet',
             #   'vgg11', 'vgg11_bn', 'vgg13', 'vgg13_bn',
             #   'vgg16', 'vgg16_bn', 'vgg19', 'vgg19_bn',
               'residualattentionnet56', 'residualattentionnet92',

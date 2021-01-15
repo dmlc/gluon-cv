@@ -22,7 +22,7 @@ from .se_resnet import *
 # from .action_recognition import *
 # from .wideresnet import *
 
-# from .alexnet import *
+from .alexnet import *
 # from .densenet import *
 # from .googlenet import *
 # from .inception import *
