@@ -23,7 +23,7 @@ from .se_resnet import *
 # from .wideresnet import *
 
 from .alexnet import *
-# from .densenet import *
+from .densenet import *
 from .googlenet import *
 # from .inception import *
 # from .xception import *
