@@ -168,7 +168,7 @@ class FasterRCNN(RCNN):
             box_features=box_features, short=short, max_size=max_size,
             train_patterns=train_patterns, nms_thresh=nms_thresh, nms_topk=nms_topk, post_nms=post_nms,
             roi_mode=roi_mode, roi_size=roi_size, strides=strides, clip=clip, force_nms=force_nms,
-            **kwargs)
+            minimal_opset=minimal_opset, **kwargs)
         if max_stage - min_stage > 1 and isinstance(strides, (int, float)):
             raise ValueError('Multi level detected but strides is of a single number:', strides)
 
@@ -203,7 +203,8 @@ class FasterRCNN(RCNN):
                 clip=clip, nms_thresh=rpn_nms_thresh, train_pre_nms=rpn_train_pre_nms,
                 train_post_nms=rpn_train_post_nms, test_pre_nms=rpn_test_pre_nms,
                 test_post_nms=rpn_test_post_nms, min_size=rpn_min_size,
-                multi_level=self.num_stages > 1, per_level_nms=False)
+                multi_level=self.num_stages > 1, per_level_nms=False,
+                minimal_opset=minimal_opset)
             self.sampler = RCNNTargetSampler(num_image=self._batch_size,
                                              num_proposal=rpn_train_post_nms, num_sample=num_sample,
                                              pos_iou_thresh=pos_iou_thresh, pos_ratio=pos_ratio,

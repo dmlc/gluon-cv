@@ -59,13 +59,17 @@ class RPN(gluon.HybridBlock):
         Whether to use multiple feature maps for RPN. eg. FPN.
     per_level_nms : boollean, default is False
         Whether to apply nms on each level's rois instead of applying nms after aggregation.
-
+    minimal_opset : bool, default is `False`
+        We sometimes add special operators to accelerate training/inference, however, for exporting
+        to third party compilers we want to utilize most widely used operators.
+        If `minimal_opset` is `True`, the network will use a minimal set of operators good
+        for e.g., `TVM`.
     """
 
     def __init__(self, channels, strides, base_size, scales, ratios, alloc_size,
                  clip, nms_thresh, train_pre_nms, train_post_nms,
                  test_pre_nms, test_post_nms, min_size, multi_level=False, per_level_nms=False,
-                 **kwargs):
+                 minimal_opset=False, **kwargs):
         super(RPN, self).__init__(**kwargs)
         self._nms_thresh = nms_thresh
         self._multi_level = multi_level
@@ -99,7 +103,7 @@ class RPN(gluon.HybridBlock):
                 self.loc = nn.Conv2D(anchor_depth * 4, 1, 1, 0,
                                      weight_initializer=weight_initializer)
 
-            self.region_proposer = RPNProposal(clip, min_size, stds=(1., 1., 1., 1.))
+            self.region_proposer = RPNProposal(clip, min_size, stds=(1.0, 1.0, 1.0, 1.0), minimal_opset=minimal_opset)
 
     # pylint: disable=arguments-differ
     def hybrid_forward(self, F, img, *x):
