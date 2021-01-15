@@ -12,7 +12,7 @@ from .cifarwideresnet import *
 # from .dla import *
 # from .rcnn.faster_rcnn import *
 # from .fcn import *
-# from .googlenet import *
+from .googlenet import *
 # from .inception import *
 # from .rcnn.mask_rcnn import *
 from .mobilenet import *
@@ -88,7 +88,7 @@ _models = {
     # 'densenet201': densenet201,
     'squeezenet1.0': squeezenet1_0,
     'squeezenet1.1': squeezenet1_1,
-    # 'googlenet': googlenet,
+    'googlenet': googlenet,
     # 'inceptionv3': inception_v3,
     # 'xception': get_xcetption,
     # 'xception71': get_xcetption_71,

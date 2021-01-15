@@ -24,7 +24,7 @@ from .se_resnet import *
 
 from .alexnet import *
 # from .densenet import *
-# from .googlenet import *
+from .googlenet import *
 # from .inception import *
 # from .xception import *
 from .resnet import *
