@@ -24,12 +24,16 @@ __all__ = ['VGG',
            'vgg11_bn', 'vgg13_bn', 'vgg16_bn', 'vgg19_bn',
            'get_vgg']
 
+import mxnet as mx
 from mxnet.context import cpu
 from mxnet.initializer import Xavier
 from mxnet.gluon.block import HybridBlock
 from mxnet.gluon import nn
+from mxnet import use_np
+mx.npx.set_np()
 
 
+@use_np
 class VGG(HybridBlock):
     r"""VGG model from the `"Very Deep Convolutional Networks for Large-Scale Image Recognition"
     <https://arxiv.org/abs/1409.1556>`_ paper.
@@ -48,22 +52,21 @@ class VGG(HybridBlock):
     def __init__(self, layers, filters, classes=1000, batch_norm=False, **kwargs):
         super(VGG, self).__init__(**kwargs)
         assert len(layers) == len(filters)
-        with self.name_scope():
-            self.features = self._make_features(layers, filters, batch_norm)
-            self.features.add(nn.Dense(4096, activation='relu',
-                                       weight_initializer='normal',
-                                       bias_initializer='zeros'))
-            self.features.add(nn.Dropout(rate=0.5))
-            self.features.add(nn.Dense(4096, activation='relu',
-                                       weight_initializer='normal',
-                                       bias_initializer='zeros'))
-            self.features.add(nn.Dropout(rate=0.5))
-            self.output = nn.Dense(classes,
+        self.features = self._make_features(layers, filters, batch_norm)
+        self.features.add(nn.Dense(4096, activation='relu',
                                    weight_initializer='normal',
-                                   bias_initializer='zeros')
+                                   bias_initializer='zeros'))
+        self.features.add(nn.Dropout(rate=0.5))
+        self.features.add(nn.Dense(4096, activation='relu',
+                                   weight_initializer='normal',
+                                   bias_initializer='zeros'))
+        self.features.add(nn.Dropout(rate=0.5))
+        self.output = nn.Dense(classes,
+                               weight_initializer='normal',
+                               bias_initializer='zeros')
 
     def _make_features(self, layers, filters, batch_norm):
-        featurizer = nn.HybridSequential(prefix='')
+        featurizer = nn.HybridSequential()
         for i, num in enumerate(layers):
             for _ in range(num):
                 featurizer.add(nn.Conv2D(filters[i], kernel_size=3, padding=1,
@@ -77,7 +80,7 @@ class VGG(HybridBlock):
             featurizer.add(nn.MaxPool2D(strides=2))
         return featurizer
 
-    def hybrid_forward(self, F, x):
+    def forward(self, x):
         x = self.features(x)
         x = self.output(x)
         return x
