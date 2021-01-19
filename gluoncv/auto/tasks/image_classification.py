@@ -3,7 +3,6 @@
 import time
 import copy
 import logging
-import uuid
 import pprint
 import json
 import pickle
@@ -84,7 +83,8 @@ def _train_image_classification(args, reporter):
         trial_log.update(result)
         json_str = json.dumps(trial_log)
         time_str = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
-        with open(task + '_dataset-' + dataset + '_trials-' + str(num_trials) + '_' + time_str + '.json', 'w') as json_file:
+        with open(task + '_dataset-' + dataset + '_trials-' + str(num_trials) + '_' + time_str + '.json', 'w') \
+                as json_file:
             json_file.write(json_str)
         logging.info('Config and result in this trial have been saved.')
     # pylint: disable=bare-except

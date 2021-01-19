@@ -3,7 +3,6 @@
 import time
 import copy
 import logging
-import uuid
 import pprint
 import json
 import pickle
@@ -39,8 +38,10 @@ class LiteConfig:
 
 @dataclass
 class DefaultConfig:
-    transfer : Union[type(None), str, ag.Space] = ag.Categorical('ssd_512_resnet50_v1_coco', 'yolo3_darknet53_coco',
-                                                                 'faster_rcnn_resnet50_v1b_coco', 'center_net_resnet50_v1b_coco')
+    transfer : Union[type(None), str, ag.Space] = ag.Categorical('ssd_512_resnet50_v1_coco',
+                                                                 'yolo3_darknet53_coco',
+                                                                 'faster_rcnn_resnet50_v1b_coco',
+                                                                 'center_net_resnet50_v1b_coco')
     lr : Union[ag.Space, float] = ag.Categorical(1e-3, 5e-3)
     num_trials : int = 3
     epochs : Union[ag.Space, int] = 10
@@ -109,7 +110,8 @@ def _train_object_detection(args, reporter):
         trial_log.update(result)
         json_str = json.dumps(trial_log)
         time_str = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
-        with open(task + '_dataset-' + dataset + '_trials-' + str(num_trials) + '_' + time_str + '.json', 'w') as json_file:
+        with open(task + '_dataset-' + dataset + '_trials-' + str(num_trials) + '_' + time_str + '.json', 'w') \
+                as json_file:
             json_file.write(json_str)
         logging.info('Config and result in this trial have been saved.')
     # pylint: disable=bare-except
@@ -196,11 +198,12 @@ class ObjectDetection(BaseTask):
             valid_transfer = []
             for e in estimator:
                 for t in transfer:
-                    if e in t: valid_transfer.append(t)
+                    if e in t:
+                        valid_transfer.append(t)
 
             if not valid_transfer:
                 raise ValueError(f'No matching `transfer` model for {estimator}')
-            elif len(valid_transfer) == 1:
+            if len(valid_transfer) == 1:
                 config['transfer'] = valid_transfer[0]
             else:
                 config['transfer'] = ag.Categorical(*valid_transfer)
