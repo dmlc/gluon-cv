@@ -92,9 +92,12 @@ def _train_object_detection(args, reporter):
     # train, val data
     train_data = args.pop('train_data')
     val_data = args.pop('val_data')
-    task = args.pop('task')
-    dataset = args.pop('dataset')
-    num_trials = args.pop('num_trials')
+    try:
+        task = args.pop('task')
+        dataset = args.pop('dataset')
+        num_trials = args.pop('num_trials')
+    except AttributeError:
+        task = None
     # convert user defined config to nested form
     args = config_to_nested(args)
 
@@ -105,15 +108,16 @@ def _train_object_detection(args, reporter):
         # training
         result = estimator.fit(train_data=train_data, val_data=val_data)
         # save config and result
-        trial_log = {}
-        trial_log.update(args)
-        trial_log.update(result)
-        json_str = json.dumps(trial_log)
-        time_str = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
-        with open(task + '_dataset-' + dataset + '_trials-' + str(num_trials) + '_' + time_str + '.json', 'w') \
-                as json_file:
-            json_file.write(json_str)
-        logging.info('Config and result in this trial have been saved.')
+        if task is not None:
+            trial_log = {}
+            trial_log.update(args)
+            trial_log.update(result)
+            json_str = json.dumps(trial_log)
+            time_str = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
+            json_file_name = task + '_dataset-' + dataset + '_trials-' + str(num_trials) + '_' + time_str + '.json'
+            with open(json_file_name, 'w') as json_file:
+                json_file.write(json_str)
+            logging.info(f'Config and result in this trial have been saved to {json_file_name}.')
     # pylint: disable=bare-except
     except:
         import traceback
