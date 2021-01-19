@@ -66,7 +66,7 @@ def _train_image_classification(args, reporter):
         dataset = args.pop('dataset')
         num_trials = args.pop('num_trials')
     except AttributeError:
-        task
+        task = None
     # convert user defined config to nested form
     args = config_to_nested(args)
 
@@ -90,7 +90,7 @@ def _train_image_classification(args, reporter):
             json_file_name = task + '_dataset-' + dataset + '_trials-' + str(num_trials) + '_' + time_str + '.json'
             with open(json_file_name, 'w') as json_file:
                 json_file.write(json_str)
-            logging.info(f'Config and result in this trial have been saved to {json_file_name}.')
+            logging.info('Config and result in this trial have been saved to %s.', json_file_name)
     # pylint: disable=bare-except
     except:
         import traceback
