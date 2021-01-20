@@ -7,7 +7,7 @@ from autocfg import dataclass, field
 @dataclass
 class YOLOv3:
     # Base network name which serves as feature extraction base.
-    backbone : str = 'darknet53'
+    base_network : str = 'darknet53'
     # List of convolution layer channels which is going to be appended to the
     # base network feature extractor. If `name` is `None`, this is ignored.
     filters : Union[Tuple, list] = (512, 256, 128)

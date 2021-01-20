@@ -5,8 +5,8 @@ from autocfg import dataclass, field
 
 @dataclass
 class FasterRCNN:
-    # Backbone network.
-    backbone : str = 'resnet50_v1b'  # base feature network
+    # Base network name which serves as feature extraction base.
+    base_network : str = 'resnet50_v1b'  # base feature network
     # Final R-CNN non-maximum suppression threshold. You can specify < 0 or > 1 to disable NMS.
     nms_thresh : float = 0.5
     # Apply R-CNN NMS to top k detection results, use -1 to disable so that every Detection

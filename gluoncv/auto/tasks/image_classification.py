@@ -1,9 +1,10 @@
 """Auto pipeline for image classification task"""
 # pylint: disable=bad-whitespace,missing-class-docstring
-import logging
-import copy
 import time
+import copy
+import logging
 import pprint
+import json
 import pickle
 from typing import Union, Tuple
 
@@ -26,28 +27,28 @@ __all__ = ['ImageClassification']
 
 @dataclass
 class LiteConfig:
-    model : Union[str, ag.Space, type(None)] = ag.Categorical('resnet18_v1b', 'mobilenetv3_small')
+    model : Union[type(None), str, ag.Space] = ag.Categorical('resnet18_v1b', 'mobilenetv3_small')
     lr : Union[ag.Space, float] = 1e-2
     num_trials : int = 1
     epochs : Union[ag.Space, int] = 5
-    batch_size : Union[ag.Space, int] = 8
+    batch_size : Union[ag.Space, int] = 3  # 2 ** 3 == 8
     nthreads_per_trial : int = 32
     ngpus_per_trial : int = 0
-    time_limits : int = 3600
-    search_strategy : Union[str, ag.Space] = 'random'
+    time_limits : int = 7 * 24 * 60 * 60  # 7 days
+    search_strategy : str = 'random'
     dist_ip_addrs : Union[type(None), list, Tuple] = None
 
 @dataclass
 class DefaultConfig:
-    model : Union[ag.Space, str] = ag.Categorical('resnet50_v1b', 'resnest50')
+    model : Union[type(None), str, ag.Space] = ag.Categorical('resnet50_v1b', 'resnest50')
     lr : Union[ag.Space, float] = ag.Categorical(1e-2, 5e-2)
     num_trials : int = 3
     epochs : Union[ag.Space, int] = 15
-    batch_size : Union[ag.Space, int] = 16
+    batch_size : Union[ag.Space, int] = 4  # 2 ** 4 = 16
     nthreads_per_trial : int = 128
     ngpus_per_trial : int = 8
-    time_limits : int = 3600
-    search_strategy : Union[str, ag.Space] = 'random'
+    time_limits : int = 7 * 24 * 60 * 60  # 7 days
+    search_strategy : str = 'random'
     dist_ip_addrs : Union[type(None), list, Tuple] = None
 
 @ag.args()
@@ -60,6 +61,12 @@ def _train_image_classification(args, reporter):
     # train, val data
     train_data = args.pop('train_data')
     val_data = args.pop('val_data')
+    try:
+        task = args.pop('task')
+        dataset = args.pop('dataset')
+        num_trials = args.pop('num_trials')
+    except AttributeError:
+        task = None
     # convert user defined config to nested form
     args = config_to_nested(args)
 
@@ -73,6 +80,17 @@ def _train_image_classification(args, reporter):
                                   net=custom_net, optimizer=custom_optimizer)
         # training
         result = estimator.fit(train_data=train_data, val_data=val_data)
+        # save config and result
+        if task is not None:
+            trial_log = {}
+            trial_log.update(args)
+            trial_log.update(result)
+            json_str = json.dumps(trial_log)
+            time_str = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
+            json_file_name = task + '_dataset-' + dataset + '_trials-' + str(num_trials) + '_' + time_str + '.json'
+            with open(json_file_name, 'w') as json_file:
+                json_file.write(json_str)
+            logging.info('Config and result in this trial have been saved to %s.', json_file_name)
     # pylint: disable=bare-except
     except:
         import traceback
@@ -149,15 +167,20 @@ class ImageClassification(BaseTask):
         # additional configs
         config['num_workers'] = nthreads_per_trial
         config['gpus'] = [int(i) for i in range(ngpus_per_trial)]
-        if config['gpus']:
-            config['batch_size'] = config.get('batch_size', 8) * len(config['gpus'])
-            self._logger.info('Increase batch size to %d based on the number of gpus %d',
-                              config['batch_size'], len(config['gpus']))
+        # if config['gpus']:
+        #     config['batch_size'] = config.get('batch_size', 8) * len(config['gpus'])
+        #     self._logger.info('Increase batch size to %d based on the number of gpus %d',
+        #                       config['batch_size'], len(config['gpus']))
         config['seed'] = config.get('seed', np.random.randint(32,767))
         self._config = config
 
         # scheduler options
         self.search_strategy = config.get('search_strategy', 'random')
+        self.search_options = config.get('search_options', None)
+        if self.search_options:
+            self.search_options.update({'debug_log': True})
+        else:
+            self.search_options = {'debug_log': True}
         self.scheduler_options = {
             'resource': {'num_cpus': nthreads_per_trial, 'num_gpus': ngpus_per_trial},
             'checkpoint': config.get('checkpoint', 'checkpoint/exp1.ag'),
@@ -169,10 +192,15 @@ class ImageClassification(BaseTask):
             'reward_attr': 'acc_reward',
             'dist_ip_addrs': config.get('dist_ip_addrs', None),
             'searcher': self.search_strategy,
-            'search_options': config.get('search_options', None)}
+            'search_options': self.search_options}
         if self.search_strategy == 'hyperband':
             self.scheduler_options.update({
                 'searcher': 'random',
+                'max_t': config.get('epochs', 50),
+                'grace_period': config.get('grace_period', config.get('epochs', 50) // 4)})
+        elif self.search_strategy == 'bayesopt_hyperband':
+            self.scheduler_options.update({
+                'searcher': 'bayesopt',
                 'max_t': config.get('epochs', 50),
                 'grace_period': config.get('grace_period', config.get('epochs', 50) // 4)})
 
@@ -215,9 +243,29 @@ class ImageClassification(BaseTask):
             train_data, val_data = train, val
 
         # automatically suggest some hyperparameters based on the dataset statistics(experimental)
+        # estimator = self._config.get('estimator', None)
+        # if estimator is None:
+        #     estimator = [ImageClassificationEstimator]
+        # elif isinstance(estimator, (tuple, list)):
+        #     pass
+        # else:
+        #     assert issubclass(estimator, BaseEstimator)
+        #     estimator = [estimator]
+        # self._config['estimator'] = ag.Categorical(*estimator)
+
         estimator = self._config.get('estimator', None)
         if estimator is None:
             estimator = [ImageClassificationEstimator]
+        else:
+            if isinstance(estimator, ag.Space):
+                estimator = estimator.data
+            elif isinstance(estimator, str):
+                estimator = [estimator]
+            for i, e in enumerate(estimator):
+                if e == 'img_cls':
+                    estimator[i] = ImageClassificationEstimator
+                else:
+                    estimator.pop(e)
         self._config['estimator'] = ag.Categorical(*estimator)
 
         # register args

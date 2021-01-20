@@ -3,8 +3,9 @@
 import time
 import copy
 import logging
-import pickle
 import pprint
+import json
+import pickle
 from typing import Union, Tuple
 
 from autocfg import dataclass
@@ -25,26 +26,29 @@ __all__ = ['ObjectDetection']
 
 @dataclass
 class LiteConfig:
-    transfer : Union[str, ag.Space, type(None)] = ag.Categorical('ssd_512_mobilenet1.0_coco', 'yolo3_mobilenet1.0_coco')
+    transfer : Union[type(None), str, ag.Space] = ag.Categorical('ssd_512_mobilenet1.0_coco', 'yolo3_mobilenet1.0_coco')
     lr : Union[ag.Space, float] = 1e-3
     num_trials : int = 1
     epochs : Union[ag.Space, int] = 5
     nthreads_per_trial : int = 32
     ngpus_per_trial : int = 0
-    time_limits : int = 3600
-    search_strategy : Union[str, ag.Space] = 'random'
+    time_limits : int = 7 * 24 * 60 * 60  # 7 days
+    search_strategy : str = 'random'
     dist_ip_addrs : Union[type(None), list, Tuple] = None
 
 @dataclass
 class DefaultConfig:
-    transfer : Union[ag.Space, str, type(None)] = ag.Categorical('yolo3_darknet53_coco', 'ssd_512_resnet50_v1_voc')
+    transfer : Union[type(None), str, ag.Space] = ag.Categorical('ssd_512_resnet50_v1_coco',
+                                                                 'yolo3_darknet53_coco',
+                                                                 'faster_rcnn_resnet50_v1b_coco',
+                                                                 'center_net_resnet50_v1b_coco')
     lr : Union[ag.Space, float] = ag.Categorical(1e-3, 5e-3)
     num_trials : int = 3
     epochs : Union[ag.Space, int] = 10
     nthreads_per_trial : int = 128
     ngpus_per_trial : int = 8
-    time_limits : int = 3600
-    search_strategy : Union[str, ag.Space] = 'random'
+    time_limits : int = 7 * 24 * 60 * 60  # 7 days
+    search_strategy : str = 'random'
     dist_ip_addrs : Union[type(None), list, Tuple] = None
 
 
@@ -55,9 +59,45 @@ def _train_object_detection(args, reporter):
     ----------
     args: <class 'autogluon.utils.edict.EasyDict'>
     """
+    # pruning for batch size
+    # if args.get('batch_size', None):
+    #     if args.estimator == FasterRCNNEstimator and args.batch_size not in [4, 8]:
+    #         logging.info('Estimator and batch size are not matched, this trial is skipped.')
+    #         return
+    #     elif args.estimator != FasterRCNNEstimator and args.batch_size in [4, 8]:
+    #         logging.info('Estimator and batch size are not matched, this trial is skipped.')
+    #         return
+
+    # pruning for base network
+    # if args.get('base_network', None):
+    #     if args.estimator == SSDEstimator and \
+    #             args.base_network not in ['vgg16_atrous', 'resnet18_v1', 'resnet50_v1',
+    #                                       'resnet101_v2', 'resnet152_v2', 'resnet34_v1b']:
+    #         logging.info('Estimator and base network are not matched, this trial is skipped.')
+    #         return
+    #     elif args.estimator == YOLOv3Estimator and \
+    #             args.base_network not in ['darknet53']:
+    #         logging.info('Estimator and base network are not matched, this trial is skipped.')
+    #         return
+    #     elif args.estimator == FasterRCNNEstimator and \
+    #             args.base_network not in ['resnet50_v1b', 'resnet101_v1d',
+    #                                       'resnest50', 'resnest101', 'resnest269']:
+    #         logging.info('Estimator and base network are not matched, this trial is skipped.')
+    #         return
+    #     elif args.estimator == CenterNetEstimator and \
+    #             args.base_network not in ['resnet18_v1b', 'resnet50_v1b', 'resnet101_v1b', 'dla34']:
+    #         logging.info('Estimator and base network are not matched, this trial is skipped.')
+    #         return
+
     # train, val data
     train_data = args.pop('train_data')
     val_data = args.pop('val_data')
+    try:
+        task = args.pop('task')
+        dataset = args.pop('dataset')
+        num_trials = args.pop('num_trials')
+    except AttributeError:
+        task = None
     # convert user defined config to nested form
     args = config_to_nested(args)
 
@@ -67,6 +107,17 @@ def _train_object_detection(args, reporter):
         estimator = estimator_cls(args, reporter=reporter)
         # training
         result = estimator.fit(train_data=train_data, val_data=val_data)
+        # save config and result
+        if task is not None:
+            trial_log = {}
+            trial_log.update(args)
+            trial_log.update(result)
+            json_str = json.dumps(trial_log)
+            time_str = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
+            json_file_name = task + '_dataset-' + dataset + '_trials-' + str(num_trials) + '_' + time_str + '.json'
+            with open(json_file_name, 'w') as json_file:
+                json_file.write(json_str)
+            logging.info('Config and result in this trial have been saved to %s.', json_file_name)
     # pylint: disable=bare-except
     except:
         import traceback
@@ -139,30 +190,45 @@ class ObjectDetection(BaseTask):
         estimator = config.get('estimator', None)
         transfer = config.get('transfer', None)
         if estimator is not None and transfer is not None:
+            if isinstance(estimator, ag.Space):
+                estimator = estimator.data
+            elif isinstance(estimator, str):
+                estimator = [estimator]
             if isinstance(transfer, ag.Space):
                 transfer = transfer.data
-            if isinstance(transfer, str):
+            elif isinstance(transfer, str):
                 transfer = [transfer]
-            transfer = [t for t in transfer if estimator in t]
-            if not transfer:
+
+            valid_transfer = []
+            for e in estimator:
+                for t in transfer:
+                    if e in t:
+                        valid_transfer.append(t)
+
+            if not valid_transfer:
                 raise ValueError(f'No matching `transfer` model for {estimator}')
-            if len(transfer) == 1:
-                config['transfer'] = transfer[0]
+            if len(valid_transfer) == 1:
+                config['transfer'] = valid_transfer[0]
             else:
-                config['transfer'] = ag.Categorical(**transfer)
+                config['transfer'] = ag.Categorical(*valid_transfer)
 
         # additional configs
         config['num_workers'] = nthreads_per_trial
         config['gpus'] = [int(i) for i in range(ngpus_per_trial)]
-        if config['gpus']:
-            config['batch_size'] = config.get('batch_size', 8) * len(config['gpus'])
-            self._logger.info('Increase batch size to %d based on the number of gpus %d',
-                              config['batch_size'], len(config['gpus']))
+        # if config['gpus']:
+        #     config['batch_size'] = config.get('batch_size', 8) * len(config['gpus'])
+        #     self._logger.info('Increase batch size to %d based on the number of gpus %d',
+        #                       config['batch_size'], len(config['gpus']))
         config['seed'] = config.get('seed', np.random.randint(32,767))
         self._config = config
 
         # scheduler options
         self.search_strategy = config.get('search_strategy', 'random')
+        self.search_options = config.get('search_options', None)
+        if self.search_options:
+            self.search_options.update({'debug_log': True})
+        else:
+            self.search_options = {'debug_log': True}
         self.scheduler_options = {
             'resource': {'num_cpus': nthreads_per_trial, 'num_gpus': ngpus_per_trial},
             'checkpoint': config.get('checkpoint', 'checkpoint/exp1.ag'),
@@ -174,10 +240,15 @@ class ObjectDetection(BaseTask):
             'reward_attr': 'map_reward',
             'dist_ip_addrs': config.get('dist_ip_addrs', None),
             'searcher': self.search_strategy,
-            'search_options': config.get('search_options', None)}
+            'search_options': self.search_options}
         if self.search_strategy == 'hyperband':
             self.scheduler_options.update({
                 'searcher': 'random',
+                'max_t': config.get('epochs', 50),
+                'grace_period': config.get('grace_period', config.get('epochs', 50) // 4)})
+        elif self.search_strategy == 'bayesopt_hyperband':
+            self.scheduler_options.update({
+                'searcher': 'bayesopt',
                 'max_t': config.get('epochs', 50),
                 'grace_period': config.get('grace_period', config.get('epochs', 50) // 4)})
 
@@ -220,14 +291,11 @@ class ObjectDetection(BaseTask):
             train_data, val_data = train, val
 
         # automatically suggest some hyperparameters based on the dataset statistics(experimental)
-        if not self._config.get('transfer', None):
-            estimator = self._config.get('estimator', None)
-            if estimator is None:
-                estimator = [SSDEstimator, FasterRCNNEstimator, YOLOv3Estimator, CenterNetEstimator]
-            self._config['estimator'] = ag.Categorical(*estimator)
+        estimator = self._config.get('estimator', None)
+        transfer = self._config.get('transfer', None)
+        if not transfer:
             self._config['train_dataset'] = train_data
-            if self._config.get('auto_suggest', True):
-                auto_suggest(self._config, estimator, self._logger)
+            auto_suggest(self._config, estimator, self._logger)
             self._config.pop('train_dataset')
 
         # register args

@@ -355,7 +355,7 @@ class FasterRCNNEstimator(BaseEstimator):
             self.net = get_model('custom_faster_rcnn_fpn', classes=self.classes, transfer=None,
                                  dataset=self._cfg.dataset,
                                  pretrained_base=self._cfg.train.pretrained_base,
-                                 base_network_name=self._cfg.faster_rcnn.backbone,
+                                 base_network_name=self._cfg.faster_rcnn.base_network,
                                  norm_layer=norm_layer, norm_kwargs=norm_kwargs,
                                  sym_norm_layer=sym_norm_layer, sym_norm_kwargs=sym_norm_kwargs,
                                  num_fpn_filters=self._cfg.faster_rcnn.num_fpn_filters,
