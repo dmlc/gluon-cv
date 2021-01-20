@@ -279,7 +279,7 @@ def get_model_file(name, tag=None, root=os.path.join('~', '.mxnet', 'models')):
         sha1_hash = _model_sha1[name]
 
     if not os.path.exists(root):
-        os.makedirs(root)
+        os.makedirs(root, exist_ok=True)
 
     with portalocker.Lock(lockfile, timeout=int(os.environ.get('GLUON_MODEL_LOCK_TIMEOUT', 300))):
         if os.path.exists(params_path):
