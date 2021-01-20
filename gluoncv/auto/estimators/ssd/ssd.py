@@ -307,7 +307,7 @@ class SSDEstimator(BaseEstimator):
         # elif self._cfg.ssd.custom_model:
         else:
             if self._cfg.ssd.syncbn and len(self.ctx) > 1:
-                self.net = custom_ssd(base_network_name=self._cfg.ssd.backbone,
+                self.net = custom_ssd(base_network_name=self._cfg.ssd.base_network,
                                       base_size=self._cfg.ssd.data_shape,
                                       filters=self._cfg.ssd.filters,
                                       sizes=self._cfg.ssd.sizes,
@@ -318,7 +318,7 @@ class SSDEstimator(BaseEstimator):
                                       pretrained_base=True,
                                       norm_layer=gluon.contrib.nn.SyncBatchNorm,
                                       norm_kwargs={'num_devices': len(self.ctx)})
-                self.async_net = custom_ssd(base_network_name=self._cfg.ssd.backbone,
+                self.async_net = custom_ssd(base_network_name=self._cfg.ssd.base_network,
                                             base_size=self._cfg.ssd.data_shape,
                                             filters=self._cfg.ssd.filters,
                                             sizes=self._cfg.ssd.sizes,
@@ -328,7 +328,7 @@ class SSDEstimator(BaseEstimator):
                                             dataset='auto',
                                             pretrained_base=False)
             else:
-                self.net = custom_ssd(base_network_name=self._cfg.ssd.backbone,
+                self.net = custom_ssd(base_network_name=self._cfg.ssd.base_network,
                                       base_size=self._cfg.ssd.data_shape,
                                       filters=self._cfg.ssd.filters,
                                       sizes=self._cfg.ssd.sizes,

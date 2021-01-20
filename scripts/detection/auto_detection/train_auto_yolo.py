@@ -4,7 +4,7 @@ import logging
 
 import autogluon.core as ag
 from gluoncv.auto.tasks import ObjectDetection
-from gluoncv.auto.estimators import SSDEstimator, YOLOv3Estimator, FasterRCNNEstimator, CenterNetEstimator
+from gluoncv.auto.estimators import YOLOv3Estimator
 from d8.object_detection import Dataset
 
 os.environ['MXNET_ENABLE_GPU_P2P'] = '0'
@@ -20,18 +20,12 @@ if __name__ == '__main__':
 
     # specify hyperparameter search space
     config = {
-        'task': 'detection',
+        'task': 'yolo3',
         'dataset': args.dataset,
-        'estimator': None,
+        'estimator': 'yolo3',
         'base_network': None,
-        # 'base_network': ag.Categorical('vgg16_atrous', 'darknet53',
-        #                                'resnet18_v1', 'resnet50_v1',
-        #                                'resnet18_v1b', 'resnet50_v1b', 'resnet101_v1b',
-        #                                'resnest50', 'resnest101'),
-        'transfer': ag.Categorical('ssd_512_vgg16_atrous_coco', 'ssd_512_resnet50_v1_coco',
-                                   'yolo3_darknet53_voc', 'yolo3_darknet53_coco',
-                                   'faster_rcnn_resnet50_v1b_coco', 'faster_rcnn_fpn_syncbn_resnest50_coco',
-                                   'center_net_resnet50_v1b_coco', 'center_net_resnet101_v1b_coco'),
+        'transfer': ag.Categorical('yolo3_darknet53_voc',
+                                   'yolo3_darknet53_coco'),
         'lr': ag.Real(1e-4, 1e-2, log=True),
         'batch_size': ag.Int(3, 6),  # [8, 16, 32, 64]
         'momentum': ag.Real(0.85, 0.95),
@@ -56,5 +50,5 @@ if __name__ == '__main__':
     logging.info('evaluation: mAP={}'.format(eval_map[-1][-1]))
 
     # save and load auto estimator
-    detector.save('detector.pkl')
-    detector = ObjectDetection.load('detector.pkl')
+    detector.save('yolo_detector.pkl')
+    detector = ObjectDetection.load('yolo_detector.pkl')

@@ -291,7 +291,7 @@ class YOLOv3Estimator(BaseEstimator):
         if self._cfg.yolo3.transfer is None:
             # use sync bn if specified
             if self._cfg.yolo3.syncbn and len(self.ctx) > 1:
-                self.net = custom_yolov3(base_network_name=self._cfg.yolo3.backbone,
+                self.net = custom_yolov3(base_network_name=self._cfg.yolo3.base_network,
                                          filters=self._cfg.yolo3.filters,
                                          anchors=self._cfg.yolo3.anchors,
                                          strides=self._cfg.yolo3.strides,
@@ -300,7 +300,7 @@ class YOLOv3Estimator(BaseEstimator):
                                          pretrained_base=True,
                                          norm_layer=gluon.contrib.nn.SyncBatchNorm,
                                          norm_kwargs={'num_devices': len(self.ctx)})
-                self.async_net = custom_yolov3(base_network_name=self._cfg.yolo3.backbone,
+                self.async_net = custom_yolov3(base_network_name=self._cfg.yolo3.base_network,
                                                filters=self._cfg.yolo3.filters,
                                                anchors=self._cfg.yolo3.anchors,
                                                strides=self._cfg.yolo3.strides,
@@ -308,7 +308,7 @@ class YOLOv3Estimator(BaseEstimator):
                                                dataset=self._cfg.dataset,
                                                pretrained_base=False)
             else:
-                self.net = custom_yolov3(base_network_name=self._cfg.yolo3.backbone,
+                self.net = custom_yolov3(base_network_name=self._cfg.yolo3.base_network,
                                          filters=self._cfg.yolo3.filters,
                                          anchors=self._cfg.yolo3.anchors,
                                          strides=self._cfg.yolo3.strides,
