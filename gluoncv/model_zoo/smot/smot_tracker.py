@@ -586,10 +586,12 @@ class SMOTTracker:
             }
             tid = track.display_id
             age = track.age
+            classId = track.class_id
             obj = {
                 'bbox': box,
                 'track_id': tid,
-                'age': age
+                'age': age,
+                'class_id':classId
             }
             if track.attributes is not None:
                 obj['landmarks'] = track.attributes
