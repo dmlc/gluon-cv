@@ -276,6 +276,10 @@ class FasterRCNNEstimator(BaseEstimator):
         short_size = self.net.short[-1] if isinstance(self.net.short, (tuple, list)) else self.net.short
         if isinstance(x, str):
             x = load_test(x, short=short_size, max_size=1024)[0]
+        elif isinstance(x, np.ndarray):
+            if len(x.shape) != 3 or x.shape[-1] != 3:
+                raise ValueError('array input with shape (h, w, 3) is required for predict')
+            return self._predict(mx.nd.array(x))
         elif isinstance(x, mx.nd.NDArray):
             x = transform_test(x, short=short_size, max_size=1024)[0]
         elif isinstance(x, pd.DataFrame):
