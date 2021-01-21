@@ -60,6 +60,8 @@ class CenterNetEstimator(BaseEstimator):
                 y['image'] = x
                 return y
             return pd.concat([_predict_merge(xx) for xx in x['image']]).reset_index(drop=True)
+        elif isinstance(x, (list, tuple)):
+            return pd.concat([self._predict(xx) for xx in x]).reset_index(drop=True)
         else:
             raise ValueError('Input is not supported: {}'.format(type(x)))
         height, width = x.shape[2:4]
