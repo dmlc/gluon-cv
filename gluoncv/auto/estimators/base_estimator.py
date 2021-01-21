@@ -265,7 +265,7 @@ class BaseEstimator:
         self.__dict__.update(state)
         # logger
         self._logger = logging.getLogger(state.get('_name', self.__class__.__name__))
-        self._logger.setLevel(logging.INFO)
+        self._logger.setLevel(logging.ERROR)
         fh = logging.FileHandler(self._log_file)
         self._logger.addHandler(fh)
         try:
@@ -284,3 +284,4 @@ class BaseEstimator:
                 self.trainer.load_states(tfile)
         except ImportError:
             pass
+        self._logger.setLevel(logging.INFO)

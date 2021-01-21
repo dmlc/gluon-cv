@@ -114,7 +114,12 @@ def auto_suggest(config, estimator, logger):
                 estimator[i] = FasterRCNNEstimator
             elif e == 'center_net':
                 estimator[i] = CenterNetEstimator
-        config['estimator'] = ag.Categorical(*estimator)
+        if not estimator:
+            raise ValueError('Unable to determine the estimator for fit function.')
+        if len(estimator) == 1:
+            config['estimator'] = estimator
+        else:
+            config['estimator'] = ag.Categorical(*estimator)
 
     # get dataset statistics
     # user needs to define a Dataset object "train_dataset" when using custom dataset

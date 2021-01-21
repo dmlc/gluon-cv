@@ -141,6 +141,8 @@ class ImageClassification(BaseTask):
         else:
             if not config.get('dist_ip_addrs', None):
                 ngpus_per_trial = config.get('ngpus_per_trial', gpu_count)
+                if ngpus_per_trial > gpu_count:
+                    ngpus_per_trial = gpu_count
                 if ngpus_per_trial < 1:
                     self._logger.info('No GPU detected/allowed, using most conservative search space.')
                     default_config = LiteConfig()
@@ -167,10 +169,6 @@ class ImageClassification(BaseTask):
         # additional configs
         config['num_workers'] = nthreads_per_trial
         config['gpus'] = [int(i) for i in range(ngpus_per_trial)]
-        # if config['gpus']:
-        #     config['batch_size'] = config.get('batch_size', 8) * len(config['gpus'])
-        #     self._logger.info('Increase batch size to %d based on the number of gpus %d',
-        #                       config['batch_size'], len(config['gpus']))
         config['seed'] = config.get('seed', np.random.randint(32,767))
         self._config = config
 
@@ -242,17 +240,6 @@ class ImageClassification(BaseTask):
                               len(train), len(val))
             train_data, val_data = train, val
 
-        # automatically suggest some hyperparameters based on the dataset statistics(experimental)
-        # estimator = self._config.get('estimator', None)
-        # if estimator is None:
-        #     estimator = [ImageClassificationEstimator]
-        # elif isinstance(estimator, (tuple, list)):
-        #     pass
-        # else:
-        #     assert issubclass(estimator, BaseEstimator)
-        #     estimator = [estimator]
-        # self._config['estimator'] = ag.Categorical(*estimator)
-
         estimator = self._config.get('estimator', None)
         if estimator is None:
             estimator = [ImageClassificationEstimator]
@@ -266,7 +253,12 @@ class ImageClassification(BaseTask):
                     estimator[i] = ImageClassificationEstimator
                 else:
                     estimator.pop(e)
-        self._config['estimator'] = ag.Categorical(*estimator)
+        if not estimator:
+            raise ValueError('Unable to determine the estimator for fit function.')
+        if len(estimator) == 1:
+            self._config['estimator'] = estimator
+        else:
+            self._config['estimator'] = ag.Categorical(*estimator)
 
         # register args
         config = self._config.copy()
