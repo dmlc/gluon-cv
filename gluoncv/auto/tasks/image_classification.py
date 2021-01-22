@@ -263,7 +263,7 @@ class ImageClassification(BaseTask):
         if not estimator:
             raise ValueError('Unable to determine the estimator for fit function.')
         if len(estimator) == 1:
-            self._config['estimator'] = estimator
+            self._config['estimator'] = estimator[0]
         else:
             self._config['estimator'] = ag.Categorical(*estimator)
 

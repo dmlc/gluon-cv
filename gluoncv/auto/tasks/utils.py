@@ -117,7 +117,7 @@ def auto_suggest(config, estimator, logger):
         if not estimator:
             raise ValueError('Unable to determine the estimator for fit function.')
         if len(estimator) == 1:
-            config['estimator'] = estimator
+            config['estimator'] = estimator[0]
         else:
             config['estimator'] = ag.Categorical(*estimator)
 
@@ -267,7 +267,6 @@ def config_to_nested(config):
         else:
             raise ValueError(f'Unknown estimator: {estimator}')
     else:
-        raise ValueError(type(estimator))
         assert issubclass(estimator, BaseEstimator)
 
     cfg_map = estimator._default_cfg.asdict()
