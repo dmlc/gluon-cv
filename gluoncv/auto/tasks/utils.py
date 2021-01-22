@@ -267,8 +267,7 @@ def config_to_nested(config):
         else:
             raise ValueError(f'Unknown estimator: {estimator}')
     else:
-        raise RuntimeError(str(estimator))
-        assert issubclass(estimator, BaseEstimator), type(estimator)
+        assert issubclass(estimator, BaseEstimator)
 
     cfg_map = estimator._default_cfg.asdict()
 
