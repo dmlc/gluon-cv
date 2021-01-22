@@ -275,7 +275,7 @@ class BaseEstimator:
             with temporary_filename() as tfile:
                 with open(tfile, 'wb') as fo:
                     fo.write(net_params)
-                self.net.load_parameters(tfile)
+                self.net.load_parameters(tfile, ignore_extra=True)
             trainer_state = state['trainer']
             self._init_trainer()
             with temporary_filename() as tfile:
