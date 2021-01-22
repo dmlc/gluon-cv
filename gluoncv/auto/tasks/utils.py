@@ -276,7 +276,7 @@ def config_to_nested(config):
                       'dataset', 'dataset_root']
         for k, v in config.items():
             if k in block_list:
-                config[k] = 'null'
+                config[k] = 'auto'
             if key == k:
                 config[key] = value
             elif isinstance(v, dict):
