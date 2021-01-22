@@ -222,36 +222,6 @@ def get_recursively(search_dict, field):
 
 def config_to_nested(config):
     """Convert config to nested version"""
-    # estimator = config.get('estimator', None)
-    # if estimator is None:
-    #     transfer = config.get('transfer', None)
-    #     assert transfer is not None, "estimator or transfer is required in search space"
-    #     if transfer.startswith('ssd'):
-    #         estimator = SSDEstimator
-    #     elif transfer.startswith('faster_rcnn'):
-    #         estimator = FasterRCNNEstimator
-    #     elif transfer.startswith('yolo3'):
-    #         estimator = YOLOv3Estimator
-    #     elif transfer.startswith('center_net'):
-    #         estimator = CenterNetEstimator
-    #     else:
-    #         estimator = ImageClassificationEstimator
-    # else:
-    #     # str to instance
-    #     if isinstance(estimator, str):
-    #         if estimator == 'ssd':
-    #             estimator = SSDEstimator
-    #         elif estimator == 'faster_rcnn':
-    #             estimator = FasterRCNNEstimator
-    #         elif estimator == 'yolo3':
-    #             estimator = YOLOv3Estimator
-    #         elif estimator == 'center_net':
-    #             estimator = CenterNetEstimator
-    #         elif estimator == 'img_cls':
-    #             estimator = ImageClassificationEstimator
-    #         else:
-    #             raise ValueError(f'Unknown estimator: {estimator}')
-
     estimator = config.get('estimator', None)
     transfer = config.get('transfer', None)
     # choose hyperparameters based on pretrained model in transfer learning
@@ -297,11 +267,7 @@ def config_to_nested(config):
         else:
             raise ValueError(f'Unknown estimator: {estimator}')
     else:
-        assert issubclass(estimator, BaseEstimator)
-
-    # batch size is the power of 2
-    if config.get('batch_size', None):
-        config['batch_size'] = 2 ** config['batch_size']
+        assert issubclass(estimator, BaseEstimator), type(estimator)
 
     cfg_map = estimator._default_cfg.asdict()
 
