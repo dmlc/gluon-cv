@@ -62,7 +62,10 @@ def _train_image_classification(args, reporter):
     train_data = args.pop('train_data')
     val_data = args.pop('val_data')
     # exponential batch size for Int() space batch sizes
-    exp_batch_size = args.pop('exp_batch_size', False)
+    try:
+        exp_batch_size = args.pop('exp_batch_size')
+    except AttributeError:
+        exp_batch_size = False
     if exp_batch_size and 'batch_size' in args:
         args['batch_size'] = 2 ** args['batch_size']
     try:
