@@ -18,7 +18,10 @@ import numpy as np
 import mxnet as mx
 from mxnet import gluon
 from mxnet.contrib import amp
+from distutils.version import LooseVersion
 import gluoncv as gcv
+
+_PRE_GCV_0_9_0 = LooseVersion(gcv.__version__) < LooseVersion('0.9.0')
 
 gcv.utils.check_version('0.7.0')
 from gluoncv import data as gdata
@@ -324,12 +327,16 @@ def get_dataloader(net, train_dataset, val_dataset, train_transform, val_transfo
                    num_shards_per_process, args):
     """Get dataloader."""
     train_bfn = batchify.MaskRCNNTrainBatchify(net, num_shards_per_process)
+    if _PRE_GCV_0_9_0:
+        sampler = gcv.nn.sampler
+    else:
+        sampler = gcv.data.sampler
     train_sampler = \
-        gcv.data.sampler.SplitSortedBucketSampler(train_dataset.get_im_aspect_ratio(),
-                                                batch_size,
-                                                num_parts=hvd.size() if args.horovod else 1,
-                                                part_index=hvd.rank() if args.horovod else 0,
-                                                shuffle=True)
+        sampler.SplitSortedBucketSampler(train_dataset.get_im_aspect_ratio(),
+                                         batch_size,
+                                         num_parts=hvd.size() if args.horovod else 1,
+                                         part_index=hvd.rank() if args.horovod else 0,
+                                         shuffle=True)
     train_loader = mx.gluon.data.DataLoader(train_dataset.transform(
         train_transform(net.short, net.max_size, net, ashape=net.ashape, multi_stage=args.use_fpn)),
         batch_sampler=train_sampler, batchify_fn=train_bfn, num_workers=args.num_workers)
