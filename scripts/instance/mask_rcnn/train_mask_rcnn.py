@@ -10,6 +10,7 @@ os.environ['MXNET_EXEC_BULK_EXEC_MAX_NODE_TRAIN_FWD'] = '999'
 os.environ['MXNET_EXEC_BULK_EXEC_MAX_NODE_TRAIN_BWD'] = '25'
 os.environ['MXNET_GPU_COPY_NTHREADS'] = '1'
 os.environ['MXNET_OPTIMIZER_AGGREGATION_SIZE'] = '54'
+os.environ['MXNET_USE_FUSION'] = '0
 
 import logging
 import time
@@ -596,14 +597,18 @@ def train(net, train_data, val_data, eval_metric, batch_size, ctx, logger, args)
             if (not args.horovod or hvd.rank() == 0) and args.log_interval \
                     and not (i + 1) % args.log_interval:
                 msg = ','.join(['{}={:.3f}'.format(*metric.get()) for metric in metrics + metrics2])
+                batch_speed = args.log_interval * args.batch_size / (time.time() - btic)
+                speed.append(batch_speed)
                 logger.info('[Epoch {}][Batch {}], Speed: {:.3f} samples/sec, {}'.format(
-                    epoch, i, args.log_interval * args.batch_size / (time.time() - btic), msg))
+                    epoch, i, batch_speed, msg))
                 btic = time.time()
+        if speed:
+            avg_batch_speed = sum(speed) / len(speed)
         # validate and save params
         if (not args.horovod) or hvd.rank() == 0:
             msg = ','.join(['{}={:.3f}'.format(*metric.get()) for metric in metrics])
-            logger.info('[Epoch {}] Training cost: {:.3f}, {}'.format(
-                epoch, (time.time() - tic), msg))
+            logger.info('[Epoch {}] Training cost: {:.3f}, Speed: {:.3f} samples/sec, {}'.format(
+                epoch, (time.time() - tic), avg_batch_speed, msg))
         if not (epoch + 1) % args.val_interval:
             # consider reduce the frequency of validation to save time
             validate(net, val_data, async_eval_processes, ctx, eval_metric, logger, epoch, best_map,
