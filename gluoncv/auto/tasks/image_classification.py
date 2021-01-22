@@ -31,7 +31,7 @@ class LiteConfig:
     lr : Union[ag.Space, float] = 1e-2
     num_trials : int = 1
     epochs : Union[ag.Space, int] = 5
-    batch_size : Union[ag.Space, int] = 3  # 2 ** 3 == 8
+    batch_size : Union[ag.Space, int] = 8
     nthreads_per_trial : int = 32
     ngpus_per_trial : int = 0
     time_limits : int = 7 * 24 * 60 * 60  # 7 days
@@ -44,7 +44,7 @@ class DefaultConfig:
     lr : Union[ag.Space, float] = ag.Categorical(1e-2, 5e-2)
     num_trials : int = 3
     epochs : Union[ag.Space, int] = 15
-    batch_size : Union[ag.Space, int] = 4  # 2 ** 4 = 16
+    batch_size : Union[ag.Space, int] = 16
     nthreads_per_trial : int = 128
     ngpus_per_trial : int = 8
     time_limits : int = 7 * 24 * 60 * 60  # 7 days
@@ -61,6 +61,10 @@ def _train_image_classification(args, reporter):
     # train, val data
     train_data = args.pop('train_data')
     val_data = args.pop('val_data')
+    # exponential batch size for Int() space batch sizes
+    exp_batch_size = args.pop('exp_batch_size', False)
+    if exp_batch_size and 'batch_size' in args:
+        args['batch_size'] = 2 ** args['batch_size']
     try:
         task = args.pop('task')
         dataset = args.pop('dataset')
