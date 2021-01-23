@@ -82,7 +82,11 @@ class Mask(nn.HybridBlock):
         # (B * N, C, MS, MS)
         x = self.mask(x)
         # (B * N, C, MS, MS) -> (B, N, C, MS, MS)
-        x = x.reshape((-4, self._batch_images, -1, 0, 0, 0))
+        if autograd.is_training():
+            x = x.reshape((-4, self._batch_images, -1, 0, 0, 0))
+        else:
+            # always use batch_size = 1 for inference
+            x = x.reshape((-4, 1, -1, 0, 0, 0))
         return x
 
     def reset_class(self, classes, reuse_weights=None):
