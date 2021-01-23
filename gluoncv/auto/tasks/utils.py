@@ -271,19 +271,26 @@ def config_to_nested(config):
 
     cfg_map = estimator._default_cfg.asdict()
 
-    def _recursive_update(config, key, value):
-        block_list = ['data_dir', 'rec_train', 'rec_train_idx', 'rec_val', 'rec_val_idx',
-                      'dataset', 'dataset_root']
+    def _recursive_update(config, key, value, auto_strs, auto_ints):
         for k, v in config.items():
-            if k in block_list:
+            if k in auto_strs:
                 config[k] = 'auto'
+            if k in auto_ints:
+                config[k] = -1
             if key == k:
                 config[key] = value
             elif isinstance(v, dict):
-                _recursive_update(v, key, value)
+                _recursive_update(v, key, value, auto_strs, auto_ints)
 
+    if 'use_rec' in config:
+        auto_strs = ['data_dir']
+        auto_ints = []
+    else:
+        auto_strs = ['data_dir', 'rec_train', 'rec_train_idx', 'rec_val', 'rec_val_idx',
+                     'dataset', 'dataset_root']
+        auto_ints = ['num_training_samples']
     for k, v in config.items():
-        _recursive_update(cfg_map, k, v)
+        _recursive_update(cfg_map, k, v, auto_strs, auto_ints)
     cfg_map['estimator'] = estimator
     return cfg_map
 
