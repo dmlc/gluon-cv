@@ -374,7 +374,11 @@ class ImageClassificationEstimator(BaseEstimator):
         resize = int(math.ceil(self.input_size / self._cfg.train.crop_ratio))
         if isinstance(x, str):
             x = transform_eval(mx.image.imread(x), resize_short=resize, crop_size=self.input_size)
+        elif isinstance(x, np.ndarray):
+            return self._predict(mx.nd.array(x))
         elif isinstance(x, mx.nd.NDArray):
+            if len(x.shape) != 3 or x.shape[-1] != 3:
+                raise ValueError('array input with shape (h, w, 3) is required for predict')
             x = transform_eval(x, resize_short=resize, crop_size=self.input_size)
         elif isinstance(x, pd.DataFrame):
             assert 'image' in x.columns, "Expect column `image` for input images"

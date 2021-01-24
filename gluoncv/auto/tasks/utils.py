@@ -114,7 +114,12 @@ def auto_suggest(config, estimator, logger):
                 estimator[i] = FasterRCNNEstimator
             elif e == 'center_net':
                 estimator[i] = CenterNetEstimator
-        config['estimator'] = ag.Categorical(*estimator)
+        if not estimator:
+            raise ValueError('Unable to determine the estimator for fit function.')
+        if len(estimator) == 1:
+            config['estimator'] = estimator[0]
+        else:
+            config['estimator'] = ag.Categorical(*estimator)
 
     # get dataset statistics
     # user needs to define a Dataset object "train_dataset" when using custom dataset
@@ -217,36 +222,6 @@ def get_recursively(search_dict, field):
 
 def config_to_nested(config):
     """Convert config to nested version"""
-    # estimator = config.get('estimator', None)
-    # if estimator is None:
-    #     transfer = config.get('transfer', None)
-    #     assert transfer is not None, "estimator or transfer is required in search space"
-    #     if transfer.startswith('ssd'):
-    #         estimator = SSDEstimator
-    #     elif transfer.startswith('faster_rcnn'):
-    #         estimator = FasterRCNNEstimator
-    #     elif transfer.startswith('yolo3'):
-    #         estimator = YOLOv3Estimator
-    #     elif transfer.startswith('center_net'):
-    #         estimator = CenterNetEstimator
-    #     else:
-    #         estimator = ImageClassificationEstimator
-    # else:
-    #     # str to instance
-    #     if isinstance(estimator, str):
-    #         if estimator == 'ssd':
-    #             estimator = SSDEstimator
-    #         elif estimator == 'faster_rcnn':
-    #             estimator = FasterRCNNEstimator
-    #         elif estimator == 'yolo3':
-    #             estimator = YOLOv3Estimator
-    #         elif estimator == 'center_net':
-    #             estimator = CenterNetEstimator
-    #         elif estimator == 'img_cls':
-    #             estimator = ImageClassificationEstimator
-    #         else:
-    #             raise ValueError(f'Unknown estimator: {estimator}')
-
     estimator = config.get('estimator', None)
     transfer = config.get('transfer', None)
     # choose hyperparameters based on pretrained model in transfer learning
@@ -294,21 +269,28 @@ def config_to_nested(config):
     else:
         assert issubclass(estimator, BaseEstimator)
 
-    # batch size is the power of 2
-    if config.get('batch_size', None):
-        config['batch_size'] = 2 ** config['batch_size']
-
     cfg_map = estimator._default_cfg.asdict()
 
-    def _recursive_update(config, key, value):
+    def _recursive_update(config, key, value, auto_strs, auto_ints):
         for k, v in config.items():
+            if k in auto_strs:
+                config[k] = 'auto'
+            if k in auto_ints:
+                config[k] = -1
             if key == k:
                 config[key] = value
             elif isinstance(v, dict):
-                _recursive_update(v, key, value)
+                _recursive_update(v, key, value, auto_strs, auto_ints)
 
+    if 'use_rec' in config:
+        auto_strs = ['data_dir']
+        auto_ints = []
+    else:
+        auto_strs = ['data_dir', 'rec_train', 'rec_train_idx', 'rec_val', 'rec_val_idx',
+                     'dataset', 'dataset_root']
+        auto_ints = ['num_training_samples']
     for k, v in config.items():
-        _recursive_update(cfg_map, k, v)
+        _recursive_update(cfg_map, k, v, auto_strs, auto_ints)
     cfg_map['estimator'] = estimator
     return cfg_map
 
