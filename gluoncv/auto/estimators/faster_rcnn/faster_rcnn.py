@@ -121,6 +121,9 @@ class FasterRCNNEstimator(BaseEstimator):
 
         for self.epoch in range(max(self._cfg.train.start_epoch, self.epoch), self._cfg.train.epochs):
             epoch = self.epoch
+            if self._best_map >= 1.0:
+                self._logger.info('[Epoch {}] Early stopping as mAP is reaching 1.0'.format(epoch))
+                break
             btic = time.time()
             rcnn_task = ForwardBackwardTask(self.net, self.trainer, rpn_cls_loss, rpn_box_loss,
                                             rcnn_cls_loss, rcnn_box_loss, mix_ratio=1.0,

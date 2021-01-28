@@ -114,6 +114,9 @@ class YOLOv3Estimator(BaseEstimator):
         self._logger.info('Start training from [Epoch %d]', max(self._cfg.train.start_epoch, self.epoch))
         for self.epoch in range(max(self._cfg.train.start_epoch, self.epoch), self._cfg.train.epochs):
             epoch = self.epoch
+            if self._best_map >= 1.0:
+                self._logger.info('[Epoch {}] Early stopping as mAP is reaching 1.0'.format(epoch))
+                break
             tic = time.time()
             btic = time.time()
             if self._cfg.train.mixup:

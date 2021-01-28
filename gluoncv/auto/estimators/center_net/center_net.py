@@ -130,13 +130,16 @@ class CenterNetEstimator(BaseEstimator):
 
         self._logger.info('Start training from [Epoch %d]', max(self._cfg.train.start_epoch, self.epoch))
         for self.epoch in range(max(self._cfg.train.start_epoch, self.epoch), self._cfg.train.epochs):
+            epoch = self.epoch
+            if self._best_map >= 1.0:
+                self._logger.info('[Epoch {}] Early stopping as mAP is reaching 1.0'.format(epoch))
+                break
             wh_metric.reset()
             center_reg_metric.reset()
             heatmap_loss_metric.reset()
             tic = time.time()
             btic = time.time()
             self.net.hybridize()
-            epoch = self.epoch
 
             for i, batch in enumerate(train_data):
                 split_data = [

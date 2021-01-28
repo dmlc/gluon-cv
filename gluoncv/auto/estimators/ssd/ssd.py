@@ -123,6 +123,9 @@ class SSDEstimator(BaseEstimator):
         self.net.collect_params().reset_ctx(self.ctx)
         for self.epoch in range(max(self._cfg.train.start_epoch, self.epoch), self._cfg.train.epochs):
             epoch = self.epoch
+            if self._best_map >= 1.0:
+                self._logger.info('[Epoch {}] Early stopping as mAP is reaching 1.0'.format(epoch))
+                break
             while lr_steps and epoch >= lr_steps[0]:
                 new_lr = self.trainer.learning_rate * lr_decay
                 lr_steps.pop(0)
