@@ -71,6 +71,9 @@ def get_data_rec(rec_train, rec_train_idx, rec_val, rec_val_idx, batch_size, num
     return train_data, val_data, rec_batch_fn
 
 def loader_batch_fn(batch, ctx):
+    if batch[0].shape[0] < len(ctx):
+        # if # sample is less than # ctx, reduce the # ctx
+        ctx = ctx[:batch[0].shape[0]]
     data = gluon.utils.split_and_load(batch[0], ctx_list=ctx, batch_axis=0, even_split=False)
     label = gluon.utils.split_and_load(batch[1], ctx_list=ctx, batch_axis=0, even_split=False)
     return data, label
