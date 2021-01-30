@@ -306,9 +306,11 @@ class SSDEstimator(BaseEstimator):
             self._logger.info(
                 f'Using transfer learning from {self._cfg.ssd.transfer}, the other network parameters are ignored.')
             if self._cfg.ssd.syncbn and len(self.ctx) > 1:
-                self.net = get_model(self._cfg.ssd.transfer, pretrained=True, norm_layer=gluon.contrib.nn.SyncBatchNorm,
-                                     norm_kwargs={'num_devices': len(self.ctx)})
-                self.async_net = get_model(self._cfg.ssd.transfer, pretrained=True)  # used by cpu worker
+                with warnings.catch_warnings(record=True) as w:
+                    warnings.simplefilter("always")
+                    self.net = get_model(self._cfg.ssd.transfer, pretrained=True, norm_layer=gluon.contrib.nn.SyncBatchNorm,
+                                         norm_kwargs={'num_devices': len(self.ctx)})
+                    self.async_net = get_model(self._cfg.ssd.transfer, pretrained=True)  # used by cpu worker
                 self.net.reset_class(self.classes,
                                      reuse_weights=[cname for cname in self.classes if cname in self.net.classes])
             else:
@@ -319,38 +321,42 @@ class SSDEstimator(BaseEstimator):
         # elif self._cfg.ssd.custom_model:
         else:
             if self._cfg.ssd.syncbn and len(self.ctx) > 1:
-                self.net = custom_ssd(base_network_name=self._cfg.ssd.base_network,
-                                      base_size=self._cfg.ssd.data_shape,
-                                      filters=self._cfg.ssd.filters,
-                                      sizes=self._cfg.ssd.sizes,
-                                      ratios=self._cfg.ssd.ratios,
-                                      steps=self._cfg.ssd.steps,
-                                      classes=self.classes,
-                                      dataset='auto',
-                                      pretrained_base=True,
-                                      norm_layer=gluon.contrib.nn.SyncBatchNorm,
-                                      norm_kwargs={'num_devices': len(self.ctx)})
-                self.async_net = custom_ssd(base_network_name=self._cfg.ssd.base_network,
-                                            base_size=self._cfg.ssd.data_shape,
-                                            filters=self._cfg.ssd.filters,
-                                            sizes=self._cfg.ssd.sizes,
-                                            ratios=self._cfg.ssd.ratios,
-                                            steps=self._cfg.ssd.steps,
-                                            classes=self.classes,
-                                            dataset='auto',
-                                            pretrained_base=False)
+                with warnings.catch_warnings(record=True) as w:
+                    warnings.simplefilter("always")
+                    self.net = custom_ssd(base_network_name=self._cfg.ssd.base_network,
+                                          base_size=self._cfg.ssd.data_shape,
+                                          filters=self._cfg.ssd.filters,
+                                          sizes=self._cfg.ssd.sizes,
+                                          ratios=self._cfg.ssd.ratios,
+                                          steps=self._cfg.ssd.steps,
+                                          classes=self.classes,
+                                          dataset='auto',
+                                          pretrained_base=True,
+                                          norm_layer=gluon.contrib.nn.SyncBatchNorm,
+                                          norm_kwargs={'num_devices': len(self.ctx)})
+                    self.async_net = custom_ssd(base_network_name=self._cfg.ssd.base_network,
+                                                base_size=self._cfg.ssd.data_shape,
+                                                filters=self._cfg.ssd.filters,
+                                                sizes=self._cfg.ssd.sizes,
+                                                ratios=self._cfg.ssd.ratios,
+                                                steps=self._cfg.ssd.steps,
+                                                classes=self.classes,
+                                                dataset='auto',
+                                                pretrained_base=False)
             else:
-                self.net = custom_ssd(base_network_name=self._cfg.ssd.base_network,
-                                      base_size=self._cfg.ssd.data_shape,
-                                      filters=self._cfg.ssd.filters,
-                                      sizes=self._cfg.ssd.sizes,
-                                      ratios=self._cfg.ssd.ratios,
-                                      steps=self._cfg.ssd.steps,
-                                      classes=self.classes,
-                                      dataset=self._cfg.dataset,
-                                      pretrained_base=True,
-                                      norm_layer=gluon.nn.BatchNorm)
-                self.async_net = self.net
+                with warnings.catch_warnings(record=True) as w:
+                    warnings.simplefilter("always")
+                    self.net = custom_ssd(base_network_name=self._cfg.ssd.base_network,
+                                          base_size=self._cfg.ssd.data_shape,
+                                          filters=self._cfg.ssd.filters,
+                                          sizes=self._cfg.ssd.sizes,
+                                          ratios=self._cfg.ssd.ratios,
+                                          steps=self._cfg.ssd.steps,
+                                          classes=self.classes,
+                                          dataset=self._cfg.dataset,
+                                          pretrained_base=True,
+                                          norm_layer=gluon.nn.BatchNorm)
+                    self.async_net = self.net
 
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")

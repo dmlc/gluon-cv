@@ -70,9 +70,9 @@ class FasterRCNN:
     num_box_head_dense_filters : int = 1024
 
     # Input image short side size.
-    image_short : int = 800
+    image_short : int = 600
     # Maximum size of input image long side.
-    image_max_size : int = 1333
+    image_max_size : int = 1000
 
     # Whether to enable custom model.
     # custom_model = True
