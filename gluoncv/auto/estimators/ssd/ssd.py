@@ -308,7 +308,8 @@ class SSDEstimator(BaseEstimator):
             if self._cfg.ssd.syncbn and len(self.ctx) > 1:
                 with warnings.catch_warnings(record=True) as w:
                     warnings.simplefilter("always")
-                    self.net = get_model(self._cfg.ssd.transfer, pretrained=True, norm_layer=gluon.contrib.nn.SyncBatchNorm,
+                    self.net = get_model(self._cfg.ssd.transfer, pretrained=True,
+                                         norm_layer=gluon.contrib.nn.SyncBatchNorm,
                                          norm_kwargs={'num_devices': len(self.ctx)})
                     self.async_net = get_model(self._cfg.ssd.transfer, pretrained=True)  # used by cpu worker
                 self.net.reset_class(self.classes,
