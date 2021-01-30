@@ -1,11 +1,12 @@
 import logging
+from typing import List
 import torch
 from torch import nn
 import torch.nn.functional as F
 import numpy as np
 import os
 
-from detectron2.structures import Instances, Boxes
+from ...data.structures import Instances, Boxes
 from ...utils.comm import get_world_size
 from ...nn.focal_loss import sigmoid_focal_loss_jit
 from ...nn.smooth_l1_loss import smooth_l1_loss
@@ -13,8 +14,6 @@ from ...utils.comm import reduce_sum
 from ...nn.nms import ml_nms, oks_nms, close_kpt_nms
 from ...nn.iou_loss import IOULoss
 from ...nn.keypoint_loss import WeightedMSELoss, HMFocalLoss
-from adet.utils.visualizer import visualize_hm, visualize_hm_xy, visualize_pseudo_bbox, visualize_kpt_offset
-from .post_process_util import _nms, _topk_channel, _transpose_and_gather_feat
 
 logger = logging.getLogger(__name__)
 
@@ -895,3 +894,34 @@ class DirectPoseOutputs(nn.Module):
             all_hms.append(target.reshape(self.num_kpts, hm_size[0], hm_size[1]))
         all_hms = torch.stack(all_hms, dim=0)
         return all_hms, None, None
+
+def _nms(heat, kernel=3):
+    pad = (kernel - 1) // 2
+
+    hmax = nn.functional.max_pool2d(
+        heat, (kernel, kernel), stride=1, padding=pad)
+    keep = (hmax == heat).float()
+    return heat * keep
+
+def _topk_channel(scores, K=40):
+    batch, cat, height, width = scores.size()
+
+    topk_scores, topk_inds = torch.topk(scores.view(batch, cat, -1), K)
+
+    topk_inds = topk_inds % (height * width)
+    topk_ys = (topk_inds / width).int().float()
+    topk_xs = (topk_inds % width).int().float()
+
+    return topk_scores, topk_inds, topk_ys, topk_xs
+
+def _gather_feat(feat, ind):
+    dim = feat.size(2)
+    ind = ind.unsqueeze(2).expand(ind.size(0), ind.size(1), dim)
+    feat = feat.gather(1, ind)
+    return feat
+
+def _transpose_and_gather_feat(feat, ind):
+    feat = feat.permute(0, 2, 3, 1).contiguous()
+    feat = feat.view(feat.size(0), -1, feat.size(3))
+    feat = _gather_feat(feat, ind)
+    return feat

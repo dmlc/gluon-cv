@@ -6,13 +6,12 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from detectron2.layers import ShapeSpec, NaiveSyncBatchNorm
-from detectron2.modeling.proposal_generator.build import PROPOSAL_GENERATOR_REGISTRY
+from ...nn.shape_spec import ShapeSpec
+from ...nn.deform_conv import DeformConvWithChangeableStride
+from ...nn.group_norm import NaiveGroupNorm
 
-from adet.layers import DFConv2d, NaiveGroupNorm
-
-from detectron2.structures import Instances, Boxes
-from fvcore.nn import sigmoid_focal_loss_jit
+from ...data.structures import Instances, Boxes
+from ...nn.focal_loss import sigmoid_focal_loss_jit
 
 from ...nn.nms import ml_nms
 from ...utils.loss import IOULoss
@@ -165,7 +164,7 @@ class FCOSHead(nn.Module):
             num_convs, use_deformable = head_configs[head]
             for i in range(num_convs):
                 if use_deformable and i == num_convs - 1:
-                    conv_func = DFConv2d
+                    raise NotImplementedError("Deformable Conv v2 is not supported yet!")
                 else:
                     conv_func = nn.Conv2d
                 tower.append(conv_func(
