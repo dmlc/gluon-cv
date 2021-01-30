@@ -84,8 +84,7 @@ def _train_object_detection(args, reporter):
         if estimator_cls == FasterRCNNEstimator:
             # safe guard if too many GT in dataset
             train_dataset = train_data.to_mxnet()
-            val_dataset = val_data.to_mxnet()
-            max_gt_count = max([y[1].shape[0] for y in train_dataset] + [y2[1].shape[0] for y2 in val_dataset])
+            max_gt_count = max([y[1].shape[0] for y in train_dataset]) + 20
             args['faster_rcnn']['max_num_gt'] = max_gt_count
         estimator = estimator_cls(args, reporter=reporter)
         # training
