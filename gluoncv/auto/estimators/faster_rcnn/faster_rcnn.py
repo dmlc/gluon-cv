@@ -321,17 +321,6 @@ class FasterRCNNEstimator(BaseEstimator):
             ctx = [mx.gpu(int(i)) for i in self._cfg.gpus]
             self.ctx = ctx if ctx else [mx.cpu()]
 
-        # adjust batch size
-        self.batch_size = self._cfg.train.batch_size // min(1, self.num_gpus) \
-            if self._cfg.horovod else self._cfg.train.batch_size
-        if not self._cfg.horovod:
-            if self._cfg.train.batch_size == 1 and self.num_gpus > 1:
-                self.batch_size *= self.num_gpus
-            elif self._cfg.train.batch_size < self.num_gpus:
-                self.batch_size = self.num_gpus
-        if self.batch_size % self.num_gpus != 0:
-            raise ValueError(f"batch_size {self._cfg.train.batch_size} must be divisible by # gpu {self.num_gpus}")
-
         # network
         kwargs = {}
         module_list = []
@@ -343,6 +332,17 @@ class FasterRCNNEstimator(BaseEstimator):
                 kwargs['num_devices'] = len(self.ctx)
 
         self.num_gpus = hvd.size() if self._cfg.horovod else len(self.ctx)
+
+        # adjust batch size
+        self.batch_size = self._cfg.train.batch_size // min(1, self.num_gpus) \
+            if self._cfg.horovod else self._cfg.train.batch_size
+        if not self._cfg.horovod:
+            if self._cfg.train.batch_size == 1 and self.num_gpus > 1:
+                self.batch_size *= self.num_gpus
+            elif self._cfg.train.batch_size < self.num_gpus:
+                self.batch_size = self.num_gpus
+        if self.batch_size % self.num_gpus != 0:
+            raise ValueError(f"batch_size {self._cfg.train.batch_size} must be divisible by # gpu {self.num_gpus}")
 
         if self._cfg.faster_rcnn.transfer is not None:
             assert isinstance(self._cfg.faster_rcnn.transfer, str)
