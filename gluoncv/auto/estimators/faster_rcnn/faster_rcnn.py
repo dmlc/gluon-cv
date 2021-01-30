@@ -1,5 +1,5 @@
 """Faster RCNN Estimator."""
-# pylint: disable=logging-not-lazy,abstract-method
+# // # pylint: disable=logging-not-lazy,abstract-method
 import os
 import time
 import warnings
@@ -252,7 +252,9 @@ class FasterRCNNEstimator(BaseEstimator):
             gt_difficults = []
             for x, y, im_scale in zip(*batch):
                 # get prediction results
-                ids, scores, bboxes = self.net(x)
+                with warnings.catch_warnings(record=True) as w:
+                    warnings.simplefilter("always")
+                    ids, scores, bboxes = self.net(x)
                 det_ids.append(ids)
                 det_scores.append(scores)
                 # clip to image size
