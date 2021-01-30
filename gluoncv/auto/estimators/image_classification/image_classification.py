@@ -127,6 +127,7 @@ class ImageClassificationEstimator(BaseEstimator):
             if self._best_acc >= 1.0:
                 self._logger.info('[Epoch {}] Early stopping as acc is reaching 1.0'.format(epoch))
                 break
+            mx.nd.waitall()
             tic = time.time()
             btic = time.time()
             if self._cfg.train.use_rec:
