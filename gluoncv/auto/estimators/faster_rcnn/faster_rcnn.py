@@ -357,6 +357,7 @@ class FasterRCNNEstimator(BaseEstimator):
                 self.net = get_model(self._cfg.faster_rcnn.transfer, pretrained=True,
                                      per_device_batch_size=self.batch_size // self.num_gpus,
                                      **kwargs)
+                self.net.sampler._max_num_gt = self._cfg.faster_rcnn.max_num_gt
             self.net.reset_class(self.classes,
                                  reuse_weights=[cname for cname in self.classes if cname in self.net.classes])
         else:
