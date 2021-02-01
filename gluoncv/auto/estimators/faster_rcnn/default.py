@@ -70,9 +70,9 @@ class FasterRCNN:
     num_box_head_dense_filters : int = 1024
 
     # Input image short side size.
-    image_short : int = 800
+    image_short : int = 600
     # Maximum size of input image long side.
-    image_max_size : int = 1333
+    image_max_size : int = 1000
 
     # Whether to enable custom model.
     # custom_model = True
@@ -143,7 +143,7 @@ class TrainCfg:
     # Misc
     # ----
     # log interval in terms of iterations
-    log_interval : int = 100
+    log_interval : int = 10
     # Random seed to be fixed.
     seed : int = 233
     # Whether to enable verbose logging
@@ -202,4 +202,4 @@ class FasterRCNNCfg:
     # dist_async are available.
     kv_store : str = 'nccl'
     # Whether to disable hybridize the model. Memory usage and speed will decrese.
-    disable_hybridization : bool = False
+    disable_hybridization : bool = True

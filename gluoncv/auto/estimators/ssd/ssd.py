@@ -123,6 +123,9 @@ class SSDEstimator(BaseEstimator):
         self.net.collect_params().reset_ctx(self.ctx)
         for self.epoch in range(max(self._cfg.train.start_epoch, self.epoch), self._cfg.train.epochs):
             epoch = self.epoch
+            if self._best_map >= 1.0:
+                self._logger.info('[Epoch {}] Early stopping as mAP is reaching 1.0'.format(epoch))
+                break
             while lr_steps and epoch >= lr_steps[0]:
                 new_lr = self.trainer.learning_rate * lr_decay
                 lr_steps.pop(0)
@@ -222,8 +225,11 @@ class SSDEstimator(BaseEstimator):
         self.net.collect_params().reset_ctx(self.ctx)
         self.net.hybridize(static_alloc=True, static_shape=True)
         for batch in val_data:
-            data = gluon.utils.split_and_load(batch[0], ctx_list=self.ctx, batch_axis=0, even_split=False)
-            label = gluon.utils.split_and_load(batch[1], ctx_list=self.ctx, batch_axis=0, even_split=False)
+            val_ctx = self.ctx
+            if batch[0].shape[0] < len(val_ctx):
+                val_ctx = val_ctx[:batch[0].shape[0]]
+            data = gluon.utils.split_and_load(batch[0], ctx_list=val_ctx, batch_axis=0, even_split=False)
+            label = gluon.utils.split_and_load(batch[1], ctx_list=val_ctx, batch_axis=0, even_split=False)
             det_bboxes = []
             det_ids = []
             det_scores = []
@@ -300,9 +306,12 @@ class SSDEstimator(BaseEstimator):
             self._logger.info(
                 f'Using transfer learning from {self._cfg.ssd.transfer}, the other network parameters are ignored.')
             if self._cfg.ssd.syncbn and len(self.ctx) > 1:
-                self.net = get_model(self._cfg.ssd.transfer, pretrained=True, norm_layer=gluon.contrib.nn.SyncBatchNorm,
-                                     norm_kwargs={'num_devices': len(self.ctx)})
-                self.async_net = get_model(self._cfg.ssd.transfer, pretrained=True)  # used by cpu worker
+                with warnings.catch_warnings(record=True) as w:
+                    warnings.simplefilter("always")
+                    self.net = get_model(self._cfg.ssd.transfer, pretrained=True,
+                                         norm_layer=gluon.contrib.nn.SyncBatchNorm,
+                                         norm_kwargs={'num_devices': len(self.ctx)})
+                    self.async_net = get_model(self._cfg.ssd.transfer, pretrained=True)  # used by cpu worker
                 self.net.reset_class(self.classes,
                                      reuse_weights=[cname for cname in self.classes if cname in self.net.classes])
             else:
@@ -313,38 +322,42 @@ class SSDEstimator(BaseEstimator):
         # elif self._cfg.ssd.custom_model:
         else:
             if self._cfg.ssd.syncbn and len(self.ctx) > 1:
-                self.net = custom_ssd(base_network_name=self._cfg.ssd.base_network,
-                                      base_size=self._cfg.ssd.data_shape,
-                                      filters=self._cfg.ssd.filters,
-                                      sizes=self._cfg.ssd.sizes,
-                                      ratios=self._cfg.ssd.ratios,
-                                      steps=self._cfg.ssd.steps,
-                                      classes=self.classes,
-                                      dataset='auto',
-                                      pretrained_base=True,
-                                      norm_layer=gluon.contrib.nn.SyncBatchNorm,
-                                      norm_kwargs={'num_devices': len(self.ctx)})
-                self.async_net = custom_ssd(base_network_name=self._cfg.ssd.base_network,
-                                            base_size=self._cfg.ssd.data_shape,
-                                            filters=self._cfg.ssd.filters,
-                                            sizes=self._cfg.ssd.sizes,
-                                            ratios=self._cfg.ssd.ratios,
-                                            steps=self._cfg.ssd.steps,
-                                            classes=self.classes,
-                                            dataset='auto',
-                                            pretrained_base=False)
+                with warnings.catch_warnings(record=True) as w:
+                    warnings.simplefilter("always")
+                    self.net = custom_ssd(base_network_name=self._cfg.ssd.base_network,
+                                          base_size=self._cfg.ssd.data_shape,
+                                          filters=self._cfg.ssd.filters,
+                                          sizes=self._cfg.ssd.sizes,
+                                          ratios=self._cfg.ssd.ratios,
+                                          steps=self._cfg.ssd.steps,
+                                          classes=self.classes,
+                                          dataset='auto',
+                                          pretrained_base=True,
+                                          norm_layer=gluon.contrib.nn.SyncBatchNorm,
+                                          norm_kwargs={'num_devices': len(self.ctx)})
+                    self.async_net = custom_ssd(base_network_name=self._cfg.ssd.base_network,
+                                                base_size=self._cfg.ssd.data_shape,
+                                                filters=self._cfg.ssd.filters,
+                                                sizes=self._cfg.ssd.sizes,
+                                                ratios=self._cfg.ssd.ratios,
+                                                steps=self._cfg.ssd.steps,
+                                                classes=self.classes,
+                                                dataset='auto',
+                                                pretrained_base=False)
             else:
-                self.net = custom_ssd(base_network_name=self._cfg.ssd.base_network,
-                                      base_size=self._cfg.ssd.data_shape,
-                                      filters=self._cfg.ssd.filters,
-                                      sizes=self._cfg.ssd.sizes,
-                                      ratios=self._cfg.ssd.ratios,
-                                      steps=self._cfg.ssd.steps,
-                                      classes=self.classes,
-                                      dataset=self._cfg.dataset,
-                                      pretrained_base=True,
-                                      norm_layer=gluon.nn.BatchNorm)
-                self.async_net = self.net
+                with warnings.catch_warnings(record=True) as w:
+                    warnings.simplefilter("always")
+                    self.net = custom_ssd(base_network_name=self._cfg.ssd.base_network,
+                                          base_size=self._cfg.ssd.data_shape,
+                                          filters=self._cfg.ssd.filters,
+                                          sizes=self._cfg.ssd.sizes,
+                                          ratios=self._cfg.ssd.ratios,
+                                          steps=self._cfg.ssd.steps,
+                                          classes=self.classes,
+                                          dataset=self._cfg.dataset,
+                                          pretrained_base=True,
+                                          norm_layer=gluon.nn.BatchNorm)
+                    self.async_net = self.net
 
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")

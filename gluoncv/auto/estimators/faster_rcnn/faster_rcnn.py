@@ -1,7 +1,8 @@
 """Faster RCNN Estimator."""
-# pylint: disable=logging-not-lazy,abstract-method
+# pylint: disable=logging-not-lazy,abstract-method,unused-variable
 import os
 import time
+import warnings
 
 import pandas as pd
 import numpy as np
@@ -54,6 +55,7 @@ class FasterRCNNEstimator(BaseEstimator):
     """
     def __init__(self, config, logger=None, reporter=None):
         super(FasterRCNNEstimator, self).__init__(config, logger, reporter)
+        self.batch_size = self._cfg.train.batch_size
 
     def _fit(self, train_data, val_data):
         """Fit Faster R-CNN model."""
@@ -62,8 +64,10 @@ class FasterRCNNEstimator(BaseEstimator):
         self._time_elapsed = 0
         if max(self._cfg.train.start_epoch, self.epoch) >= self._cfg.train.epochs:
             return {'time', self._time_elapsed}
-        self.net.collect_params().setattr('grad_req', 'null')
-        self.net.collect_train_params().setattr('grad_req', 'write')
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            self.net.collect_params().setattr('grad_req', 'null')
+            self.net.collect_train_params().setattr('grad_req', 'write')
         self._init_trainer()
         return self._resume_fit(train_data, val_data)
 
@@ -78,11 +82,6 @@ class FasterRCNNEstimator(BaseEstimator):
         val_dataset = val_data.to_mxnet()
 
         # dataloader
-        self.batch_size = self._cfg.train.batch_size // min(1, self.num_gpus) \
-            if self._cfg.horovod else self._cfg.train.batch_size
-        if not self._cfg.horovod:
-            if self._cfg.train.batch_size == 1 and self.num_gpus > 1:
-                self.batch_size *= self.num_gpus
         train_loader, val_loader, train_eval_loader = _get_dataloader(
             self.net, train_dataset, val_dataset, FasterRCNNDefaultTrainTransform,
             FasterRCNNDefaultValTransform, self.batch_size, len(self.ctx), self._cfg)
@@ -121,6 +120,9 @@ class FasterRCNNEstimator(BaseEstimator):
 
         for self.epoch in range(max(self._cfg.train.start_epoch, self.epoch), self._cfg.train.epochs):
             epoch = self.epoch
+            if self._best_map >= 1.0:
+                self._logger.info('[Epoch %d] Early stopping as mAP is reaching 1.0', epoch)
+                break
             btic = time.time()
             rcnn_task = ForwardBackwardTask(self.net, self.trainer, rpn_cls_loss, rpn_box_loss,
                                             rcnn_cls_loss, rcnn_box_loss, mix_ratio=1.0,
@@ -189,7 +191,7 @@ class FasterRCNNEstimator(BaseEstimator):
                          metrics + metrics2])
                     self._logger.info('[Epoch {}][Batch {}], Speed: {:.3f} samples/sec, {}'.format(
                         epoch, i,
-                        self._cfg.train.log_interval * self._cfg.train.batch_size / (
+                        self._cfg.train.log_interval * self.batch_size / (
                             time.time() - btic), msg))
                     btic = time.time()
 
@@ -250,7 +252,9 @@ class FasterRCNNEstimator(BaseEstimator):
             gt_difficults = []
             for x, y, im_scale in zip(*batch):
                 # get prediction results
-                ids, scores, bboxes = self.net(x)
+                with warnings.catch_warnings(record=True) as w:
+                    warnings.simplefilter("always")
+                    ids, scores, bboxes = self.net(x)
                 det_ids.append(ids)
                 det_scores.append(scores)
                 # clip to image size
@@ -318,6 +322,7 @@ class FasterRCNNEstimator(BaseEstimator):
         else:
             ctx = [mx.gpu(int(i)) for i in self._cfg.gpus]
             self.ctx = ctx if ctx else [mx.cpu()]
+
         # network
         kwargs = {}
         module_list = []
@@ -330,15 +335,29 @@ class FasterRCNNEstimator(BaseEstimator):
 
         self.num_gpus = hvd.size() if self._cfg.horovod else len(self.ctx)
 
+        # adjust batch size
+        self.batch_size = self._cfg.train.batch_size // min(1, self.num_gpus) \
+            if self._cfg.horovod else self._cfg.train.batch_size
+        if not self._cfg.horovod:
+            if self._cfg.train.batch_size == 1 and self.num_gpus > 1:
+                self.batch_size *= self.num_gpus
+            elif self._cfg.train.batch_size < self.num_gpus:
+                self.batch_size = self.num_gpus
+        if self.batch_size % self.num_gpus != 0:
+            raise ValueError(f"batch_size {self._cfg.train.batch_size} must be divisible by # gpu {self.num_gpus}")
+
         if self._cfg.faster_rcnn.transfer is not None:
             assert isinstance(self._cfg.faster_rcnn.transfer, str)
             self._logger.info(
                 f'Using transfer learning from {self._cfg.faster_rcnn.transfer}, ' +
                 'the other network parameters are ignored.')
             self._cfg.faster_rcnn.use_fpn = 'fpn' in self._cfg.faster_rcnn.transfer
-            self.net = get_model(self._cfg.faster_rcnn.transfer, pretrained=True,
-                                 per_device_batch_size=self._cfg.train.batch_size // self.num_gpus,
-                                 **kwargs)
+            with warnings.catch_warnings(record=True) as w:
+                warnings.simplefilter("always")
+                self.net = get_model(self._cfg.faster_rcnn.transfer, pretrained=True,
+                                     per_device_batch_size=self.batch_size // self.num_gpus,
+                                     **kwargs)
+                self.net.sampler._max_num_gt = self._cfg.faster_rcnn.max_num_gt
             self.net.reset_class(self.classes,
                                  reuse_weights=[cname for cname in self.classes if cname in self.net.classes])
         else:
@@ -358,43 +377,45 @@ class FasterRCNNEstimator(BaseEstimator):
                 norm_kwargs = None
                 sym_norm_layer = None
                 sym_norm_kwargs = None
-            self.net = get_model('custom_faster_rcnn_fpn', classes=self.classes, transfer=None,
-                                 dataset=self._cfg.dataset,
-                                 pretrained_base=self._cfg.train.pretrained_base,
-                                 base_network_name=self._cfg.faster_rcnn.base_network,
-                                 norm_layer=norm_layer, norm_kwargs=norm_kwargs,
-                                 sym_norm_layer=sym_norm_layer, sym_norm_kwargs=sym_norm_kwargs,
-                                 num_fpn_filters=self._cfg.faster_rcnn.num_fpn_filters,
-                                 num_box_head_conv=self._cfg.faster_rcnn.num_box_head_conv,
-                                 num_box_head_conv_filters=
-                                 self._cfg.faster_rcnn.num_box_head_conv_filters,
-                                 num_box_head_dense_filters=
-                                 self._cfg.faster_rcnn.num_box_head_dense_filters,
-                                 short=self._cfg.faster_rcnn.image_short,
-                                 max_size=self._cfg.faster_rcnn.image_max_size,
-                                 min_stage=2, max_stage=6,
-                                 nms_thresh=self._cfg.faster_rcnn.nms_thresh,
-                                 nms_topk=self._cfg.faster_rcnn.nms_topk,
-                                 roi_mode=self._cfg.faster_rcnn.roi_mode,
-                                 roi_size=self._cfg.faster_rcnn.roi_size,
-                                 strides=self._cfg.faster_rcnn.strides,
-                                 clip=self._cfg.faster_rcnn.clip,
-                                 rpn_channel=self._cfg.faster_rcnn.rpn_channel,
-                                 base_size=self._cfg.faster_rcnn.anchor_base_size,
-                                 scales=self._cfg.faster_rcnn.anchor_scales,
-                                 ratios=self._cfg.faster_rcnn.anchor_aspect_ratio,
-                                 alloc_size=self._cfg.faster_rcnn.anchor_alloc_size,
-                                 rpn_nms_thresh=self._cfg.faster_rcnn.rpn_nms_thresh,
-                                 rpn_train_pre_nms=self._cfg.train.rpn_train_pre_nms,
-                                 rpn_train_post_nms=self._cfg.train.rpn_train_post_nms,
-                                 rpn_test_pre_nms=self._cfg.valid.rpn_test_pre_nms,
-                                 rpn_test_post_nms=self._cfg.valid.rpn_test_post_nms,
-                                 rpn_min_size=self._cfg.train.rpn_min_size,
-                                 per_device_batch_size=self._cfg.train.batch_size // self.num_gpus,
-                                 num_sample=self._cfg.train.rcnn_num_samples,
-                                 pos_iou_thresh=self._cfg.train.rcnn_pos_iou_thresh,
-                                 pos_ratio=self._cfg.train.rcnn_pos_ratio,
-                                 max_num_gt=self._cfg.faster_rcnn.max_num_gt)
+            with warnings.catch_warnings(record=True) as w:
+                warnings.simplefilter("always")
+                self.net = get_model('custom_faster_rcnn_fpn', classes=self.classes, transfer=None,
+                                     dataset=self._cfg.dataset,
+                                     pretrained_base=self._cfg.train.pretrained_base,
+                                     base_network_name=self._cfg.faster_rcnn.base_network,
+                                     norm_layer=norm_layer, norm_kwargs=norm_kwargs,
+                                     sym_norm_layer=sym_norm_layer, sym_norm_kwargs=sym_norm_kwargs,
+                                     num_fpn_filters=self._cfg.faster_rcnn.num_fpn_filters,
+                                     num_box_head_conv=self._cfg.faster_rcnn.num_box_head_conv,
+                                     num_box_head_conv_filters=
+                                     self._cfg.faster_rcnn.num_box_head_conv_filters,
+                                     num_box_head_dense_filters=
+                                     self._cfg.faster_rcnn.num_box_head_dense_filters,
+                                     short=self._cfg.faster_rcnn.image_short,
+                                     max_size=self._cfg.faster_rcnn.image_max_size,
+                                     min_stage=2, max_stage=6,
+                                     nms_thresh=self._cfg.faster_rcnn.nms_thresh,
+                                     nms_topk=self._cfg.faster_rcnn.nms_topk,
+                                     roi_mode=self._cfg.faster_rcnn.roi_mode,
+                                     roi_size=self._cfg.faster_rcnn.roi_size,
+                                     strides=self._cfg.faster_rcnn.strides,
+                                     clip=self._cfg.faster_rcnn.clip,
+                                     rpn_channel=self._cfg.faster_rcnn.rpn_channel,
+                                     base_size=self._cfg.faster_rcnn.anchor_base_size,
+                                     scales=self._cfg.faster_rcnn.anchor_scales,
+                                     ratios=self._cfg.faster_rcnn.anchor_aspect_ratio,
+                                     alloc_size=self._cfg.faster_rcnn.anchor_alloc_size,
+                                     rpn_nms_thresh=self._cfg.faster_rcnn.rpn_nms_thresh,
+                                     rpn_train_pre_nms=self._cfg.train.rpn_train_pre_nms,
+                                     rpn_train_post_nms=self._cfg.train.rpn_train_post_nms,
+                                     rpn_test_pre_nms=self._cfg.valid.rpn_test_pre_nms,
+                                     rpn_test_post_nms=self._cfg.valid.rpn_test_post_nms,
+                                     rpn_min_size=self._cfg.train.rpn_min_size,
+                                     per_device_batch_size=self.batch_size // self.num_gpus,
+                                     num_sample=self._cfg.train.rcnn_num_samples,
+                                     pos_iou_thresh=self._cfg.train.rcnn_pos_iou_thresh,
+                                     pos_ratio=self._cfg.train.rcnn_pos_ratio,
+                                     max_num_gt=self._cfg.faster_rcnn.max_num_gt)
 
         if self._cfg.resume.strip():
             self.net.load_parameters(self._cfg.resume.strip())

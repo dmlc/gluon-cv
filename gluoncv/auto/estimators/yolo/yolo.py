@@ -114,6 +114,9 @@ class YOLOv3Estimator(BaseEstimator):
         self._logger.info('Start training from [Epoch %d]', max(self._cfg.train.start_epoch, self.epoch))
         for self.epoch in range(max(self._cfg.train.start_epoch, self.epoch), self._cfg.train.epochs):
             epoch = self.epoch
+            if self._best_map >= 1.0:
+                self._logger.info('[Epoch {}] Early stopping as mAP is reaching 1.0'.format(epoch))
+                break
             tic = time.time()
             btic = time.time()
             if self._cfg.train.mixup:
@@ -222,8 +225,11 @@ class YOLOv3Estimator(BaseEstimator):
         mx.nd.waitall()
         self.net.hybridize()
         for batch in val_data:
-            data = gluon.utils.split_and_load(batch[0], ctx_list=self.ctx, batch_axis=0, even_split=False)
-            label = gluon.utils.split_and_load(batch[1], ctx_list=self.ctx, batch_axis=0, even_split=False)
+            val_ctx = self.ctx
+            if batch[0].shape[0] < len(val_ctx):
+                val_ctx = val_ctx[:batch[0].shape[0]]
+            data = gluon.utils.split_and_load(batch[0], ctx_list=val_ctx, batch_axis=0, even_split=False)
+            label = gluon.utils.split_and_load(batch[1], ctx_list=val_ctx, batch_axis=0, even_split=False)
             det_bboxes = []
             det_ids = []
             det_scores = []

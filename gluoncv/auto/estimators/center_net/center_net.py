@@ -130,13 +130,16 @@ class CenterNetEstimator(BaseEstimator):
 
         self._logger.info('Start training from [Epoch %d]', max(self._cfg.train.start_epoch, self.epoch))
         for self.epoch in range(max(self._cfg.train.start_epoch, self.epoch), self._cfg.train.epochs):
+            epoch = self.epoch
+            if self._best_map >= 1.0:
+                self._logger.info('[Epoch %d] Early stopping as mAP is reaching 1.0', epoch)
+                break
             wh_metric.reset()
             center_reg_metric.reset()
             heatmap_loss_metric.reset()
             tic = time.time()
             btic = time.time()
             self.net.hybridize()
-            epoch = self.epoch
 
             for i, batch in enumerate(train_data):
                 split_data = [
@@ -225,9 +228,12 @@ class CenterNetEstimator(BaseEstimator):
                 self._cfg.valid.batch_size, False, batchify_fn=val_batchify_fn, last_batch='keep',
                 num_workers=self._cfg.valid.num_workers)
         for batch in val_data:
-            data = gluon.utils.split_and_load(batch[0], ctx_list=self.ctx, batch_axis=0,
+            val_ctx = self.ctx
+            if batch[0].shape[0] < len(val_ctx):
+                val_ctx = val_ctx[:batch[0].shape[0]]
+            data = gluon.utils.split_and_load(batch[0], ctx_list=val_ctx, batch_axis=0,
                                               even_split=False)
-            label = gluon.utils.split_and_load(batch[1], ctx_list=self.ctx, batch_axis=0,
+            label = gluon.utils.split_and_load(batch[1], ctx_list=val_ctx, batch_axis=0,
                                                even_split=False)
             det_bboxes = []
             det_ids = []

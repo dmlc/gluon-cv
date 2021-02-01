@@ -81,6 +81,11 @@ def _train_object_detection(args, reporter):
     tic = time.time()
     try:
         estimator_cls = args.pop('estimator', None)
+        if estimator_cls == FasterRCNNEstimator:
+            # safe guard if too many GT in dataset
+            train_dataset = train_data.to_mxnet()
+            max_gt_count = max([y[1].shape[0] for y in train_dataset]) + 20
+            args['faster_rcnn']['max_num_gt'] = max_gt_count
         estimator = estimator_cls(args, reporter=reporter)
         # training
         result = estimator.fit(train_data=train_data, val_data=val_data)
