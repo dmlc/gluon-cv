@@ -27,7 +27,7 @@ def get_dataset(ds_name, train=True, download=True):
         return ret[0]
     else:
         if len(ret) < 2:
-            raise raise ValueError('No validation dataset available for {}'.format(ds_name))
+            raise ValueError('No validation dataset available for {}'.format(ds_name))
         return ret[1]
 
 def _register_dataset(ds_name, fn):
