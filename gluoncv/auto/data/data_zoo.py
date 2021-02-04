@@ -37,8 +37,8 @@ def _register_dataset(ds_name, fn):
     _DATASETS[ds_name] = fn
 
 def _pascal_0712_detection(download=True):
-    root = os.environ.get('MXNET_HOME', os.path.join('~', '.mxnet', 'datasets', 'voc'))
-    root = os.path.expanduser(root)
+    root = os.environ.get('MXNET_HOME', os.path.join('~', '.mxnet'))
+    root = os.path.expanduser(os.path.join(root, 'datasets', 'voc'))
     if not os.path.isdir(root):
         if not download:
             raise OSError('No `pascal` dataset found on disk and `download=False`')
@@ -55,8 +55,8 @@ def _pascal_0712_detection(download=True):
            VOCDetection(root=root, splits=[(2007, 'test')])
 
 def _coco_2017_detection(download=True):
-    root = os.environ.get('MXNET_HOME', os.path.join('~', '.mxnet', 'datasets', 'coco'))
-    root = os.path.expanduser(root)
+    root = os.environ.get('MXNET_HOME', os.path.join('~', '.mxnet'))
+    root = os.path.expanduser(os.path.join(root, 'datasets', 'coco'))
     if not os.path.isdir(root):
         if not download:
             raise OSError('No `coco` dataset found on disk and `download=False`')
