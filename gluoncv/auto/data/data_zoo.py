@@ -10,6 +10,9 @@ __all__ = ['get_dataset']
 _DATASETS = {}
 
 
+def list_dataset():
+    return _DATASETS.keys()
+
 def get_dataset(ds_name, train=True, download=True):
     if not ds_name in _DATASETS:
         choices = str(_DATASETS.keys())
