@@ -75,7 +75,7 @@ def _coco_2017_detection(download=True):
             # extract
             with zipfile.ZipFile(filename) as zf:
                 zf.extractall(path=root)
-    return COCODetection(root=root, splits='instances_train2017', \
+    return COCODetection(root=root, splits='instances_train2017'), \
            COCODetection(root=root, splits='instances_val2017', skip_empty=False)
 
 _register_dataset('pascal_voc_0712', _pascal_0712_detection)
