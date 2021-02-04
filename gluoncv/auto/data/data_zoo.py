@@ -3,15 +3,15 @@ import os
 import shutil
 import tarfile
 from ...data import VOCDetection, COCODetection
-from ...utils import download, makedirs
+from ...utils import download as _download, makedirs
 
-__all__ = ['get_dataset']
+__all__ = ['get_dataset', 'list_dataset']
 
 _DATASETS = {}
 
 
 def list_dataset():
-    return _DATASETS.keys()
+    return list(_DATASETS.keys())
 
 def get_dataset(ds_name, train=True, download=True):
     if not ds_name in _DATASETS:
@@ -44,7 +44,7 @@ def _pascal_0712_detection(download=True):
             raise OSError('No `pascal` dataset found on disk and `download=False`')
         # download automatically
         makedirs(root)
-        filename = download('https://s3.amazonaws.com/fast-ai-imagelocal/pascal-voc.tgz',
+        filename = _download('https://s3.amazonaws.com/fast-ai-imagelocal/pascal-voc.tgz',
                             path=root, overwrite=True)
         with tarfile.open(filename) as tar:
             tar.extractall(path=root)
@@ -71,7 +71,7 @@ def _coco_2017_detection(download=True):
              '4950dc9d00dbe1c933ee0170f5797584351d2a41'),
         ]
         for url, checksum in _DOWNLOAD_URLS:
-            filename = download(url, path=root, overwrite=True, sha1_hash=checksum)
+            filename = _download(url, path=root, overwrite=True, sha1_hash=checksum)
             # extract
             with zipfile.ZipFile(filename) as zf:
                 zf.extractall(path=root)
