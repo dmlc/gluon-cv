@@ -64,54 +64,54 @@ class DirectPoseOutputs(nn.Module):
     def __init__(self, cfg):
         super(DirectPoseOutputs, self).__init__()
 
-        self.focal_loss_alpha = cfg.MODEL.DIRECTPOSE.LOSS_ALPHA
-        self.focal_loss_gamma = cfg.MODEL.DIRECTPOSE.LOSS_GAMMA
-        self.center_sample = cfg.MODEL.DIRECTPOSE.CENTER_SAMPLE
-        self.radius = cfg.MODEL.DIRECTPOSE.POS_RADIUS
-        self.pre_nms_thresh_train = cfg.MODEL.DIRECTPOSE.INFERENCE_TH_TRAIN
-        self.pre_nms_topk_train = cfg.MODEL.DIRECTPOSE.PRE_NMS_TOPK_TRAIN
-        self.post_nms_topk_train = cfg.MODEL.DIRECTPOSE.POST_NMS_TOPK_TRAIN
-        self.loc_loss_func = IOULoss(cfg.MODEL.DIRECTPOSE.LOC_LOSS_TYPE)
-        self.kpt_l1_beta = cfg.MODEL.DIRECTPOSE.KPT_L1_beta
-        self.enable_bbox_branch = cfg.MODEL.DIRECTPOSE.ENABLE_BBOX_BRANCH
-        self.loss_on_locator = cfg.MODEL.DIRECTPOSE.LOSS_ON_LOCATOR
-        self.enable_kpt_vis_branch = cfg.MODEL.DIRECTPOSE.KPT_VIS
-        self.enable_close_kpt_nms = cfg.MODEL.DIRECTPOSE.CLOSEKPT_NMS
+        self.focal_loss_alpha = cfg.CONFIG.MODEL.DIRECTPOSE.LOSS_ALPHA
+        self.focal_loss_gamma = cfg.CONFIG.MODEL.DIRECTPOSE.LOSS_GAMMA
+        self.center_sample = cfg.CONFIG.MODEL.DIRECTPOSE.CENTER_SAMPLE
+        self.radius = cfg.CONFIG.MODEL.DIRECTPOSE.POS_RADIUS
+        self.pre_nms_thresh_train = cfg.CONFIG.MODEL.DIRECTPOSE.INFERENCE_TH_TRAIN
+        self.pre_nms_topk_train = cfg.CONFIG.MODEL.DIRECTPOSE.PRE_NMS_TOPK_TRAIN
+        self.post_nms_topk_train = cfg.CONFIG.MODEL.DIRECTPOSE.POST_NMS_TOPK_TRAIN
+        self.loc_loss_func = IOULoss(cfg.CONFIG.MODEL.DIRECTPOSE.LOC_LOSS_TYPE)
+        self.kpt_l1_beta = cfg.CONFIG.MODEL.DIRECTPOSE.KPT_L1_beta
+        self.enable_bbox_branch = cfg.CONFIG.MODEL.DIRECTPOSE.ENABLE_BBOX_BRANCH
+        self.loss_on_locator = cfg.CONFIG.MODEL.DIRECTPOSE.LOSS_ON_LOCATOR
+        self.enable_kpt_vis_branch = cfg.CONFIG.MODEL.DIRECTPOSE.KPT_VIS
+        self.enable_close_kpt_nms = cfg.CONFIG.MODEL.DIRECTPOSE.CLOSEKPT_NMS
         # self.vis_res_dir = os.path.join('/workplace/data/motion_efs/home/manchenw/AdelaiDet/visualization',
-        #                                 cfg.MODEL.WEIGHTS.split('/')[2])
+        #                                 cfg.CONFIG.MODEL.WEIGHTS.split('/')[2])
 
-        self.enable_hm_branch = cfg.MODEL.DIRECTPOSE.ENABLE_HM_BRANCH
-        self.hm_type = cfg.MODEL.DIRECTPOSE.HM_TYPE
-        self.predict_hm_offset = cfg.MODEL.DIRECTPOSE.HM_OFFSET
-        self.hm_loss_type = cfg.MODEL.DIRECTPOSE.HM_LOSS_TYPE
-        self.combine_hm_and_kpt = cfg.MODEL.DIRECTPOSE.REFINE_KPT
-        self.hm_loss_weight = cfg.MODEL.DIRECTPOSE.HM_LOSS_WEIGHT
+        self.enable_hm_branch = cfg.CONFIG.MODEL.DIRECTPOSE.ENABLE_HM_BRANCH
+        self.hm_type = cfg.CONFIG.MODEL.DIRECTPOSE.HM_TYPE
+        self.predict_hm_offset = cfg.CONFIG.MODEL.DIRECTPOSE.HM_OFFSET
+        self.hm_loss_type = cfg.CONFIG.MODEL.DIRECTPOSE.HM_LOSS_TYPE
+        self.combine_hm_and_kpt = cfg.CONFIG.MODEL.DIRECTPOSE.REFINE_KPT
+        self.hm_loss_weight = cfg.CONFIG.MODEL.DIRECTPOSE.HM_LOSS_WEIGHT
         self.g = self.get_gaussian_kernel(sigma=2)
         if self.hm_type == 'Gaussian':
             if self.hm_loss_type == 'mse':
-                self.hm_bg_weight = cfg.MODEL.DIRECTPOSE.HM_MSELOSS_BG_WEIGHT
-                self.hm_loss_weight = cfg.MODEL.DIRECTPOSE.HM_MSELOSS_WEIGHT
+                self.hm_bg_weight = cfg.CONFIG.MODEL.DIRECTPOSE.HM_MSELOSS_BG_WEIGHT
+                self.hm_loss_weight = cfg.CONFIG.MODEL.DIRECTPOSE.HM_MSELOSS_WEIGHT
                 self.hm_loss = WeightedMSELoss()
             elif self.hm_loss_type == 'focal':
                 self.hm_bg_weight = 1.0
-                hm_focal_alpha = cfg.MODEL.DIRECTPOSE.HM_FOCALLOSS_ALPHA
-                hm_focal_beta = cfg.MODEL.DIRECTPOSE.HM_FOCALLOSS_BETA
+                hm_focal_alpha = cfg.CONFIG.MODEL.DIRECTPOSE.HM_FOCALLOSS_ALPHA
+                hm_focal_beta = cfg.CONFIG.MODEL.DIRECTPOSE.HM_FOCALLOSS_BETA
                 self.hm_loss = HMFocalLoss(hm_focal_alpha, hm_focal_beta)
 
-        self.pre_nms_thresh_test = cfg.MODEL.DIRECTPOSE.INFERENCE_TH_TEST
-        self.pre_nms_topk_test = cfg.MODEL.DIRECTPOSE.PRE_NMS_TOPK_TEST
-        self.post_nms_topk_test = cfg.MODEL.DIRECTPOSE.POST_NMS_TOPK_TEST
-        self.nms_thresh = cfg.MODEL.DIRECTPOSE.NMS_TH
-        self.thresh_with_ctr = cfg.MODEL.DIRECTPOSE.THRESH_WITH_CTR
+        self.pre_nms_thresh_test = cfg.CONFIG.MODEL.DIRECTPOSE.INFERENCE_TH_TEST
+        self.pre_nms_topk_test = cfg.CONFIG.MODEL.DIRECTPOSE.PRE_NMS_TOPK_TEST
+        self.post_nms_topk_test = cfg.CONFIG.MODEL.DIRECTPOSE.POST_NMS_TOPK_TEST
+        self.nms_thresh = cfg.CONFIG.MODEL.DIRECTPOSE.NMS_TH
+        self.thresh_with_ctr = cfg.CONFIG.MODEL.DIRECTPOSE.THRESH_WITH_CTR
 
-        self.num_classes = cfg.MODEL.DIRECTPOSE.NUM_CLASSES
-        self.strides = cfg.MODEL.DIRECTPOSE.FPN_STRIDES
-        self.num_kpts = cfg.MODEL.DIRECTPOSE.NUM_KPTS
+        self.num_classes = cfg.CONFIG.MODEL.DIRECTPOSE.NUM_CLASSES
+        self.strides = cfg.CONFIG.MODEL.DIRECTPOSE.FPN_STRIDES
+        self.num_kpts = cfg.CONFIG.MODEL.DIRECTPOSE.NUM_KPTS
 
         # generate sizes of interest
         soi = []
         prev_size = -1
-        for s in cfg.MODEL.DIRECTPOSE.SIZES_OF_INTEREST:
+        for s in cfg.CONFIG.MODEL.DIRECTPOSE.SIZES_OF_INTEREST:
             soi.append([prev_size, s])
             prev_size = s
         soi.append([prev_size, INF])
@@ -660,7 +660,7 @@ class DirectPoseOutputs(nn.Module):
             per_candidate_inds = candidate_inds[i]
             per_box_cls = per_box_cls[per_candidate_inds]
 
-            per_candidate_nonzeros = per_candidate_inds.nonzero()
+            per_candidate_nonzeros = per_candidate_inds.nonzero(as_tuple=False)
             per_box_loc = per_candidate_nonzeros[:, 0]
             per_class = per_candidate_nonzeros[:, 1]
 

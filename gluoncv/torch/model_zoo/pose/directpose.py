@@ -76,9 +76,9 @@ class DirectPose(nn.Module):
 
     def __init__(self, cfg, input_shape: Dict[str, ShapeSpec]):
         super().__init__()
-        self.in_features = cfg.CONFIG.DIRECTPOSE.IN_FEATURES
-        self.fpn_strides = cfg.CONFIG.DIRECTPOSE.FPN_STRIDES
-        self.yield_proposal = cfg.CONFIG.DIRECTPOSE.YIELD_PROPOSAL
+        self.in_features = cfg.CONFIG.MODEL.DIRECTPOSE.IN_FEATURES
+        self.fpn_strides = cfg.CONFIG.MODEL.DIRECTPOSE.FPN_STRIDES
+        self.yield_proposal = cfg.CONFIG.MODEL.DIRECTPOSE.YIELD_PROPOSAL
 
         self.directpose_head = DIRECTPOSEHead(cfg, [input_shape[f] for f in self.in_features])
         self.in_channels_to_top_module = self.directpose_head.in_channels_to_top_module
@@ -130,9 +130,13 @@ class DirectPose(nn.Module):
                     )
             return results, losses
         else:
+            if isinstance(images, torch.Tensor):
+                image_sizes = [image.size()[-2:] for image in images]
+            else:
+                image_sizes = images.image_sizes
             results = self.directpose_outputs.predict_proposals(
                 logits_pred, bbox_reg_pred, kpt_reg_pred, ctrness_pred, hms, hms_offset,
-                locations, images.image_sizes, top_feats, None
+                locations, image_sizes, top_feats, None
             )
 
             return results, {}
@@ -157,38 +161,38 @@ class DIRECTPOSEHead(nn.Module):
         """
         super().__init__()
         # TODO: Implement the sigmoid version first.
-        self.num_classes = cfg.CONFIG.DIRECTPOSE.NUM_CLASSES
-        self.num_kpts = cfg.CONFIG.DIRECTPOSE.NUM_KPTS
-        self.fpn_strides = cfg.CONFIG.DIRECTPOSE.FPN_STRIDES
-        self.hm_loss_type = cfg.CONFIG.DIRECTPOSE.HM_LOSS_TYPE
-        self.sample_feature = cfg.CONFIG.DIRECTPOSE.SAMPLE_FEATURE
-        self.groups = cfg.CONFIG.DIRECTPOSE.KPALIGN_GROUPS
-        self.seperate_conv_feature = cfg.CONFIG.DIRECTPOSE.SEPERATE_CONV_FEATURE
-        self.seperate_conv_channel = cfg.CONFIG.DIRECTPOSE.SEPERATE_CONV_CHANNEL
-        self.enable_bbox_branch = cfg.CONFIG.DIRECTPOSE.ENABLE_BBOX_BRANCH
-        self.hm_channels = cfg.CONFIG.DIRECTPOSE.HM_CHANNELS
-        self.loss_on_locator = cfg.CONFIG.DIRECTPOSE.LOSS_ON_LOCATOR
-        self.predict_hm_offset = cfg.CONFIG.DIRECTPOSE.HM_OFFSET
-        self.enable_kpt_vis_branch = cfg.CONFIG.DIRECTPOSE.KPT_VIS
-        self.enable_hm_branch = cfg.CONFIG.DIRECTPOSE.ENABLE_HM_BRANCH
-        self.center_branch = cfg.CONFIG.DIRECTPOSE.CENTER_BRANCH
+        self.num_classes = cfg.CONFIG.MODEL.DIRECTPOSE.NUM_CLASSES
+        self.num_kpts = cfg.CONFIG.MODEL.DIRECTPOSE.NUM_KPTS
+        self.fpn_strides = cfg.CONFIG.MODEL.DIRECTPOSE.FPN_STRIDES
+        self.hm_loss_type = cfg.CONFIG.MODEL.DIRECTPOSE.HM_LOSS_TYPE
+        self.sample_feature = cfg.CONFIG.MODEL.DIRECTPOSE.SAMPLE_FEATURE
+        self.groups = cfg.CONFIG.MODEL.DIRECTPOSE.KPALIGN_GROUPS
+        self.seperate_conv_feature = cfg.CONFIG.MODEL.DIRECTPOSE.SEPERATE_CONV_FEATURE
+        self.seperate_conv_channel = cfg.CONFIG.MODEL.DIRECTPOSE.SEPERATE_CONV_CHANNEL
+        self.enable_bbox_branch = cfg.CONFIG.MODEL.DIRECTPOSE.ENABLE_BBOX_BRANCH
+        self.hm_channels = cfg.CONFIG.MODEL.DIRECTPOSE.HM_CHANNELS
+        self.loss_on_locator = cfg.CONFIG.MODEL.DIRECTPOSE.LOSS_ON_LOCATOR
+        self.predict_hm_offset = cfg.CONFIG.MODEL.DIRECTPOSE.HM_OFFSET
+        self.enable_kpt_vis_branch = cfg.CONFIG.MODEL.DIRECTPOSE.KPT_VIS
+        self.enable_hm_branch = cfg.CONFIG.MODEL.DIRECTPOSE.ENABLE_HM_BRANCH
+        self.center_branch = cfg.CONFIG.MODEL.DIRECTPOSE.CENTER_BRANCH
         self.kpt_per_group = [5, 1, 2, 1, 2, 1, 2, 1, 2]
         self.kpt_index = torch.tensor([0, 1, 2, 3, 4, 5, 8, 6, 9, 7, 10, 11, 14, 12, 15, 13, 16])
 
-        head_configs = {"cls": (cfg.CONFIG.DIRECTPOSE.NUM_CLS_CONVS,
-                                cfg.CONFIG.DIRECTPOSE.USE_DEFORMABLE),
-                        "kpt": (cfg.CONFIG.DIRECTPOSE.NUM_KPT_CONVS,
-                                 cfg.CONFIG.DIRECTPOSE.USE_DEFORMABLE),
-                        "share": (cfg.CONFIG.DIRECTPOSE.NUM_SHARE_CONVS,
+        head_configs = {"cls": (cfg.CONFIG.MODEL.DIRECTPOSE.NUM_CLS_CONVS,
+                                cfg.CONFIG.MODEL.DIRECTPOSE.USE_DEFORMABLE),
+                        "kpt": (cfg.CONFIG.MODEL.DIRECTPOSE.NUM_KPT_CONVS,
+                                 cfg.CONFIG.MODEL.DIRECTPOSE.USE_DEFORMABLE),
+                        "share": (cfg.CONFIG.MODEL.DIRECTPOSE.NUM_SHARE_CONVS,
                                   False)}
         if self.enable_bbox_branch:
-            head_configs["bbox"] = (cfg.CONFIG.DIRECTPOSE.NUM_BOX_CONVS,
-                                 cfg.CONFIG.DIRECTPOSE.USE_DEFORMABLE)
+            head_configs["bbox"] = (cfg.CONFIG.MODEL.DIRECTPOSE.NUM_BOX_CONVS,
+                                 cfg.CONFIG.MODEL.DIRECTPOSE.USE_DEFORMABLE)
         if self.enable_hm_branch:
-            head_configs["hm"] = (cfg.CONFIG.DIRECTPOSE.NUM_HMS_CONVS,
-                                 cfg.CONFIG.DIRECTPOSE.USE_DEFORMABLE)
+            head_configs["hm"] = (cfg.CONFIG.MODEL.DIRECTPOSE.NUM_HMS_CONVS,
+                                 cfg.CONFIG.MODEL.DIRECTPOSE.USE_DEFORMABLE)
 
-        norm = None if cfg.CONFIG.DIRECTPOSE.NORM == "none" else cfg.CONFIG.DIRECTPOSE.NORM
+        norm = None if cfg.CONFIG.MODEL.DIRECTPOSE.NORM == "none" else cfg.CONFIG.MODEL.DIRECTPOSE.NORM
         self.num_levels = len(input_shape)
 
         in_channels = [s.channels for s in input_shape]
@@ -281,7 +285,7 @@ class DIRECTPOSEHead(nn.Module):
             if self.predict_hm_offset:
                 self.hm_offset_pred = nn.Conv2d(self.hm_channels, 2, kernel_size=3, stride=1, padding=1)
 
-        if cfg.CONFIG.DIRECTPOSE.USE_SCALE:
+        if cfg.CONFIG.MODEL.DIRECTPOSE.USE_SCALE:
             self.scales = nn.ModuleList([Scale(init_value=1.0) for _ in range(self.num_levels)])
         else:
             self.scales = None
@@ -307,7 +311,7 @@ class DIRECTPOSEHead(nn.Module):
                     torch.nn.init.constant_(l.bias, 0)
 
         # initialize the bias for focal loss
-        prior_prob = cfg.CONFIG.DIRECTPOSE.PRIOR_PROB
+        prior_prob = cfg.CONFIG.MODEL.DIRECTPOSE.PRIOR_PROB
         bias_value = -math.log((1 - prior_prob) / prior_prob)
         torch.nn.init.constant_(self.cls_logits.bias, bias_value)
 
