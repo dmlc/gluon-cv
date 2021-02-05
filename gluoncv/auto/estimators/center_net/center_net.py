@@ -47,7 +47,11 @@ class CenterNetEstimator(BaseEstimator):
         short_size = min(self._cfg.center_net.data_shape)
         if isinstance(x, str):
             x = load_test(x, short=short_size, max_size=1024)[0]
+        elif isinstance(x, np.ndarray):
+            return self._predict(mx.nd.array(x))
         elif isinstance(x, mx.nd.NDArray):
+            if len(x.shape) != 3 or x.shape[-1] != 3:
+                raise ValueError('array input with shape (h, w, 3) is required for predict')
             x = transform_test(x, short=short_size, max_size=1024)[0]
         elif isinstance(x, pd.DataFrame):
             assert 'image' in x.columns, "Expect column `image` for input images"
@@ -56,6 +60,8 @@ class CenterNetEstimator(BaseEstimator):
                 y['image'] = x
                 return y
             return pd.concat([_predict_merge(xx) for xx in x['image']]).reset_index(drop=True)
+        elif isinstance(x, (list, tuple)):
+            return pd.concat([self._predict(xx) for xx in x]).reset_index(drop=True)
         else:
             raise ValueError('Input is not supported: {}'.format(type(x)))
         height, width = x.shape[2:4]
@@ -124,13 +130,16 @@ class CenterNetEstimator(BaseEstimator):
 
         self._logger.info('Start training from [Epoch %d]', max(self._cfg.train.start_epoch, self.epoch))
         for self.epoch in range(max(self._cfg.train.start_epoch, self.epoch), self._cfg.train.epochs):
+            epoch = self.epoch
+            if self._best_map >= 1.0:
+                self._logger.info('[Epoch %d] Early stopping as mAP is reaching 1.0', epoch)
+                break
             wh_metric.reset()
             center_reg_metric.reset()
             heatmap_loss_metric.reset()
             tic = time.time()
             btic = time.time()
             self.net.hybridize()
-            epoch = self.epoch
 
             for i, batch in enumerate(train_data):
                 split_data = [
@@ -219,9 +228,12 @@ class CenterNetEstimator(BaseEstimator):
                 self._cfg.valid.batch_size, False, batchify_fn=val_batchify_fn, last_batch='keep',
                 num_workers=self._cfg.valid.num_workers)
         for batch in val_data:
-            data = gluon.utils.split_and_load(batch[0], ctx_list=self.ctx, batch_axis=0,
+            val_ctx = self.ctx
+            if batch[0].shape[0] < len(val_ctx):
+                val_ctx = val_ctx[:batch[0].shape[0]]
+            data = gluon.utils.split_and_load(batch[0], ctx_list=val_ctx, batch_axis=0,
                                               even_split=False)
-            label = gluon.utils.split_and_load(batch[1], ctx_list=self.ctx, batch_axis=0,
+            label = gluon.utils.split_and_load(batch[1], ctx_list=val_ctx, batch_axis=0,
                                                even_split=False)
             det_bboxes = []
             det_ids = []

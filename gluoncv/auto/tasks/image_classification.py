@@ -31,7 +31,7 @@ class LiteConfig:
     lr : Union[ag.Space, float] = 1e-2
     num_trials : int = 1
     epochs : Union[ag.Space, int] = 5
-    batch_size : Union[ag.Space, int] = 3  # 2 ** 3 == 8
+    batch_size : Union[ag.Space, int] = 8
     nthreads_per_trial : int = 32
     ngpus_per_trial : int = 0
     time_limits : int = 7 * 24 * 60 * 60  # 7 days
@@ -44,7 +44,7 @@ class DefaultConfig:
     lr : Union[ag.Space, float] = ag.Categorical(1e-2, 5e-2)
     num_trials : int = 3
     epochs : Union[ag.Space, int] = 15
-    batch_size : Union[ag.Space, int] = 4  # 2 ** 4 = 16
+    batch_size : Union[ag.Space, int] = 16
     nthreads_per_trial : int = 128
     ngpus_per_trial : int = 8
     time_limits : int = 7 * 24 * 60 * 60  # 7 days
@@ -61,6 +61,13 @@ def _train_image_classification(args, reporter):
     # train, val data
     train_data = args.pop('train_data')
     val_data = args.pop('val_data')
+    # exponential batch size for Int() space batch sizes
+    try:
+        exp_batch_size = args.pop('exp_batch_size')
+    except AttributeError:
+        exp_batch_size = False
+    if exp_batch_size and 'batch_size' in args:
+        args['batch_size'] = 2 ** args['batch_size']
     try:
         task = args.pop('task')
         dataset = args.pop('dataset')
@@ -141,6 +148,8 @@ class ImageClassification(BaseTask):
         else:
             if not config.get('dist_ip_addrs', None):
                 ngpus_per_trial = config.get('ngpus_per_trial', gpu_count)
+                if ngpus_per_trial > gpu_count:
+                    ngpus_per_trial = gpu_count
                 if ngpus_per_trial < 1:
                     self._logger.info('No GPU detected/allowed, using most conservative search space.')
                     default_config = LiteConfig()
@@ -167,20 +176,12 @@ class ImageClassification(BaseTask):
         # additional configs
         config['num_workers'] = nthreads_per_trial
         config['gpus'] = [int(i) for i in range(ngpus_per_trial)]
-        # if config['gpus']:
-        #     config['batch_size'] = config.get('batch_size', 8) * len(config['gpus'])
-        #     self._logger.info('Increase batch size to %d based on the number of gpus %d',
-        #                       config['batch_size'], len(config['gpus']))
         config['seed'] = config.get('seed', np.random.randint(32,767))
         self._config = config
 
         # scheduler options
         self.search_strategy = config.get('search_strategy', 'random')
-        self.search_options = config.get('search_options', None)
-        if self.search_options:
-            self.search_options.update({'debug_log': True})
-        else:
-            self.search_options = {'debug_log': True}
+        self.search_options = config.get('search_options', {})
         self.scheduler_options = {
             'resource': {'num_cpus': nthreads_per_trial, 'num_gpus': ngpus_per_trial},
             'checkpoint': config.get('checkpoint', 'checkpoint/exp1.ag'),
@@ -192,7 +193,8 @@ class ImageClassification(BaseTask):
             'reward_attr': 'acc_reward',
             'dist_ip_addrs': config.get('dist_ip_addrs', None),
             'searcher': self.search_strategy,
-            'search_options': self.search_options}
+            'search_options': self.search_options,
+            'max_reward': config.get('max_reward', 0.95)}
         if self.search_strategy == 'hyperband':
             self.scheduler_options.update({
                 'searcher': 'random',
@@ -242,17 +244,6 @@ class ImageClassification(BaseTask):
                               len(train), len(val))
             train_data, val_data = train, val
 
-        # automatically suggest some hyperparameters based on the dataset statistics(experimental)
-        # estimator = self._config.get('estimator', None)
-        # if estimator is None:
-        #     estimator = [ImageClassificationEstimator]
-        # elif isinstance(estimator, (tuple, list)):
-        #     pass
-        # else:
-        #     assert issubclass(estimator, BaseEstimator)
-        #     estimator = [estimator]
-        # self._config['estimator'] = ag.Categorical(*estimator)
-
         estimator = self._config.get('estimator', None)
         if estimator is None:
             estimator = [ImageClassificationEstimator]
@@ -266,7 +257,12 @@ class ImageClassification(BaseTask):
                     estimator[i] = ImageClassificationEstimator
                 else:
                     estimator.pop(e)
-        self._config['estimator'] = ag.Categorical(*estimator)
+        if not estimator:
+            raise ValueError('Unable to determine the estimator for fit function.')
+        if len(estimator) == 1:
+            self._config['estimator'] = estimator[0]
+        else:
+            self._config['estimator'] = ag.Categorical(*estimator)
 
         # register args
         config = self._config.copy()

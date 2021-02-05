@@ -59,39 +59,16 @@ def _train_object_detection(args, reporter):
     ----------
     args: <class 'autogluon.utils.edict.EasyDict'>
     """
-    # pruning for batch size
-    # if args.get('batch_size', None):
-    #     if args.estimator == FasterRCNNEstimator and args.batch_size not in [4, 8]:
-    #         logging.info('Estimator and batch size are not matched, this trial is skipped.')
-    #         return
-    #     elif args.estimator != FasterRCNNEstimator and args.batch_size in [4, 8]:
-    #         logging.info('Estimator and batch size are not matched, this trial is skipped.')
-    #         return
-
-    # pruning for base network
-    # if args.get('base_network', None):
-    #     if args.estimator == SSDEstimator and \
-    #             args.base_network not in ['vgg16_atrous', 'resnet18_v1', 'resnet50_v1',
-    #                                       'resnet101_v2', 'resnet152_v2', 'resnet34_v1b']:
-    #         logging.info('Estimator and base network are not matched, this trial is skipped.')
-    #         return
-    #     elif args.estimator == YOLOv3Estimator and \
-    #             args.base_network not in ['darknet53']:
-    #         logging.info('Estimator and base network are not matched, this trial is skipped.')
-    #         return
-    #     elif args.estimator == FasterRCNNEstimator and \
-    #             args.base_network not in ['resnet50_v1b', 'resnet101_v1d',
-    #                                       'resnest50', 'resnest101', 'resnest269']:
-    #         logging.info('Estimator and base network are not matched, this trial is skipped.')
-    #         return
-    #     elif args.estimator == CenterNetEstimator and \
-    #             args.base_network not in ['resnet18_v1b', 'resnet50_v1b', 'resnet101_v1b', 'dla34']:
-    #         logging.info('Estimator and base network are not matched, this trial is skipped.')
-    #         return
-
     # train, val data
     train_data = args.pop('train_data')
     val_data = args.pop('val_data')
+    # exponential batch size for Int() space batch sizes
+    try:
+        exp_batch_size = args.pop('exp_batch_size')
+    except AttributeError:
+        exp_batch_size = False
+    if exp_batch_size and 'batch_size' in args:
+        args['batch_size'] = 2 ** args['batch_size']
     try:
         task = args.pop('task')
         dataset = args.pop('dataset')
@@ -104,6 +81,11 @@ def _train_object_detection(args, reporter):
     tic = time.time()
     try:
         estimator_cls = args.pop('estimator', None)
+        if estimator_cls == FasterRCNNEstimator:
+            # safe guard if too many GT in dataset
+            train_dataset = train_data.to_mxnet()
+            max_gt_count = max([y[1].shape[0] for y in train_dataset]) + 20
+            args['faster_rcnn']['max_num_gt'] = max_gt_count
         estimator = estimator_cls(args, reporter=reporter)
         # training
         result = estimator.fit(train_data=train_data, val_data=val_data)
@@ -164,6 +146,8 @@ class ObjectDetection(BaseTask):
         else:
             if not config.get('dist_ip_addrs', None):
                 ngpus_per_trial = config.get('ngpus_per_trial', gpu_count)
+                if ngpus_per_trial > gpu_count:
+                    ngpus_per_trial = gpu_count
                 if ngpus_per_trial < 1:
                     self._logger.info('No GPU detected/allowed, using most conservative search space.')
                     default_config = LiteConfig()
@@ -215,20 +199,12 @@ class ObjectDetection(BaseTask):
         # additional configs
         config['num_workers'] = nthreads_per_trial
         config['gpus'] = [int(i) for i in range(ngpus_per_trial)]
-        # if config['gpus']:
-        #     config['batch_size'] = config.get('batch_size', 8) * len(config['gpus'])
-        #     self._logger.info('Increase batch size to %d based on the number of gpus %d',
-        #                       config['batch_size'], len(config['gpus']))
         config['seed'] = config.get('seed', np.random.randint(32,767))
         self._config = config
 
         # scheduler options
         self.search_strategy = config.get('search_strategy', 'random')
-        self.search_options = config.get('search_options', None)
-        if self.search_options:
-            self.search_options.update({'debug_log': True})
-        else:
-            self.search_options = {'debug_log': True}
+        self.search_options = config.get('search_options', {})
         self.scheduler_options = {
             'resource': {'num_cpus': nthreads_per_trial, 'num_gpus': ngpus_per_trial},
             'checkpoint': config.get('checkpoint', 'checkpoint/exp1.ag'),
@@ -240,7 +216,8 @@ class ObjectDetection(BaseTask):
             'reward_attr': 'map_reward',
             'dist_ip_addrs': config.get('dist_ip_addrs', None),
             'searcher': self.search_strategy,
-            'search_options': self.search_options}
+            'search_options': self.search_options,
+            'max_reward': config.get('max_reward', 0.9)}
         if self.search_strategy == 'hyperband':
             self.scheduler_options.update({
                 'searcher': 'random',
