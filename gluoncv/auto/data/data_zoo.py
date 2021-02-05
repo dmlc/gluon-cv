@@ -48,9 +48,9 @@ def _pascal_0712_detection(download=True):
                             path=root, overwrite=True)
         with tarfile.open(filename) as tar:
             tar.extractall(path=root)
-        shutil.move(os.path.join(root, 'VOCdevkit', 'VOC2007'), os.path.join(root, 'VOC2007'))
-        shutil.move(os.path.join(root, 'VOCdevkit', 'VOC2012'), os.path.join(root, 'VOC2012'))
-        shutil.rmtree(os.path.join(root, 'VOCdevkit'))
+        shutil.move(os.path.join(root, 'pascal-voc', 'VOC2007'), os.path.join(root, 'VOC2007'))
+        shutil.move(os.path.join(root, 'pascal-voc', 'VOC2012'), os.path.join(root, 'VOC2012'))
+        shutil.rmtree(os.path.join(root, 'pascal-voc'))
     return VOCDetection(root=root, splits=[(2007, 'trainval'), (2012, 'trainval')]), \
            VOCDetection(root=root, splits=[(2007, 'test')])
 
