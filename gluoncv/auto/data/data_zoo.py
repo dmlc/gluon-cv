@@ -2,6 +2,7 @@
 import os
 import shutil
 import tarfile
+import zipfile
 from ...data import VOCDetection, COCODetection
 from ...utils import download as _download, makedirs
 
@@ -78,5 +79,5 @@ def _coco_2017_detection(download=True):
     return COCODetection(root=root, splits='instances_train2017'), \
            COCODetection(root=root, splits='instances_val2017', skip_empty=False)
 
-_register_dataset('pascal_voc_0712', _pascal_0712_detection)
-_register_dataset('coco_2017', _coco_2017_detection)
+_register_dataset('pascal_voc_0712_detection', _pascal_0712_detection)
+_register_dataset('coco_2017_detection', _coco_2017_detection)
