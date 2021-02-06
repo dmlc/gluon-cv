@@ -5,8 +5,8 @@ DDP_CONFIG:
   WORLD_RANK: 0
   GPU_WORLD_SIZE: 8
   GPU_WORLD_RANK: 0
-  DIST_URL: 'tcp://172.31.72.195:23456'
-  WOLRD_URLS: ['172.31.72.195']
+  DIST_URL: 'tcp://172.31.0.32:23456'
+  WOLRD_URLS: ['172.31.0.32']
   AUTO_RANK_MATCH: True
   DIST_BACKEND: 'nccl'
   GPU: 0
@@ -18,14 +18,14 @@ CONFIG:
     BATCH_SIZE: 8
     LR: 0.01
     MOMENTUM: 0.9
-    W_DECAY: 1e-5
+    W_DECAY: 1e-4
     LR_POLICY: 'Step'
     USE_WARMUP: False
     LR_MILESTONE: [75, 125]
     STEP: 0.1
 
   VAL:
-    FREQ: 2
+    FREQ: 10
     BATCH_SIZE: 8
 
   DATA:
@@ -52,4 +52,4 @@ CONFIG:
     LOG_DIR: 'tb_log'
     SAVE_DIR: 'checkpoints'
     EVAL_DIR: './logs/tpn_resnet50_f8s8_kinetics400/eval'
-    SAVE_FREQ: 2
+    SAVE_FREQ: 10
