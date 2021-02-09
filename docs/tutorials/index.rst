@@ -101,7 +101,7 @@ Object Detection
     .. card::
         :title: Skip Finetuning by reusing part of pre-trained model
         :link: ../build/examples_detection/skip_fintune.html
-    
+
     .. card::
         :title: Object Detection on NVIDIA Jetson module
         :link: ../build/examples_detection/demo_jetson.html
@@ -374,6 +374,12 @@ Dataset Preparation
         :title: Prepare Multi-Human Parsing V1 Dataset
         :link: ../build/examples_datasets/mhp_v1.html
 
+Auto Module
+-----------
+    .. card::
+        :title: Example of loading web data into gluoncv.auto
+        :link: ../build/examples_auto_module/demo_auto_data.html
+
 Distributed Training
 --------------------
 
@@ -416,5 +422,6 @@ Deployment
     ../build/examples_tracking/index
     ../build/examples_depth/index
     ../build/examples_datasets/index
+    ../build/examples_auto_module/index
     ../build/examples_distributed/index
     ../build/examples_deployment/index
