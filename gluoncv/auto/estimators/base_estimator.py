@@ -66,7 +66,6 @@ class BaseEstimator:
 
     """
     def __init__(self, config, logger=None, reporter=None, name=None):
-        # self._init_args = [config, logger, reporter]
         self._reporter = reporter
         name = name if isinstance(name, str) else self.__class__.__name__
         self._name = name
@@ -81,11 +80,11 @@ class BaseEstimator:
         self.dataset = 'auto'
 
         # logdir
-        logdir = config.pop('logdir', None)
+        logdir = config.pop('logdir', None) if instance(config, dict) else None
         self._logdir = os.path.abspath(logdir) if logdir else os.getcwd()
 
         # finalize config
-        cfg = self._default_cfg.merge(config)
+        cfg = self._default_cfg.merge(config)  # config can be dict or yaml file
         diffs = self._default_cfg.diff(cfg)
         if diffs:
             self._logger.info('modified configs: {')

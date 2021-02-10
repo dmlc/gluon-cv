@@ -99,7 +99,7 @@ class ImageClassificationDataset(pd.DataFrame):
         train = trainval[~val_mask]
         return train, val, test
 
-    def show_images(self, indices=None, nsample=16, ncol=4, shuffle=True, resize=224):
+    def show_images(self, indices=None, nsample=16, ncol=4, shuffle=True, resize=224, fontsize=20):
         r"""Display images in dataset.
 
         Parameters
@@ -115,7 +115,8 @@ class ImageClassificationDataset(pd.DataFrame):
             If `shuffle` is False, will always sample from the begining.
         resize : int, optional
             The image will be resized to (resize, resize) for better visual experience.
-
+        fontsize : int, optional
+            The fontsize for the title
         """
         if indices is None:
             if not shuffle:
@@ -130,7 +131,7 @@ class ImageClassificationDataset(pd.DataFrame):
         if 'label' in self.columns:
             titles = [self.classes[int(self.at[idx, 'label'])] + ': ' + str(self.at[idx, 'label']) \
                 for idx in indices if idx < len(self)]
-        _show_images(images, cols=ncol, titles=titles)
+        _show_images(images, cols=ncol, titles=titles, fontsize=fontsize)
 
     def to_mxnet(self):
         """Return a mxnet based iterator that returns ndarray and labels"""
@@ -611,7 +612,7 @@ class ObjectDetectionDataset(pd.DataFrame):
         train = trainval[~val_mask]
         return train, val, test
 
-    def show_images(self, indices=None, nsample=16, ncol=4, shuffle=True, resize=512):
+    def show_images(self, indices=None, nsample=16, ncol=4, shuffle=True, resize=512, fontsize=20):
         r"""Display images in dataset.
 
         Parameters
@@ -627,7 +628,8 @@ class ObjectDetectionDataset(pd.DataFrame):
             If `shuffle` is False, will always sample from the begining.
         resize : int, optional
             The image will be resized to (resize, resize) for better visual experience.
-
+        fontsize : int, optional, default is 20
+            The fontsize for title
         """
         df = self.pack()
         if indices is None:
@@ -659,7 +661,7 @@ class ObjectDetectionDataset(pd.DataFrame):
             self.color_map = df.color_map
 
         titles = ['Image(' + str(idx) + ')' for idx in indices if idx < len(df)]
-        _show_images(images, cols=ncol, titles=titles)
+        _show_images(images, cols=ncol, titles=titles, fontsize=fontsize)
 
 
 class _MXObjectDetectionDataset(MXDataset):
@@ -713,7 +715,7 @@ def _check_synsets(ref_synset, other_synset):
             return True
     return False
 
-def _show_images(images, cols=1, titles=None):
+def _show_images(images, cols=1, titles=None, fontsize=20):
     """Display a list of images in a single figure with matplotlib.
 
     Parameters
@@ -738,7 +740,7 @@ def _show_images(images, cols=1, titles=None):
         if image.ndim == 2:
             plt.gray()
         plt.imshow(image)
-        a.set_title(title, fontsize=20)
+        a.set_title(title, fontsize=fontsize)
     fig.set_size_inches(np.array(fig.get_size_inches()) * n_images)
     plt.show()
 

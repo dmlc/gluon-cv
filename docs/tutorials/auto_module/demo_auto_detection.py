@@ -1,4 +1,4 @@
-"""02. HPO with Faster R-CNN end-to-end on PASCAL VOC
+"""04. HPO with Faster R-CNN end-to-end on PASCAL VOC
 =====================================================
 
 This tutorial goes through the basic steps of using AutoGluon to tune hyper-parameters for a
@@ -13,7 +13,7 @@ Faster-RCNN [Ren15]_ object detection model provided by GluonCV.
 # VOC dataset on your disk.
 # Then, we are ready to load training and validation images.
 
-import autogluon as ag
+import autogluon.core as ag
 
 from gluoncv.auto.estimators.faster_rcnn import FasterRCNNEstimator
 from gluoncv.auto.tasks.object_detection import ObjectDetection
@@ -40,18 +40,18 @@ search_args = {'dataset': 'voc', 'split_ratio': 0.8, 'num_trials': 30,
                'time_limits': time_limits, 'dist_ip_addrs': []}
 
 # Construct a object detection task based on the config.
-task = ObjectDetection(search_args, FasterRCNNEstimator)
-
-# Automatically fit a model.
-estimator = task.fit()
-
-# Evaluate the final model on test set.
-test_map = estimator.evaluate()
-print("mAP on test dataset: {}".format(test_map[-1][-1]))
-print(test_map)
-
-# Save our final model.
-estimator.save('final_model.model')
+# task = ObjectDetection(search_args, FasterRCNNEstimator)
+#
+# # Automatically fit a model.
+# estimator = task.fit()
+#
+# # Evaluate the final model on test set.
+# test_map = estimator.evaluate()
+# print("mAP on test dataset: {}".format(test_map[-1][-1]))
+# print(test_map)
+#
+# # Save our final model.
+# estimator.save('final_model.model')
 
 ##########################################################
 # References
