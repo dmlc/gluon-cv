@@ -12,6 +12,7 @@ from mxnet import autograd
 from mxnet import gluon
 
 from ..base_estimator import BaseEstimator, set_default
+from ..tasks.dataset import ObjectDetectionDataset
 from ....data.batchify import Tuple, Stack, Pad
 from ....data.transforms.presets.center_net import CenterNetDefaultTrainTransform
 from ....data.transforms.presets.center_net import CenterNetDefaultValTransform
@@ -39,6 +40,7 @@ class CenterNetEstimator(BaseEstimator):
         The reporter for metric checkpointing.
 
     """
+    Dataset = ObjectDetectionDataset
     def __init__(self, config, logger=None, reporter=None):
         super(CenterNetEstimator, self).__init__(config, logger, reporter=reporter, name=None)
         self.last_train = None
