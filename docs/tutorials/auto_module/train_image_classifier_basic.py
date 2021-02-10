@@ -9,11 +9,10 @@ with custom hyper-parameters.
 # Train with default configurations
 # ---------------------------------
 from gluoncv.auto.estimators import ImageClassificationEstimator
-from gluoncv.auto.tasks import ImageClassification
 
 ##########################################################
 # In this tutorial, we use a small sample dataset
-train, _, test = ImageClassification.Dataset.from_folders(
+train, _, test = ImageClassificationEstimator.Dataset.from_folders(
     'https://autogluon.s3.amazonaws.com/datasets/shopee-iet.zip')
 train, val, _ = train.random_split(val_size=0.1, test_size=0)
 
@@ -26,7 +25,7 @@ train, val, _ = train.random_split(val_size=0.1, test_size=0)
 # in case the dataset isn't tiny.
 #
 # We recommend that you use at least one nvidia gpu with more than 6GB free GPU memory.
-classifier = ImageClassification({'gpus': [0]})
+classifier = ImageClassificationEstimator({'gpus': [0]})
 
 
 ##########################################################
@@ -41,7 +40,7 @@ print("mAP on test dataset: {}".format(eval_maps[-1][-1]))
 ##########################################################
 # save to/from disk to be used later
 classifier.save('classifier.pkl')
-classifier2 = ImageClassification.load('classifier.pkl')
+classifier2 = ImageClassificationEstimator.load('classifier.pkl')
 
 ##########################################################
 # run prediction on test images
@@ -54,11 +53,11 @@ print('prediction:', pred)
 # --------------------------------------
 # You may modify configurations to customize your training,
 # supported fields:
-print(ImageClassification._default_cfg)
+print(ImageClassificationEstimator._default_cfg)
 
 ##########################################################
 # For example, we could change the learning rate and batch size
-new_classifier = ImageClassification({'gpus': [0], 'train': {'batch_size': 16, 'lr': 0.01}})
+new_classifier = ImageClassificationEstimator({'gpus': [0], 'train': {'batch_size': 16, 'lr': 0.01}})
 
 ##########################################################
 # A more human readable format for modifying individual hyperparameter

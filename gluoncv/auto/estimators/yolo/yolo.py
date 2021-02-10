@@ -20,7 +20,6 @@ from ....utils.metrics.voc_detection import VOC07MApMetric, VOCMApMetric
 from ....utils import LRScheduler, LRSequential
 
 from ..base_estimator import BaseEstimator, set_default
-from ...tasks.dataset import ObjectDetectionDataset
 from .utils import _get_dataloader
 
 try:
@@ -55,6 +54,7 @@ class YOLOv3Estimator(BaseEstimator):
     _cfg : autocfg.dataclass
         The configurations.
     """
+    from ...tasks.dataset import ObjectDetectionDataset
     Dataset = ObjectDetectionDataset
     def __init__(self, config, logger=None, reporter=None):
         super(YOLOv3Estimator, self).__init__(config, logger, reporter)

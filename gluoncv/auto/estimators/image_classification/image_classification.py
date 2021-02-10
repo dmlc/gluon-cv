@@ -18,7 +18,6 @@ from ....utils import LRSequential, LRScheduler
 from .... import nn
 from .... import loss
 from ..base_estimator import BaseEstimator, set_default
-from ...tasks.dataset import ImageClassificationDataset
 from .utils import get_data_loader, get_data_rec, smooth
 from .default import ImageClassificationCfg
 
@@ -41,6 +40,7 @@ class ImageClassificationEstimator(BaseEstimator):
         The custom network. If defined, the model name in config will be ignored so your
         custom network will be used for training rather than pulling it from model zoo.
     """
+    from ...tasks.dataset import ImageClassificationDataset
     Dataset = ImageClassificationDataset
     def __init__(self, config, logger=None, reporter=None, net=None, optimizer=None):
         super(ImageClassificationEstimator, self).__init__(config, logger, reporter=reporter, name=None)

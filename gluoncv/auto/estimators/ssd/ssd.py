@@ -22,7 +22,6 @@ from ....data.transforms.presets.ssd import load_test, transform_test
 from ....loss import SSDMultiBoxLoss
 from .utils import _get_dataloader, _get_dali_dataloader
 from ..base_estimator import BaseEstimator, set_default
-from ...tasks.dataset import ObjectDetectionDataset
 from .default import SSDCfg
 
 try:
@@ -60,6 +59,7 @@ class SSDEstimator(BaseEstimator):
     _cfg : autocfg.dataclass
         The configurations.
     """
+    from ...tasks.dataset import ObjectDetectionDataset
     Dataset = ObjectDetectionDataset
     def __init__(self, config, logger=None, reporter=None):
         super(SSDEstimator, self).__init__(config, logger, reporter, name=self.__class__.__name__)

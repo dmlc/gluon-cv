@@ -19,7 +19,6 @@ from ....utils.parallel import Parallel
 from ....utils.metrics.rcnn import RPNAccMetric, RPNL1LossMetric, RCNNAccMetric, RCNNL1LossMetric
 from ....utils.metrics.voc_detection import VOC07MApMetric, VOCMApMetric
 from ..base_estimator import BaseEstimator, set_default
-from ...tasks.dataset import ObjectDetectionDataset
 from .utils import _get_lr_at_iter, _get_dataloader, _split_and_load
 
 try:
@@ -54,6 +53,7 @@ class FasterRCNNEstimator(BaseEstimator):
     _cfg : autocfg.dataclass
         The configurations.
     """
+    from ...tasks.dataset import ObjectDetectionDataset
     Dataset = ObjectDetectionDataset
     def __init__(self, config, logger=None, reporter=None):
         super(FasterRCNNEstimator, self).__init__(config, logger, reporter)
