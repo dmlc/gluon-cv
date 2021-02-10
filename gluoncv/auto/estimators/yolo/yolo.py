@@ -20,7 +20,7 @@ from ....utils.metrics.voc_detection import VOC07MApMetric, VOCMApMetric
 from ....utils import LRScheduler, LRSequential
 
 from ..base_estimator import BaseEstimator, set_default
-from ..tasks.dataset import ObjectDetectionDataset
+from ...tasks.dataset import ObjectDetectionDataset
 from .utils import _get_dataloader
 
 try:

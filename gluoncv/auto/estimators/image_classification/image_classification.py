@@ -18,7 +18,7 @@ from ....utils import LRSequential, LRScheduler
 from .... import nn
 from .... import loss
 from ..base_estimator import BaseEstimator, set_default
-from ..tasks.dataset import ImageClassificationDataset
+from ...tasks.dataset import ImageClassificationDataset
 from .utils import get_data_loader, get_data_rec, smooth
 from .default import ImageClassificationCfg
 
