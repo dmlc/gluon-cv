@@ -80,7 +80,7 @@ class BaseEstimator:
         self.dataset = 'auto'
 
         # logdir
-        logdir = config.pop('logdir', None) if instance(config, dict) else None
+        logdir = config.pop('logdir', None) if isinstance(config, dict) else None
         self._logdir = os.path.abspath(logdir) if logdir else os.getcwd()
 
         # finalize config
