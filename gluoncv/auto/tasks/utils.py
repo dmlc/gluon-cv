@@ -9,7 +9,7 @@ from ... import data as gdata
 from ..estimators.base_estimator import BaseEstimator
 from ..estimators import SSDEstimator, FasterRCNNEstimator, YOLOv3Estimator, CenterNetEstimator
 from ..estimators import ImageClassificationEstimator
-from .dataset import ObjectDetectionDataset
+from ..data.dataset import ObjectDetectionDataset
 
 
 class ConfigDict(dict):

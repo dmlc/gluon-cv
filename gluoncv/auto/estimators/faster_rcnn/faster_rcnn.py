@@ -20,6 +20,7 @@ from ....utils.metrics.rcnn import RPNAccMetric, RPNL1LossMetric, RCNNAccMetric,
 from ....utils.metrics.voc_detection import VOC07MApMetric, VOCMApMetric
 from ..base_estimator import BaseEstimator, set_default
 from .utils import _get_lr_at_iter, _get_dataloader, _split_and_load
+from ...data.dataset import ObjectDetectionDataset
 
 try:
     import horovod.mxnet as hvd
@@ -53,7 +54,6 @@ class FasterRCNNEstimator(BaseEstimator):
     _cfg : autocfg.dataclass
         The configurations.
     """
-    from ...tasks.dataset import ObjectDetectionDataset
     Dataset = ObjectDetectionDataset
     def __init__(self, config, logger=None, reporter=None):
         super(FasterRCNNEstimator, self).__init__(config, logger, reporter)
