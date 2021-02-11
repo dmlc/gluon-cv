@@ -25,7 +25,7 @@ train, val, _ = train.random_split(val_size=0.1, test_size=0)
 # in case the dataset isn't tiny.
 #
 # We recommend that you use at least one nvidia gpu with more than 6GB free GPU memory.
-classifier = ImageClassificationEstimator({'gpus': [0]})
+classifier = ImageClassificationEstimator({'gpus': [0], 'train': {'batch_size': 16}})
 
 
 ##########################################################
@@ -60,5 +60,28 @@ print(ImageClassificationEstimator._default_cfg)
 new_classifier = ImageClassificationEstimator({'gpus': [0], 'train': {'batch_size': 16, 'lr': 0.01}})
 
 ##########################################################
-# A more human readable format for modifying individual hyperparameter
-# is to edit the yaml file saved automatically in `log_dir`
+# A more natural format for modifying individual hyperparameter
+# is to edit the yaml file saved automatically in `self._logdir`, here we just show an example
+# of how to copy/edit and load the modified configuration file back to the estimator in python
+#
+# You may edit the yaml file directly with a text editor
+import shutil
+import os
+config_name = 'config.yaml'
+shutil.copyfile(os.path.join(classifier2._logdir, config_name), os.path.join('.', config_name))
+cfg = open(config_name).read()
+print(cfg)
+# modify the network
+import fileinput
+with fileinput.FileInput(config_name,
+                         inplace = True, backup ='.bak') as f:
+    for line in f:
+        if 'resnet50_v1' in line:
+            new_line = line.replace('resnet50_v1', 'resnet18_v1b')
+            print(new_line, end='')
+        else:
+            print(line, end='')
+
+##########################################################
+# The new classifier show reflect the new configs we just modified
+new_classifier2 = ImageClassificationEstimator(config_name)
