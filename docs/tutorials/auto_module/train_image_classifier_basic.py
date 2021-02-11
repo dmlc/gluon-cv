@@ -25,7 +25,8 @@ train, val, _ = train.random_split(val_size=0.1, test_size=0)
 # in case the dataset isn't tiny.
 #
 # We recommend that you use at least one nvidia gpu with more than 6GB free GPU memory.
-classifier = ImageClassificationEstimator({'gpus': [0], 'train': {'batch_size': 16}})
+classifier = ImageClassificationEstimator(
+    {'gpus': [0], 'train': {'batch_size': 16, 'epochs': 2}})
 
 
 ##########################################################
@@ -35,7 +36,7 @@ classifier.fit(train, val)
 ##########################################################
 # Evaluate the final model on test set
 eval_result = classifier.evaluate(test)
-print("mAP on test dataset: {}".format(eval_result))
+print("Top1/Top5 on test dataset: {}".format(eval_result))
 
 ##########################################################
 # save to/from disk to be used later
@@ -71,7 +72,9 @@ config_name = 'config.yaml'
 shutil.copyfile(os.path.join(classifier2._logdir, config_name), os.path.join('.', config_name))
 cfg = open(config_name).read()
 print(cfg)
-# modify the network
+
+##########################################################
+# Let's modify the network from resnet50_v1 to resnet18_v1b
 import fileinput
 with fileinput.FileInput(config_name,
                          inplace = True, backup ='.bak') as f:
@@ -83,5 +86,5 @@ with fileinput.FileInput(config_name,
             print(line, end='')
 
 ##########################################################
-# The new classifier show reflect the new configs we just modified
+# The new classifier now should reflect the new configs we just edited
 new_classifier2 = ImageClassificationEstimator(config_name)
