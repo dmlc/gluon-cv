@@ -34,8 +34,8 @@ classifier.fit(train, val)
 
 ##########################################################
 # Evaluate the final model on test set
-eval_maps = classifier.evaluate(test)
-print("mAP on test dataset: {}".format(eval_maps[-1][-1]))
+eval_result = classifier.evaluate(test)
+print("mAP on test dataset: {}".format(eval_result))
 
 ##########################################################
 # save to/from disk to be used later
