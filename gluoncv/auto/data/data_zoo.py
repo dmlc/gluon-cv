@@ -12,9 +12,29 @@ _DATASETS = {}
 
 
 def list_dataset():
+    """List available dataset registered in auto data.
+
+    Returns
+    -------
+    list
+        List of names.
+
+    """
     return list(_DATASETS.keys())
 
 def get_dataset(ds_name, train=True, download=True):
+    """Get the auto dataset with `ds_name`.
+
+    Parameters
+    ----------
+    ds_name : str
+        The name of dataset, you may view registered with `list_dataset`.
+    train : bool, default is `True`
+        If `True`, get the training set, if `False`, try to get the validation set.
+    download : bool, default is `True`
+        If `True`, download the dataset automatically if not found on disk.
+
+    """
     if not ds_name in _DATASETS:
         choices = str(_DATASETS.keys())
         raise ValueError('{} not found. Available choices: {}'.format(ds_name, choices))
@@ -46,7 +66,7 @@ def _pascal_0712_detection(download=True):
         # download automatically
         makedirs(root)
         filename = _download('https://s3.amazonaws.com/fast-ai-imagelocal/pascal-voc.tgz',
-                            path=root, overwrite=True)
+                             path=root, overwrite=True)
         with tarfile.open(filename) as tar:
             tar.extractall(path=root)
         shutil.move(os.path.join(root, 'pascal-voc', 'VOC2007'), os.path.join(root, 'VOC2007'))
