@@ -26,11 +26,13 @@ train, val, test = train.random_split(val_size=0.1, test_size=0.1)
 # Define search space
 #
 # We use very conservative search space to reduce CI runtime,
-# you may adjust the `num_trials`, `time_limits` and `epochs` in order
-# to achieve better results
+# and we will cap the number of trials to be 1 to reduce building time,
+# feel free to adjust the `num_trials`, `time_limits`, `epochs` and tune
+# other search spaces with `ag.Categorical`, `ag.Int`, `ag.Real` for example
+# in order to achieve better results
 time_limits = 60 * 60  # 1hr
 search_args = {'lr': ag.Categorical(1e-3, 1e-2),
-               'num_trials': 2,
+               'num_trials': 1,
                'epochs': 2, 'num_workers': 16,
                'ngpus_per_trial': 1,
                'search_strategy': 'random',
@@ -47,9 +49,14 @@ detector = task.fit(train, val)
 ##########################################################
 # Evaluate the final model on test set.
 test_map = detector.evaluate(test)
-print("mAP on test dataset: {}".format(test_map[-1][-1]))
-print(test_map)
+print("mAP on test dataset: \n{}".format(test_map))
 
 ##########################################################
 # Save our final model.
 detector.save('detector.pkl')
+
+##########################################################
+# load the model and run some prediction
+detector2 = ObjectDetection.load('detector.pkl')
+pred = detector2.predict(test.iloc[0]['image'])
+print(pred)
