@@ -277,6 +277,10 @@ class ImageClassificationEstimator(BaseEstimator):
                     new_fc_layer = gluon.nn.Dense(self.num_class, in_units=in_channels)
                 elif isinstance(fc_layer, gluon.nn.Conv2D):
                     new_fc_layer = gluon.nn.Conv2D(self.num_class, in_channels=in_channels, kernel_size=1)
+                elif isinstance(fc_layer, gluon.nn.HybridSequential):
+                    print('in_channels', in_channels)
+                    print('fc_layer', fc_layer)
+                    raise
                 else:
                     raise TypeError(f'Invalid FC layer type {type(fc_layer)} found, expected (Conv2D, Dense)...')
                 new_fc_layer.initialize(mx.init.MSRAPrelu(), ctx=self.ctx)
