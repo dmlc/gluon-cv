@@ -45,6 +45,7 @@ def parse_args():
     parser.add_argument('--name', type=str, required=True)
     parser.add_argument('--num-trials', type=int, default=-1)
     parser.add_argument('--optimizer', type=str, default='adam')
+    parser.add_argument('--epochs', type=int, default=-1)
     args = parser.parse_args()
     return args
 
@@ -60,6 +61,9 @@ if __name__ == '__main__':
     
     if args.optimizer:
         config['custom_optimizer'] = args.optimizer
+
+    if args.epochs >= 1:
+        config['epochs'] = args.epochs
 
     ds = Dataset.get(args.name)
     print(ds.summary())
