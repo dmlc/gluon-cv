@@ -28,7 +28,7 @@ _PRESETS = {
                                 'vgg16_bn', 'SE_ResNext50_32x4d', 'resnest50', 'resnest200'),
         'num_trials': 25,
         'lr': ag.Real(1e-4, 1e-2, log=True),
-        'batch_size': ag.Int(3, 7),  # min: (2 ** 3) = 8, max:  (2 ** 6) = 128
+        'batch_size': ag.Int(3, 8),  # min: (2 ** 3) = 8, max:  (2 ** 8) = 512
         'exp_batch_size': True,
         'ngpus_per_trial': 4,
         'nthreads_per_trial': 64,
