@@ -72,10 +72,10 @@ if __name__ == '__main__':
 
     classifier = task.fit(train, valid)
 
-    with open('fit_summary.txt', 'w') as f:
+    with open('fit_summary.txt', 'w', encoding="utf-8") as f:
         print(task.fit_summary(), file=f)
 
-    with open('fit_history.txt', 'w') as f:
+    with open('fit_history.txt', 'w', encoding="utf-8") as f:
         print(task.fit_history(), file=f)
     
     classifier.save('best_model.pkl')
