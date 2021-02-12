@@ -131,6 +131,8 @@ class ImageClassification(BaseTask):
         self._fit_summary = {}
         self._logger = logger if logger is not None else logging.getLogger(__name__)
         self._logger.setLevel(logging.INFO)
+        self._fit_summary = {}
+        self._results = {}
 
 
         # cpu and gpu setting
@@ -272,6 +274,7 @@ class ImageClassification(BaseTask):
 
         start_time = time.time()
         self._fit_summary = {}
+        self._results = {}
         if config.get('num_trials', 1) < 2:
             rand_config = RandomSearcher(_train_image_classification.cs).get_config()
             self._logger.info("Starting fit without HPO")
@@ -287,6 +290,7 @@ class ImageClassification(BaseTask):
             self._logger.info("Starting HPO experiments")
             results = self.run_fit(_train_image_classification, self.search_strategy,
                                    self.scheduler_options)
+            self._results = results
         end_time = time.time()
         self._logger.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> finish model fitting")
         self._logger.info("total runtime is %.2f s", end_time - start_time)
@@ -311,6 +315,9 @@ class ImageClassification(BaseTask):
 
     def fit_summary(self):
         return copy.copy(self._fit_summary)
+
+    def fit_history(self):
+        return copy.copy(self._results)
 
     @classmethod
     def load(cls, filename):

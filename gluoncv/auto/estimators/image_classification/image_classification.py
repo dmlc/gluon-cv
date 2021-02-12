@@ -54,7 +54,10 @@ class ImageClassificationEstimator(BaseEstimator):
                 pass
         self._custom_net = net
         if optimizer is not None:
-            assert isinstance(optimizer, Optimizer)
+            if isinstance(optimizer, str):
+                pass
+            else:
+                assert isinstance(optimizer, Optimizer)
         self._optimizer = optimizer
 
     def _fit(self, train_data, val_data):
@@ -342,6 +345,11 @@ class ImageClassificationEstimator(BaseEstimator):
             self.trainer = gluon.Trainer(self.net.collect_params(), optimizer, optimizer_params)
         else:
             optimizer = self._optimizer
+            if isinstance(optimizer, str):
+                try:
+                    optimizer = mx.optimizer.create(optimizer, learning_rate=self._cfg.train.lr)
+                except TypeError:
+                    optimizer = mx.optimizer.create(optimizer)
             self.trainer = gluon.Trainer(self.net.collect_params(), optimizer)
 
     def _evaluate(self, val_data):
