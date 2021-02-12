@@ -290,7 +290,9 @@ class ImageClassification(BaseTask):
             self._logger.info("Starting HPO experiments")
             results = self.run_fit(_train_image_classification, self.search_strategy,
                                    self.scheduler_options)
-            self._results = results
+            if isinstance(results, dict):
+                ks = ('best_reward', 'best_config', 'total_time', 'training_history', 'config_history', 'reward_attr')
+                self._results.update({k: v for k, v in results.items() if k in ks})
         end_time = time.time()
         self._logger.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> finish model fitting")
         self._logger.info("total runtime is %.2f s", end_time - start_time)
