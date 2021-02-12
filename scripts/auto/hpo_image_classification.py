@@ -66,7 +66,6 @@ if __name__ == '__main__':
         config['epochs'] = args.epochs
 
     ds = Dataset.get(args.name)
-    print(ds.summary())
     train, valid = ds.split(0.9, seed=0)
 
     task = ImageClassification(config)
