@@ -51,7 +51,9 @@ detector = task.fit(train, val)
 ##########################################################
 # Evaluate the final model on test set.
 test_map = detector.evaluate(test)
-print("mAP on test dataset: \n{}".format(test_map))
+print("mAP on test dataset:")
+for category, score in zip(*test_map):
+    print(category, score)
 
 ##########################################################
 # Save our final model.

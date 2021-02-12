@@ -109,6 +109,7 @@ sphinx_gallery_conf = {
         'gluoncv': None,
     },
     'backreferences_dir': None,
+    'capture_repr': (),
 }
 
 # Disable tutorial if needed
