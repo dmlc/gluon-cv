@@ -377,6 +377,8 @@ Dataset Preparation
 Auto Module
 -----------
 
+.. container:: cards
+
     .. card::
         :title: Example of loading web data into gluoncv.auto
         :link: ../build/examples_auto_module/demo_auto_data.html
@@ -384,7 +386,7 @@ Auto Module
     .. card::
         :title: Train image classifier with auto estimator
         :link: ../build/examples_auto_module/train_image_classifier_basic.html
-        
+
     .. card::
         :title: Train Object Detection model with auto module
         :link: ../build/examples_auto_module/demo_auto_detection.html

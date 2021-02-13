@@ -135,3 +135,14 @@ print(train.loc[0])
 # ----------------------------------
 # you may plot the sample images as well as bounding boxes with `show_images`, like:
 train.show_images(nsample=16, ncol=4, shuffle=True, fontsize=64)
+
+##########################################################
+# Next step
+# ---------
+# You have access to arbitrary datasets, e.g., kaggle competition datasets,
+# you can start training by looking at these tutorials:
+# - :ref:`sphx_glr_build_examples_auto_module_train_image_classifier_basic.py`
+# - :ref:`sphx_glr_build_examples_auto_module_demo_auto_detection.py`
+# You may also check out the`d8 dataset <http://preview.d2l.ai/d8/main/>`_ with built-in datasets.
+# D8 datasets is fully compatible with gluoncv.auto, you can directly plug-in datasets loaded from d8 and
+# train with `fit` functions.
