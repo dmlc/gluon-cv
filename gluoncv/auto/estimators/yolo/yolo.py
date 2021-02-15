@@ -21,6 +21,7 @@ from ....utils import LRScheduler, LRSequential
 
 from ..base_estimator import BaseEstimator, set_default
 from .utils import _get_dataloader
+from ...data.dataset import ObjectDetectionDataset
 
 try:
     import horovod.mxnet as hvd
@@ -54,6 +55,7 @@ class YOLOv3Estimator(BaseEstimator):
     _cfg : autocfg.dataclass
         The configurations.
     """
+    Dataset = ObjectDetectionDataset
     def __init__(self, config, logger=None, reporter=None):
         super(YOLOv3Estimator, self).__init__(config, logger, reporter)
         self.last_train = None

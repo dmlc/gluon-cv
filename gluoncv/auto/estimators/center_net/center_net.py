@@ -22,6 +22,7 @@ from ....model_zoo.center_net import get_center_net, get_base_network
 from ....utils import LRScheduler, LRSequential
 from ....utils.metrics import VOCMApMetric, VOC07MApMetric
 from .default import CenterNetCfg
+from ...data.dataset import ObjectDetectionDataset
 
 __all__ = ['CenterNetEstimator']
 
@@ -39,6 +40,7 @@ class CenterNetEstimator(BaseEstimator):
         The reporter for metric checkpointing.
 
     """
+    Dataset = ObjectDetectionDataset
     def __init__(self, config, logger=None, reporter=None):
         super(CenterNetEstimator, self).__init__(config, logger, reporter=reporter, name=None)
         self.last_train = None

@@ -20,7 +20,7 @@ from autogluon.core.searcher import RandomSearcher
 from ..estimators.base_estimator import BaseEstimator
 from ..estimators import ImageClassificationEstimator
 from .utils import config_to_nested
-from .dataset import ImageClassificationDataset
+from ..data.dataset import ImageClassificationDataset
 
 
 __all__ = ['ImageClassification']

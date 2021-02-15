@@ -20,7 +20,7 @@ from autogluon.core.searcher import RandomSearcher
 from ..estimators.base_estimator import BaseEstimator
 from ..estimators import SSDEstimator, FasterRCNNEstimator, YOLOv3Estimator, CenterNetEstimator
 from .utils import auto_suggest, config_to_nested
-from .dataset import ObjectDetectionDataset
+from ..data.dataset import ObjectDetectionDataset
 
 __all__ = ['ObjectDetection']
 

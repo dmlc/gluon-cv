@@ -9,7 +9,7 @@ from ...utils.filesystem import unzip, untar, PathTree
 __all__ = ['url_data']
 
 def url_data(url, path=None, overwrite=False, overwrite_folder=False, sha1_hash=None, root=None, disp_depth=1):
-    """Download an given URL
+    """Download dataset with a given URL
 
     Parameters
     ----------

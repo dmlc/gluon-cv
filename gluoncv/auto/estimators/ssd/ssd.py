@@ -23,6 +23,7 @@ from ....loss import SSDMultiBoxLoss
 from .utils import _get_dataloader, _get_dali_dataloader
 from ..base_estimator import BaseEstimator, set_default
 from .default import SSDCfg
+from ...data.dataset import ObjectDetectionDataset
 
 try:
     import horovod.mxnet as hvd
@@ -59,6 +60,7 @@ class SSDEstimator(BaseEstimator):
     _cfg : autocfg.dataclass
         The configurations.
     """
+    Dataset = ObjectDetectionDataset
     def __init__(self, config, logger=None, reporter=None):
         super(SSDEstimator, self).__init__(config, logger, reporter, name=self.__class__.__name__)
 
