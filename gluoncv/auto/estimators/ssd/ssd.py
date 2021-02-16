@@ -1,6 +1,7 @@
 """SSD Estimator."""
 # pylint: disable=logging-format-interpolation,abstract-method
 import os
+import math
 import time
 import warnings
 
@@ -69,8 +70,9 @@ class SSDEstimator(BaseEstimator):
         if self._cfg.horovod:
             hvd.init()
 
-    def _fit(self, train_data, val_data):
+    def _fit(self, train_data, val_data, time_limit=math.inf):
         """Fit SSD model."""
+        tic = time.time()
         self._best_map = 0
         self.epoch = 0
         self._time_elapsed = 0
@@ -78,9 +80,11 @@ class SSDEstimator(BaseEstimator):
             return {'time', self._time_elapsed}
         self.net.collect_params().reset_ctx(self.ctx)
         self._init_trainer()
-        return self._resume_fit(train_data, val_data)
+        self._time_elapsed += time.time() - tic
+        return self._resume_fit(train_data, val_data, time_limit=time_limit)
 
-    def _resume_fit(self, train_data, val_data):
+    def _resume_fit(self, train_data, val_data, time_limit=math.inf):
+        tic = time.time()
         if max(self._cfg.train.start_epoch, self.epoch) >= self._cfg.train.epochs:
             return {'time', self._time_elapsed}
         if not self.classes or not self.num_class:
@@ -106,9 +110,11 @@ class SSDEstimator(BaseEstimator):
                 self.async_net, train_dataset, val_dataset, self._cfg.ssd.data_shape,
                 self.batch_size, self._cfg.num_workers)
 
-        return self._train_loop(train_loader, val_loader, train_eval_loader)
+        self._time_elapsed += time.time() - tic
+        return self._train_loop(train_loader, val_loader, train_eval_loader, time_limit=time_limit)
 
-    def _train_loop(self, train_data, val_data, train_eval_data):
+    def _train_loop(self, train_data, val_data, train_eval_data, time_limit=math.inf):
+        start_tic = time.time()
         # fix seed for mxnet, numpy and python builtin random generator.
         gutils.random.seed(self._cfg.train.seed)
         # loss and metric
@@ -123,8 +129,12 @@ class SSDEstimator(BaseEstimator):
         self._logger.info('Start training from [Epoch %d]', max(self._cfg.train.start_epoch, self.epoch))
 
         self.net.collect_params().reset_ctx(self.ctx)
+        mean_ap = [-1]
+        self._time_elapsed += time.time() - start_tic
         for self.epoch in range(max(self._cfg.train.start_epoch, self.epoch), self._cfg.train.epochs):
             epoch = self.epoch
+            tic = time.time()
+            btic = time.time()
             if self._best_map >= 1.0:
                 self._logger.info('[Epoch {}] Early stopping as mAP is reaching 1.0'.format(epoch))
                 break
@@ -135,11 +145,12 @@ class SSDEstimator(BaseEstimator):
                 self._logger.info("[Epoch {}] Set learning rate to {}".format(epoch, new_lr))
             ce_metric.reset()
             smoothl1_metric.reset()
-            tic = time.time()
-            btic = time.time()
             self.net.hybridize(static_alloc=True, static_shape=True)
 
             for i, batch in enumerate(train_data):
+                if self._time_elapsed > time_limit:
+                    self._logger.warn(f'`time_limit={time_limit}` reached, exit early...')
+                    return {'train_map': float(mean_ap[-1]), 'valid_map': self._best_map, 'time': self._time_elapsed}
                 if self._cfg.train.dali:
                     # dali iterator returns a mxnet.io.DataBatch
                     data = [d.data[0] for d in batch]
@@ -202,9 +213,11 @@ class SSDEstimator(BaseEstimator):
                         self._best_map = current_map
                 if self._reporter:
                     self._reporter(epoch=epoch, map_reward=current_map)
-            self._time_elapsed += time.time() - btic
+            self._time_elapsed += time.time() - tic
         # map on train data
+        tic = time.time()
         map_name, mean_ap = self._evaluate(train_eval_data)
+        self._time_elapsed += time.time() - tic
         return {'train_map': float(mean_ap[-1]), 'valid_map': self._best_map, 'time': self._time_elapsed}
 
     def _evaluate(self, val_data):

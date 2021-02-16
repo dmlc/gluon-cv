@@ -1,6 +1,7 @@
 """Auto pipeline for object detection task"""
 # pylint: disable=bad-whitespace,missing-class-docstring
 import time
+import math
 import copy
 import logging
 import pprint
@@ -59,9 +60,12 @@ def _train_object_detection(args, reporter):
     ----------
     args: <class 'autogluon.utils.edict.EasyDict'>
     """
+    tic = time.time()
     # train, val data
     train_data = args.pop('train_data')
     val_data = args.pop('val_data')
+    # wall clock tick limit
+    wall_clock_tick = args.pop('wall_clock_tick')
     # exponential batch size for Int() space batch sizes
     try:
         exp_batch_size = args.pop('exp_batch_size')
@@ -78,7 +82,6 @@ def _train_object_detection(args, reporter):
     # convert user defined config to nested form
     args = config_to_nested(args)
 
-    tic = time.time()
     try:
         estimator_cls = args.pop('estimator', None)
         if estimator_cls == FasterRCNNEstimator:
@@ -88,7 +91,7 @@ def _train_object_detection(args, reporter):
             args['faster_rcnn']['max_num_gt'] = max_gt_count
         estimator = estimator_cls(args, reporter=reporter)
         # training
-        result = estimator.fit(train_data=train_data, val_data=val_data)
+        result = estimator.fit(train_data=train_data, val_data=val_data, time_limit=wall_clock_tick-tic)
         # save config and result
         if task is not None:
             trial_log = {}
@@ -231,7 +234,7 @@ class ObjectDetection(BaseTask):
                 'max_t': config.get('epochs', 50),
                 'grace_period': config.get('grace_period', config.get('epochs', 50) // 4)})
 
-    def fit(self, train_data, val_data=None, train_size=0.9, random_state=None):
+    def fit(self, train_data, val_data=None, train_size=0.9, random_state=None, time_limit=None):
         """Fit auto estimator given the input data.
 
         Parameters
@@ -245,6 +248,12 @@ class ObjectDetection(BaseTask):
             The portion of train data split from original `train_data` if `val_data` is not provided.
         random_state : int
             Random state for splitting, for `np.random.seed`.
+        time_limit : int, default is None
+            The wall clock time limit(second) for fit process, if `None`, time limit is not enforced.
+            If `fit` takes longer than `time_limit`, the process will terminate early and return the
+            model prematurally.
+            Due to callbacks and additional validation functions, the `time_limit` may not be very precise
+            (few minutes allowance), but you can use it to safe-guard a very long training session.
 
         Returns
         -------
@@ -252,6 +261,11 @@ class ObjectDetection(BaseTask):
             The estimator obtained by training on the specified dataset.
 
         """
+        if time_limit is None:
+            time_limit = math.inf
+        elif not isinstance(time_limit, int):
+            raise TypeError(f'Invalid type `time_limit={time_limit}`, int or None expected')
+        wall_clock_tick = time.time() + time_limit
         # split train/val before HPO to make fair comparisons
         if not isinstance(train_data, pd.DataFrame):
             assert val_data is not None, \
@@ -281,6 +295,7 @@ class ObjectDetection(BaseTask):
         config = self._config.copy()
         config['train_data'] = train_data
         config['val_data'] = val_data
+        config['wall_clock_tick'] = wall_clock_tick
         _train_object_detection.register_args(**config)
 
         start_time = time.time()
