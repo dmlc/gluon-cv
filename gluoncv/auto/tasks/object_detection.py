@@ -302,7 +302,7 @@ class ObjectDetection(BaseTask):
             results = self.run_fit(_train_object_detection, self.search_strategy,
                                    self.scheduler_options)
             if isinstance(results, dict):
-                ks = ('best_reward', 'best_config', 'total_time', 'training_history', 'config_history', 'reward_attr')
+                ks = ('best_reward', 'best_config', 'total_time', 'config_history', 'reward_attr')
                 self._results.update({k: v for k, v in results.items() if k in ks})
         end_time = time.time()
         self._logger.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> finish model fitting")
