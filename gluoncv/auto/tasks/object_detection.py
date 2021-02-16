@@ -130,6 +130,8 @@ class ObjectDetection(BaseTask):
         self._fit_summary = {}
         self._logger = logger if logger is not None else logging.getLogger(__name__)
         self._logger.setLevel(logging.INFO)
+        self._fit_summary = {}
+        self._results = {}
 
         # cpu and gpu setting
         cpu_count = get_cpu_count()
@@ -283,6 +285,7 @@ class ObjectDetection(BaseTask):
 
         start_time = time.time()
         self._fit_summary = {}
+        self._results = {}
         if config.get('num_trials', 1) < 2:
             rand_config = RandomSearcher(_train_object_detection.cs).get_config()
             self._logger.info("Starting fit without HPO")
@@ -298,6 +301,9 @@ class ObjectDetection(BaseTask):
             self._logger.info("Starting HPO experiments")
             results = self.run_fit(_train_object_detection, self.search_strategy,
                                    self.scheduler_options)
+            if isinstance(results, dict):
+                ks = ('best_reward', 'best_config', 'total_time', 'config_history', 'reward_attr')
+                self._results.update({k: v for k, v in results.items() if k in ks})
         end_time = time.time()
         self._logger.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> finish model fitting")
         self._logger.info("total runtime is %.2f s", end_time - start_time)
@@ -322,6 +328,9 @@ class ObjectDetection(BaseTask):
 
     def fit_summary(self):
         return copy.copy(self._fit_summary)
+
+    def fit_history(self):
+        return copy.copy(self._results)
 
     @classmethod
     def load(cls, filename):
