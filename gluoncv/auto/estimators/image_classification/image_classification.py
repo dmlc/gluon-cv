@@ -148,8 +148,8 @@ class ImageClassificationEstimator(BaseEstimator):
 
             # pylint: disable=undefined-loop-variable
             for i, batch in enumerate(train_data):
+                self._logger.info(f'time_limit: {time_limit}, elapsed: {self._time_elapsed}')
                 if self._time_elapsed > time_limit:
-                    self._logger.info(f'time_limit: {time_limit}, elapsed: {self._time_elapsed}')
                     self._logger.warn(f'`time_limit={time_limit}` reached, exit early...')
                     return {'train_acc': train_metric_score, 'valid_acc': self._best_acc, 'time': self._time_elapsed}
                 data, label = self.batch_fn(batch, self.ctx)
