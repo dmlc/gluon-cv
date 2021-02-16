@@ -259,7 +259,7 @@ jobs:
                                              --source-ref ${{ env.REF }} \
                                              --work-dir . \
                                              --remote https://github.com/${{ env.REPO }} \
-                                             --command "chmod +x ./.github/workflows/build_docs.sh && ./.github/workflows/build_docs.sh ${{ env.REF }} ${{ env.SHORT_SHA }} ${{ env.REPO }} ${{ env.PR }}" \
+                                             --command "chmod +x ./.github/workflows/build_docs.sh && ./.github/workflows/build_docs.sh ${{ env.REF }} ${{ env.REPO }} ${{ env.SHORT_SHA }} ${{ env.PR }}" \
                                              --wait
       - name: Build docs on AWS Batch(For pull request)
         if: ${{ github.event.workflow_run.event == 'pull_request' }}
@@ -271,7 +271,7 @@ jobs:
                                              --source-ref ${{ env.REF }} \
                                              --work-dir . \
                                              --remote https://github.com/${{ env.REPO }} \
-                                             --command "chmod +x ./.github/workflows/build_docs.sh && ./.github/workflows/build_docs.sh ${{ env.REF }} ${{ env.SHORT_SHA }} ${{ env.REPO }} ${{ env.PR }} " \
+                                             --command "chmod +x ./.github/workflows/build_docs.sh && ./.github/workflows/build_docs.sh ${{ env.REF }} ${{ env.REPO }} ${{ env.SHORT_SHA }} ${{ env.PR }} " \
                                              --wait
       - name: Comment on PR
         if: ${{ github.event.workflow_run.event == 'pull_request' }}
