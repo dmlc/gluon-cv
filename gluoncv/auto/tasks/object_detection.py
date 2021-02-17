@@ -1,6 +1,7 @@
 """Auto pipeline for object detection task"""
 # pylint: disable=bad-whitespace,missing-class-docstring,bare-except
 import time
+import os
 import math
 import copy
 import logging
