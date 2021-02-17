@@ -1,0 +1,174 @@
+#!/usr/bin/env python
+
+import sys, os, socket
+from argparse import ArgumentParser
+from mxnet.context import gpu_sm_arch
+from mxnet.util import is_enough_gpus
+
+data_dir = '~/.mxnet/datasets/imagenet/'
+
+optparser = ArgumentParser(description="train ResNet50 with MXNet")
+optparser.add_argument("-n", "--n-GPUs", type=int, default=8, help="number of GPUs to use; " +\
+                       "default = 8")
+optparser.add_argument("-a", "--use_all_gpus", action="store_true", default=False,
+                       help="use all available gpus")
+optparser.add_argument("--conv-bn-fusion-type", type=str, default='stats', help="conv-bn-fusion-type; " +\
+                       "default = 'stats'")
+optparser.add_argument("-b", "--batch-size", type=int, default=256, help="batch size per GPU; " +\
+                       "default = 256")
+optparser.add_argument("-e", "--num-epochs", type=int, default=90, help="number of epochs; " +\
+                       "default = 90")
+optparser.add_argument("-s", "--num-examples", type=int,
+                       help="number of examples; if not passed full dataset will be used")
+optparser.add_argument("-l", "--lr", type=float, default=0.1, help="learning rate; default = 0.1; " +\
+                       "IMPORTANT: true learning rate will be calculated as `lr * batch_size/256`")
+optparser.add_argument("--no-val", action="store_true",
+                       help="if set no validation will be performed")
+optparser.add_argument("--no-fuse", action="store_true",
+                       help="prevent to use fused batchnorm-relu and batchnorm-add-relu kernels")
+optparser.add_argument("-o", "--output", type=str, help="copy (not redirect!) " +\
+                       "stdout and stderr to *.out.log i *.err.log files")
+optparser.add_argument("--profile", type=str, help="run `nvprof` and save profile " +\
+                       "in given destination")
+optparser.add_argument("--synthetic", action="store_true", help="use no pipeline (benchmark 1)")
+optparser.add_argument("--no-dali", action="store_true", default=False,
+                       help="use default MXNet pipeline instead of DALI")
+optparser.add_argument("--kv-store", type=str, help="set kv-store type", default="device")
+optparser.add_argument("--network", type=str, help="Network to train, available networks: resnet-v1, resnet-v1b, resnet-v1-normconv, resnet-v1b-normconv, resnet-v1-normconv2, resnet-v1b-normconv2", default="resnet-v1")
+optparser.add_argument("--data-root", type=str, help="Directory with RecordIO data files", default=data_dir + 'rec')
+optparser.add_argument("--data-nthreads", type=int, help="number of threads for data loading; default = 40", default=40)
+optparser.add_argument("--dtype", type=str, choices=['float16', 'float32'], help="Precision, float16 or float32", default="float16")
+optparser.add_argument("--layout", type=str, help="Layout, NCHW or NHWC", choices=[None, 'NCHW', 'NHWC'], default=None)
+optparser.add_argument("--image-shape", type=str, help="Image shape", default="224,224")
+optparser.add_argument("--gdb", action="store_true",
+                       help="run with gnu debuger")
+
+opts, args = optparser.parse_known_args()
+
+
+native_io = opts.no_dali and not opts.synthetic
+
+if opts.synthetic:
+    opts.no_val = True
+
+opts.no_dali = opts.synthetic or opts.no_dali
+
+horovod = "horovod" in opts.kv_store
+
+if horovod:
+    opts.n_GPUs = int(os.environ['OMPI_COMM_WORLD_LOCAL_SIZE'])
+    opts.lr *= int(os.environ['OMPI_COMM_WORLD_SIZE'])
+else:
+    opts.batch_size *= opts.n_GPUs
+
+is_enough_gpus(opts.n_GPUs)
+opts.lr *= opts.batch_size/256
+
+command = ""
+if opts.profile and horovod:
+    command += "nvprof -fo {}.{}_{}.profile ".format(opts.profile,
+                                                     socket.gethostname(),
+                                                     os.environ['OMPI_COMM_WORLD_LOCAL_RANK'])
+elif opts.profile:
+    command += "nvprof -fo {}.{}.profile ".format(opts.profile, socket.gethostname())
+
+if opts.gdb:
+    command += "gdb --args "
+command += "python " + os.path.dirname(os.path.abspath(__file__)) + "/train_imagenet_dali.py"
+command += " --network " + opts.network + "-fl"
+command += " --num-layers 50"
+command += " --data-train " + opts.data_root + "/train.rec"
+command += " --data-train-idx " + opts.data_root + "/train.idx"
+if not opts.no_val:
+    command += " --data-val " + opts.data_root + "/val.rec"
+    command += " --data-val-idx " + opts.data_root + "/val.idx"
+command += " --data-nthreads " + str(opts.data_nthreads)
+command += " --optimizer sgd --dtype " + opts.dtype
+command += " --lr-step-epochs 30,60,80 --max-random-area 1"
+command += " --min-random-area 0.08 --max-random-scale 1"
+command += " --min-random-scale 1 --pca-noise 0.0"
+command += " --brightness 0.4 --contrast 0.4"
+command += " --saturation 0.4 --min-random-aspect-ratio 0.75"
+command += " --max-random-aspect-ratio 1.33 --max-random-shear-ratio 0"
+command += " --max-random-rotate-angle 0 --random-resized-crop 1"
+command += " --random-crop 0 --random-mirror 1"
+
+if not opts.conv_bn_fusion_type:
+    command += " --conv-bn-fusion-type {}".format("NONE")
+else:
+    command += " --conv-bn-fusion-type {}".format(opts.conv_bn_fusion_type)
+
+# Set default layout to NHWC for float16 models if gpu has Tensor Cores
+min_sm_arch = min([gpu_sm_arch(i) for i in range(opts.n_GPUs)])
+if (opts.dtype == 'float16') and (opts.layout is None) and min_sm_arch >= 70:
+    opts.layout = 'NHWC'
+if opts.layout == 'NHWC':
+    n_ch = str(4 - int(native_io)) # number of input channls (4 supported only by DALI and synthetic)
+else:
+    n_ch = str(3)
+
+if opts.layout == 'NHWC':
+    command += " --input-layout NHWC --conv-layout NHWC"
+    command += " --batchnorm-layout NHWC --pooling-layout NHWC"
+    command += " --fuse-bn-relu " + str(int(opts.no_fuse == 0))
+    # On resnet-v1, it's faster to use add-relu fusion with BN+Relu than to use
+    # BN+Add+Relu with the unoptimized output-blending of the conv dgrad.
+    # Thus, we only enable BN+Add+Relu on resnet-v1b.
+    convbn_fused_net_list = ['resnet-v1b-normconv', 'resnet-v1b-normconv2', 'resnet-v1b-normconv-dbar', 'resnet-v1b-normconv2-dbar','resnet-v1b-normconv2-dbar2','resnet-v1b-normconv-dbar2','resnet-v1b-stats']
+    conv_bn_unfused_net_list = ['resnet-v1b']
+    if (opts.network in convbn_fused_net_list) or (opts.network in conv_bn_unfused_net_list):
+        command += " --fuse-bn-add-relu " + str(int(opts.no_fuse == 0))
+        os.environ["MXNET_EXEC_ENABLE_ADDTO"] = "1"
+        if opts.network in convbn_fused_net_list:
+            assert opts.conv_bn_fusion_type in ['stats', 'mainloop'] , "conv-bn-fusion-type = {} is not in [stats, mainloop]".format(opts.conv_bn_fusion_type)
+    else:
+        command += " --fuse-bn-add-relu 0"
+else:
+    command += " --input-layout NCHW --conv-layout NCHW"
+    command += " --batchnorm-layout NCHW --pooling-layout NCHW"
+    command += " --fuse-bn-relu 0"
+    command += " --fuse-bn-add-relu 0"
+
+
+command += " --image-shape "+ n_ch+ "," + opts.image_shape +" --warmup-epochs 5"
+command += " --disp-batches 20"
+
+if opts.kv_store:
+    command += " --kv-store "+opts.kv_store
+if opts.synthetic:
+    command += " --benchmark 1"
+if not opts.no_dali:
+    command += " --use-dali"
+command += " --lr "+str(opts.lr)
+if opts.num_examples:
+    command += " --num-examples " + str(opts.num_examples)
+command += " --gpus " + str(list(range(opts.n_GPUs))).replace(' ', '').replace('[', '').replace(']', '')
+command += " --batch-size " + str(opts.batch_size)
+command += " --num-epochs " + str(opts.num_epochs)
+
+if opts.output and horovod:
+    command += " > >(tee -a {}.{}_{}.out.log)".format(opts.output,
+                                                      socket.gethostname(),
+                                                      os.environ['OMPI_COMM_WORLD_LOCAL_RANK'])
+    command +=" 2> >(tee -a {}.{}_{}.err.log >&2)".format(opts.output,
+                                                          socket.gethostname(),
+                                                          os.environ['OMPI_COMM_WORLD_LOCAL_RANK'])
+elif opts.output:
+    command += " > >(tee -a {}.{}.out.log)".format(opts.output, socket.gethostname())
+    command +=" 2> >(tee -a {}.{}.err.log >&2)".format(opts.output, socket.gethostname())
+
+for arg in args:
+    command += " " + arg
+
+os.environ["MXNET_UPDATE_ON_KVSTORE"] = "0"
+retval = os.system('/bin/bash -c "'+command+'"')
+
+# Helper functions to decode return value are linux-only, so use within 'try-finally'
+try:
+    exit_status = 0 if retval == 0 else 1
+    if os.WIFEXITED(retval):
+        exit_status = os.WEXITSTATUS(retval)
+finally:
+    if retval != 0:
+        print('Saw non-zero command return value {}.  Exit code = {} '.format(retval, exit_status))
+    sys.exit(exit_status)

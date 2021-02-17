@@ -15,16 +15,17 @@ from gluoncv.utils import makedirs, LRSequential, LRScheduler
 
 # CLI
 def parse_args():
+    data_dir = '~/.mxnet/datasets/imagenet/'
     parser = argparse.ArgumentParser(description='Train a model for image classification.')
-    parser.add_argument('--data-dir', type=str, default='~/.mxnet/datasets/imagenet',
+    parser.add_argument('--data-dir', type=str, default=data_dir,
                         help='training and validation pictures to use.')
-    parser.add_argument('--rec-train', type=str, default='~/.mxnet/datasets/imagenet/rec/train.rec',
+    parser.add_argument('--rec-train', type=str, default=data_dir + 'rec/train.rec',
                         help='the training data')
-    parser.add_argument('--rec-train-idx', type=str, default='~/.mxnet/datasets/imagenet/rec/train.idx',
+    parser.add_argument('--rec-train-idx', type=str, default=data_dir + 'rec/train.idx',
                         help='the index of training data')
-    parser.add_argument('--rec-val', type=str, default='~/.mxnet/datasets/imagenet/rec/val.rec',
+    parser.add_argument('--rec-val', type=str, default=data_dir + 'rec/val.rec',
                         help='the validation data')
-    parser.add_argument('--rec-val-idx', type=str, default='~/.mxnet/datasets/imagenet/rec/val.idx',
+    parser.add_argument('--rec-val-idx', type=str, default=data_dir + 'rec/val.idx',
                         help='the index of validation data')
     parser.add_argument('--use-rec', action='store_true',
                         help='use image record iter for data input. default is false.')
@@ -104,8 +105,7 @@ def parse_args():
                         help='name of training log file')
     parser.add_argument('--use-gn', action='store_true',
                         help='whether to use group norm.')
-    opt = parser.parse_args()
-    return opt
+    return add_dali_pipeline_args(parser, [('--synthetic', int, 0, 'Use synthetic data')])
 
 
 def main():
