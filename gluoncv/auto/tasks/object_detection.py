@@ -98,6 +98,7 @@ def _train_object_detection(args, reporter):
                 'time': 0, 'train_map': -1, 'valid_map': -1}
 
     try:
+        valid_summary_file = 'fit_summary_obj_det.ag'
         estimator_cls = args.pop('estimator', None)
         if estimator_cls == FasterRCNNEstimator:
             # safe guard if too many GT in dataset
