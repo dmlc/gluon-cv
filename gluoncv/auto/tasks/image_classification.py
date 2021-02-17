@@ -107,7 +107,7 @@ def _train_image_classification(args, reporter):
             for dd in trial_dirs:
                 try:
                     print('file', os.path.join(log_dir, dd, valid_summary_file), os.path.isfile(os.path.join(log_dir, dd, valid_summary_file)))
-                    print('ch', os.path.isfile(os.path.join(log_dir, dd, _BEST_CHECKPOINT_FILE), os.path.isfile(os.path.isfile(os.path.join(log_dir, dd, _BEST_CHECKPOINT_FILE)))
+                    print('ch', os.path.isfile(os.path.join(log_dir, dd, _BEST_CHECKPOINT_FILE)), os.path.isfile(os.path.isfile(os.path.join(log_dir, dd, _BEST_CHECKPOINT_FILE))))
                     with open(os.path.join(log_dir, dd, valid_summary_file), 'r') as f:
                         result = json.load(f)
                         acc = results.get('valid_acc', -1)
