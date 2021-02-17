@@ -62,6 +62,8 @@ def _train_object_detection(args, reporter):
     args: <class 'autogluon.utils.edict.EasyDict'>
     """
     tic = time.time()
+    task_id = int(args.task_id)
+    final_fit = args.final_fit
     # train, val data
     train_data = args.pop('train_data')
     val_data = args.pop('val_data')
@@ -80,16 +82,6 @@ def _train_object_detection(args, reporter):
         num_trials = args.pop('num_trials')
     except AttributeError:
         task = None
-
-    final_fit = args.pop('final_fit', False)
-    # handle time_limit
-    if wall_clock_tick < tic:
-        # already exceeds time_limit, skip
-        if not final_fit:
-            return {'time': 0, 'train_map': -1, 'valid_map': -1}
-        else:
-            # try to load back the previous best model
-
 
     # convert user defined config to nested form
     args = config_to_nested(args)
