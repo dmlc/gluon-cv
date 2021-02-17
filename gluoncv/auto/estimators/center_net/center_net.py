@@ -1,5 +1,5 @@
 """CenterNet Estimator"""
-# pylint: disable=unused-variable,missing-function-docstring,abstract-method
+# pylint: disable=unused-variable,missing-function-docstring,abstract-method,logging-format-interpolation
 import os
 import math
 import time
