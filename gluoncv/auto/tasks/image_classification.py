@@ -120,7 +120,7 @@ def _train_image_classification(args, reporter):
                 estimator = None
                 result.update({'traceback': 'timeout'})
         else:
-            importlib.reload(mxnet)
+            # importlib.reload(mxnet)
             # create independent log_dir for each trial
             trial_log_dir = os.path.join(log_dir, '.trial_{}'.format(task_id))
             args['log_dir'] = trial_log_dir
