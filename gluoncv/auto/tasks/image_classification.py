@@ -65,6 +65,7 @@ def _train_image_classification(args, reporter):
     """
     tic = time.time()
     task_id = int(args.task_id)
+    print(args)
     final_fit = args.get('final_fit')
     # train, val data
     train_data = args.pop('train_data')
