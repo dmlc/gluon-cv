@@ -283,6 +283,7 @@ class ImageClassification(BaseTask):
                 time_limit = config['time_limits']
             else:
                 time_limit = math.inf
+        self.scheduler_options['time_out'] = time_limit
         elif not isinstance(time_limit, int):
             raise TypeError(f'Invalid type `time_limit={time_limit}`, int or None expected')
         wall_clock_tick = time.time() + time_limit
@@ -366,12 +367,10 @@ class ImageClassification(BaseTask):
                                       'best_config': best_config})
         self._logger.info(pprint.pformat(self._fit_summary, indent=2))
 
-        # TODO: checkpointing needs to be done in a better way
         if self._cleanup_disk:
             shutil.rmtree(config['log_dir'], ignore_errors=True)
         model_checkpoint = results.get('model_checkpoint', None)
         if model_checkpoint is None:
-            print('results', results)
             if results.get('traceback', '') == 'timeout':
                 raise TimeoutError(f'Unable to fit a usable model given `time_limit={time_limit}`')
             raise RuntimeError(f'Unexpected error happened during fit: {pprint.pformat(results, indent=2)}')

@@ -8,6 +8,8 @@ import pprint
 import json
 import pickle
 from typing import Union, Tuple
+import uuid
+import shutil
 
 from autocfg import dataclass
 import numpy as np
@@ -63,12 +65,13 @@ def _train_object_detection(args, reporter):
     """
     tic = time.time()
     task_id = int(args.task_id)
-    final_fit = args.final_fit
+    final_fit = args.pop('final_fit', False)
     # train, val data
     train_data = args.pop('train_data')
     val_data = args.pop('val_data')
     # wall clock tick limit
     wall_clock_tick = args.pop('wall_clock_tick')
+    log_dir = args.pop('log_dir', os.getcwd())
     # exponential batch size for Int() space batch sizes
     try:
         exp_batch_size = args.pop('exp_batch_size')
@@ -86,6 +89,10 @@ def _train_object_detection(args, reporter):
     # convert user defined config to nested form
     args = config_to_nested(args)
 
+    if wall_clock_tick < tic and not final_fit:
+        return {'traceback': 'timeout', 'args': str(args),
+                'time': 0, 'train_map': -1, 'valid_map': -1}
+
     try:
         estimator_cls = args.pop('estimator', None)
         if estimator_cls == FasterRCNNEstimator:
@@ -93,30 +100,55 @@ def _train_object_detection(args, reporter):
             train_dataset = train_data.to_mxnet()
             max_gt_count = max([y[1].shape[0] for y in train_dataset]) + 20
             args['faster_rcnn']['max_num_gt'] = max_gt_count
-        estimator = estimator_cls(args, reporter=reporter)
-        # training
-        result = estimator.fit(train_data=train_data, val_data=val_data, time_limit=wall_clock_tick-tic)
-        # save config and result
-        if task is not None:
-            trial_log = {}
-            trial_log.update(args)
-            trial_log.update(result)
-            json_str = json.dumps(trial_log)
-            time_str = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
-            json_file_name = task + '_dataset-' + dataset + '_trials-' + str(num_trials) + '_' + time_str + '.json'
-            with open(json_file_name, 'w') as json_file:
-                json_file.write(json_str)
-            logging.info('Config and result in this trial have been saved to %s.', json_file_name)
-    # pylint: disable=bare-except
+        if final_fit:
+            # load from previous dumps
+            is_valid_dir_fn = lambda d : d.startswith('.trial_') and os.path.isdir(os.path.join(log_dir, d))
+            trial_dirs = [d for d in os.listdir(log_dir) if is_valid_dir_fn(d)]
+            best_checkpoint = ''
+            best_acc = -1
+            result = {}
+            for dd in trial_dirs:
+                try:
+                    with open(os.path.join(log_dir, dd, valid_summary_file), 'r') as f:
+                        result = json.load(f)
+                        acc = result.get('valid_map', -1)
+                        if acc > best_acc and os.path.isfile(os.path.join(log_dir, dd, _BEST_CHECKPOINT_FILE)):
+                            best_checkpoint = os.path.join(log_dir, dd, _BEST_CHECKPOINT_FILE)
+                            best_acc = acc
+                except:
+                    pass
+            if best_checkpoint:
+                estimator = estimator_cls.load(best_checkpoint)
+            else:
+                estimator = None
+                result.update({'traceback': 'timeout'})
+        else:
+            # create independent log_dir for each trial
+            trial_log_dir = os.path.join(log_dir, '.trial_{}'.format(task_id))
+            args['log_dir'] = trial_log_dir
+            estimator = estimator_cls(args, reporter=reporter)
+            # training
+            result = estimator.fit(train_data=train_data, val_data=val_data, time_limit=wall_clock_tick-tic)
+            with open(os.path.join(trial_log_dir, valid_summary_file), 'w') as f:
+                json.dump(result, f)
+            # save config and result
+            if task is not None:
+                trial_log = {}
+                trial_log.update(args)
+                trial_log.update(result)
+                json_str = json.dumps(trial_log)
+                time_str = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
+                json_file_name = task + '_dataset-' + dataset + '_trials-' + str(num_trials) + '_' + time_str + '.json'
+                with open(json_file_name, 'w') as json_file:
+                    json_file.write(json_str)
+                logging.info('Config and result in this trial have been saved to %s.', json_file_name)
     except:
         import traceback
         return {'traceback': traceback.format_exc(), 'args': str(args),
                 'time': time.time() - tic, 'train_map': -1, 'valid_map': -1}
 
-    # TODO: checkpointing needs to be done in a better way
-    # unique_checkpoint = 'train_object_detection_' + str(uuid.uuid4()) + '.pkl'
-    # estimator.save(unique_checkpoint)
-    result.update({'model_checkpoint': pickle.dumps(estimator)})
+    if estimator:
+        result.update({'model_checkpoint': pickle.dumps(estimator)})
     return result
 
 class ObjectDetection(BaseTask):
@@ -209,6 +241,8 @@ class ObjectDetection(BaseTask):
         config['num_workers'] = nthreads_per_trial
         config['gpus'] = [int(i) for i in range(ngpus_per_trial)]
         config['seed'] = config.get('seed', np.random.randint(32,767))
+        config['final_fit'] = False
+        self._cleanup_disk = config.get('cleanup_disk', True)
         self._config = config
 
         # scheduler options
@@ -303,6 +337,7 @@ class ObjectDetection(BaseTask):
         config['train_data'] = train_data
         config['val_data'] = val_data
         config['wall_clock_tick'] = wall_clock_tick
+        config['log_dir'] = os.path.join(config.get('log_dir', os.getcwd()), str(uuid.uuid4())[:8])
         _train_object_detection.register_args(**config)
 
         start_time = time.time()
@@ -341,9 +376,12 @@ class ObjectDetection(BaseTask):
                                       'best_config': best_config})
         self._logger.info(pprint.pformat(self._fit_summary, indent=2))
 
-        # TODO: checkpointing needs to be done in a better way
+        if self._cleanup_disk:
+            shutil.rmtree(config['log_dir'], ignore_errors=True)
         model_checkpoint = results.get('model_checkpoint', None)
         if model_checkpoint is None:
+            if results.get('traceback', '') == 'timeout':
+                raise TimeoutError(f'Unable to fit a usable model given `time_limit={time_limit}`')
             raise RuntimeError(f'Unexpected error happened during fit: {pprint.pformat(results, indent=2)}')
         estimator = pickle.loads(results['model_checkpoint'])
         return estimator
