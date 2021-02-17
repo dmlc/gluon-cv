@@ -315,8 +315,8 @@ class ObjectDetection(BaseTask):
                 time_limit = math.inf
         elif not isinstance(time_limit, int):
             raise TypeError(f'Invalid type `time_limit={time_limit}`, int or None expected')
-        self.scheduler_options['time_out'] = time_limit + 60  # allow overhead
-        wall_clock_tick = time.time() + time_limit + 60  # allow overhead
+        self.scheduler_options['time_out'] = time_limit
+        wall_clock_tick = time.time() + time_limit
         # split train/val before HPO to make fair comparisons
         if not isinstance(train_data, pd.DataFrame):
             assert val_data is not None, \
