@@ -128,6 +128,7 @@ class YOLOv3Estimator(BaseEstimator):
                 self._logger.info('[Epoch {}] Early stopping as mAP is reaching 1.0'.format(epoch))
                 break
             tic = time.time()
+            last_tic = time.time()
             if self._cfg.train.mixup:
                 # TODO(zhreshold): more elegant way to control mixup during runtime
                 try:
@@ -185,8 +186,9 @@ class YOLOv3Estimator(BaseEstimator):
                         self._logger.info(
                             '[Epoch {}][Batch {}], LR: {:.2E}, Speed: {:.3f} samples/sec,'
                             ' {}={:.3f}, {}={:.3f}, {}={:.3f}, {}={:.3f}'.format(
-                                epoch, i, trainer.learning_rate, self._cfg.train.batch_size / (time.time() - btic),
+                                epoch, i, trainer.learning_rate, self._cfg.train.batch_size / (time.time() - last_tic),
                                 name1, loss1, name2, loss2, name3, loss3, name4, loss4))
+                        last_tic = time.time()
                     self._time_elapsed += time.time() - btic
 
             post_tic = time.time()

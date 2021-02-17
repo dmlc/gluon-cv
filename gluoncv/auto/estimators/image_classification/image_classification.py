@@ -140,6 +140,7 @@ class ImageClassificationEstimator(BaseEstimator):
                 self._logger.info('[Epoch {}] Early stopping as acc is reaching 1.0'.format(epoch))
                 break
             tic = time.time()
+            last_tic = time.time()
             mx.nd.waitall()
             if self._cfg.train.use_rec:
                 train_data.reset()
@@ -202,8 +203,9 @@ class ImageClassificationEstimator(BaseEstimator):
                     train_metric_name, train_metric_score = train_metric.get()
                     self._logger.info('Epoch[%d] Batch [%d]\tSpeed: %f samples/sec\t%s=%f\tlr=%f',
                                       epoch, i,
-                                      self._cfg.train.batch_size*self._cfg.train.log_interval/(time.time()-btic),
+                                      self._cfg.train.batch_size*self._cfg.train.log_interval/(time.time()-last_tic),
                                       train_metric_name, train_metric_score, self.trainer.learning_rate)
+                    last_tic = time.time()
                 self._time_elapsed += time.time() - btic
 
             post_tic = time.time()

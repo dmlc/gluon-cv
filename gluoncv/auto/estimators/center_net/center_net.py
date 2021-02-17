@@ -141,6 +141,7 @@ class CenterNetEstimator(BaseEstimator):
         for self.epoch in range(max(self._cfg.train.start_epoch, self.epoch), self._cfg.train.epochs):
             epoch = self.epoch
             tic = time.time()
+            last_tic = time.time()
             if self._best_map >= 1.0:
                 self._logger.info('[Epoch %d] Early stopping as mAP is reaching 1.0', epoch)
                 break
@@ -190,8 +191,9 @@ class CenterNetEstimator(BaseEstimator):
                     self._logger.info(
                         '[Epoch {}][Batch {}], Speed: {:.3f} samples/sec, '
                         'LR={}, {}={:.3f}, {}={:.3f}, {}={:.3f}'.format(
-                            epoch, i, batch_size / (time.time() - btic),
+                            epoch, i, batch_size / (time.time() - last_tic),
                             self.trainer.learning_rate, name2, loss2, name3, loss3, name4, loss4))
+                    last_tic = time.time()
                 self._time_elapsed += time.time() - btic
 
             post_tic = time.time()

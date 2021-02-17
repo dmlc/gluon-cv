@@ -134,6 +134,7 @@ class SSDEstimator(BaseEstimator):
         for self.epoch in range(max(self._cfg.train.start_epoch, self.epoch), self._cfg.train.epochs):
             epoch = self.epoch
             tic = time.time()
+            last_tic = time.time()
             if self._best_map >= 1.0:
                 self._logger.info('[Epoch {}] Early stopping as mAP is reaching 1.0'.format(epoch))
                 break
@@ -189,8 +190,9 @@ class SSDEstimator(BaseEstimator):
                         name1, loss1 = ce_metric.get()
                         name2, loss2 = smoothl1_metric.get()
                         self._logger.info('[Epoch %d][Batch %d], Speed: %f samples/sec, %s=%f, %s=%f',
-                                          epoch, i, self._cfg.train.batch_size/(time.time()-btic),
+                                          epoch, i, self._cfg.train.batch_size/(time.time()-last_tic),
                                           name1, loss1, name2, loss2)
+                        last_tic = time.time()
                 self._time_elapsed += time.time() - btic
 
             post_tic = time.time()

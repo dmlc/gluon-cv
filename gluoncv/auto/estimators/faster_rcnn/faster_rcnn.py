@@ -130,6 +130,7 @@ class FasterRCNNEstimator(BaseEstimator):
         for self.epoch in range(max(self._cfg.train.start_epoch, self.epoch), self._cfg.train.epochs):
             epoch = self.epoch
             tic = time.time()
+            last_tic = time.time()
             if self._best_map >= 1.0:
                 self._logger.info('[Epoch %d] Early stopping as mAP is reaching 1.0', epoch)
                 break
@@ -204,7 +205,8 @@ class FasterRCNNEstimator(BaseEstimator):
                     self._logger.info('[Epoch {}][Batch {}], Speed: {:.3f} samples/sec, {}'.format(
                         epoch, i,
                         self._cfg.train.log_interval * self.batch_size / (
-                            time.time() - btic), msg))
+                            time.time() - last_tic), msg))
+                    last_tic = time.time()
                 self._time_elapsed += time.time() - btic
 
             post_tic = time.time()
