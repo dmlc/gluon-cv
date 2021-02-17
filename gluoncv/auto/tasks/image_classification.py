@@ -105,21 +105,14 @@ def _train_image_classification(args, reporter):
             result = {}
             for dd in trial_dirs:
                 try:
-                    print('file', os.path.join(log_dir, dd, valid_summary_file), os.path.isfile(os.path.join(log_dir, dd, valid_summary_file)))
-                    print('ch', os.path.join(log_dir, dd, _BEST_CHECKPOINT_FILE), os.path.isfile(os.path.join(log_dir, dd, _BEST_CHECKPOINT_FILE)))
                     with open(os.path.join(log_dir, dd, valid_summary_file), 'r') as f:
                         result = json.load(f)
-                        print('rr', result)
-                        acc = results.get('valid_acc', -1)
-                        print('acc', acc)
+                        acc = result.get('valid_acc', -1)
                         if acc > best_acc and os.path.isfile(os.path.join(log_dir, dd, _BEST_CHECKPOINT_FILE)):
                             best_checkpoint = os.path.join(log_dir, dd, _BEST_CHECKPOINT_FILE)
                             best_acc = acc
                 except:
                     pass
-            print('tiral_dirs', trial_dirs)
-            print('best_checkpoint', best_checkpoint)
-            print('result', result)
             if best_checkpoint:
                 estimator = estimator_cls.load(best_checkpoint)
         else:
