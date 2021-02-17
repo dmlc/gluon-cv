@@ -1,5 +1,5 @@
 """Auto pipeline for image classification task"""
-# pylint: disable=bad-whitespace,missing-class-docstring
+# pylint: disable=bad-whitespace,missing-class-docstring,disable=bare-except
 import time
 import os
 import math
@@ -109,9 +109,10 @@ def _train_image_classification(args, reporter):
                     with open(os.path.join(log_dir, dd, valid_summary_file), 'r') as f:
                         result = json.load(f)
                         acc = results.get('valid_acc', -1)
-                    if acc > best_acc and os.path.isfile(os.path.join(log_dir, dd, _BEST_CHECKPOINT_FILE)):
-                        best_checkpoint = os.path.join(log_dir, dd, _BEST_CHECKPOINT_FILE)
-                        best_acc = acc
+                        print('acc', acc)
+                        if acc > best_acc and os.path.isfile(os.path.join(log_dir, dd, _BEST_CHECKPOINT_FILE)):
+                            best_checkpoint = os.path.join(log_dir, dd, _BEST_CHECKPOINT_FILE)
+                            best_acc = acc
                 except:
                     pass
             print('tiral_dirs', trial_dirs)
@@ -142,7 +143,6 @@ def _train_image_classification(args, reporter):
                 with open(json_file_name, 'w') as json_file:
                     json_file.write(json_str)
                 logging.info('Config and result in this trial have been saved to %s.', json_file_name)
-    # pylint: disable=bare-except
     except:
         import traceback
         return {'traceback': traceback.format_exc(), 'args': str(args),
