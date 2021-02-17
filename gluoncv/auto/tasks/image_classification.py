@@ -275,9 +275,10 @@ class ImageClassification(BaseTask):
             The estimator obtained by training on the specified dataset.
 
         """
+        config = self._config.copy()
         if time_limit is None:
-            if self._config.get('time_limits', None):
-                time_limit = self._config['time_limits']
+            if config.get('time_limits', None):
+                time_limit = config['time_limits']
             else:
                 time_limit = math.inf
         elif not isinstance(time_limit, int):
@@ -300,7 +301,7 @@ class ImageClassification(BaseTask):
                               len(train), len(val))
             train_data, val_data = train, val
 
-        estimator = self._config.get('estimator', None)
+        estimator = config.get('estimator', None)
         if estimator is None:
             estimator = [ImageClassificationEstimator]
         else:
@@ -316,12 +317,11 @@ class ImageClassification(BaseTask):
         if not estimator:
             raise ValueError('Unable to determine the estimator for fit function.')
         if len(estimator) == 1:
-            self._config['estimator'] = estimator[0]
+            config['estimator'] = estimator[0]
         else:
-            self._config['estimator'] = ag.Categorical(*estimator)
+            config['estimator'] = ag.Categorical(*estimator)
 
         # register args
-        config = self._config.copy()
         config['train_data'] = train_data
         config['val_data'] = val_data
         config['wall_clock_tick'] = wall_clock_tick
@@ -351,8 +351,7 @@ class ImageClassification(BaseTask):
                 ks = ('best_reward', 'best_config', 'total_time', 'config_history', 'reward_attr')
                 self._results.update({k: v for k, v in results.items() if k in ks})
         end_time = time.time()
-        self._logger.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> finish model fitting")
-        self._logger.info("total runtime is %.2f s", end_time - start_time)
+        self._logger.info("Finished, total runtime is %.2f s", end_time - start_time)
         if config.get('num_trials', 1) > 1:
             best_config = sample_config(_train_image_classification.args, results['best_config'])
             # convert best config to nested form

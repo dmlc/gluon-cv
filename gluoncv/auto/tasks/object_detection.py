@@ -265,9 +265,10 @@ class ObjectDetection(BaseTask):
             The estimator obtained by training on the specified dataset.
 
         """
+        config = self._config.copy()
         if time_limit is None:
-            if self._config.get('time_limits', None):
-                time_limit = self._config['time_limits']
+            if config.get('time_limits', None):
+                time_limit = config['time_limits']
             else:
                 time_limit = math.inf
         elif not isinstance(time_limit, int):
@@ -291,15 +292,14 @@ class ObjectDetection(BaseTask):
             train_data, val_data = train, val
 
         # automatically suggest some hyperparameters based on the dataset statistics(experimental)
-        estimator = self._config.get('estimator', None)
-        transfer = self._config.get('transfer', None)
+        estimator = config.get('estimator', None)
+        transfer = config.get('transfer', None)
         if not transfer:
-            self._config['train_dataset'] = train_data
+            config['train_dataset'] = train_data
             auto_suggest(self._config, estimator, self._logger)
-            self._config.pop('train_dataset')
+            config.pop('train_dataset')
 
         # register args
-        config = self._config.copy()
         config['train_data'] = train_data
         config['val_data'] = val_data
         config['wall_clock_tick'] = wall_clock_tick
@@ -328,8 +328,7 @@ class ObjectDetection(BaseTask):
                 ks = ('best_reward', 'best_config', 'total_time', 'config_history', 'reward_attr')
                 self._results.update({k: v for k, v in results.items() if k in ks})
         end_time = time.time()
-        self._logger.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> finish model fitting")
-        self._logger.info("total runtime is %.2f s", end_time - start_time)
+        self._logger.info("Finished, total runtime is %.2f s", end_time - start_time)
         if config.get('num_trials', 1) > 1:
             best_config = sample_config(_train_object_detection.args, results['best_config'])
             # convert best config to nested form
