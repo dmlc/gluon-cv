@@ -89,7 +89,7 @@ def _train_image_classification(args, reporter):
     args = config_to_nested(args)
 
     if wall_clock_tick < tic and not final_fit:
-        return {'traceback': 'time_out', 'args': str(args),
+        return {'traceback': 'timeout', 'args': str(args),
                 'time': 0, 'train_acc': -1, 'valid_acc': -1}
 
     try:

@@ -89,7 +89,7 @@ class BaseEstimator:
         cfg = self._default_cfg.merge(config)  # config can be dict or yaml file
         diffs = self._default_cfg.diff(cfg)
         if diffs:
-            self._logger.info('modified configs: {')
+            self._logger.info('modified configs(<old> != <new>): {')
             for diff in diffs:
                 self._logger.info(diff)
             self._logger.info('}')
