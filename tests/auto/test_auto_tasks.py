@@ -41,7 +41,7 @@ def test_object_detection_estimator_transfer():
 def test_time_out_image_classification():
     time_limit = 30
     from gluoncv.auto.tasks import ImageClassification
-    task = ImageClassification({'num_trials': 10, 'epochs': 10})
+    task = ImageClassification({'num_trials': 1, 'epochs': 50})
 
     tic = time.time()
     classifier = task.fit(IMAGE_CLASS_DATASET, time_limit=time_limit)
@@ -51,7 +51,7 @@ def test_time_out_image_classification():
 def test_time_out_detection():
     time_limit = 30
     from gluoncv.auto.tasks import ObjectDetection
-    task = ObjectDetection({'num_trials': 10, 'epochs': 10, 'time_limits': time_limit})
+    task = ObjectDetection({'num_trials': 1, 'epochs': 50, 'time_limits': time_limit})
     tic = time.time()
     detector = task.fit(OBJECT_DETECTION_TRAIN)
     # check time_limit with a little bit overhead
