@@ -319,7 +319,7 @@ class ImageClassification(BaseTask):
         config['train_data'] = train_data
         config['val_data'] = val_data
         config['wall_clock_tick'] = wall_clock_tick
-        config['log_dir'] = os.path.join(config.get('log_dir', os.getcwd()), str(uuid.uuid4()[:8]))
+        config['log_dir'] = os.path.join(config.get('log_dir', os.getcwd()), str(uuid.uuid4())[:8])
         _train_image_classification.register_args(**config)
 
         start_time = time.time()
