@@ -12,9 +12,9 @@ from typing import Union, Tuple
 import uuid
 import shutil
 
-from autocfg import dataclass
 import numpy as np
 import pandas as pd
+from autocfg import dataclass
 import autogluon.core as ag
 from autogluon.core.decorator import sample_config
 from autogluon.core.scheduler.resource import get_cpu_count, get_gpu_count
