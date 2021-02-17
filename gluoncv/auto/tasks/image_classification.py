@@ -64,7 +64,10 @@ def _train_image_classification(args, reporter):
     args: <class 'autogluon.utils.edict.EasyDict'>
     """
     tic = time.time()
-    task_id = int(args.task_id)
+    try:
+        task_id = int(args.task_id)
+    except:
+        task_id = 0
     final_fit = args.pop('final_fit', False)
     # train, val data
     train_data = args.pop('train_data')

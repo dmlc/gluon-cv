@@ -65,7 +65,10 @@ def _train_object_detection(args, reporter):
     args: <class 'autogluon.utils.edict.EasyDict'>
     """
     tic = time.time()
-    task_id = int(args.task_id)
+    try:
+        task_id = int(args.task_id)
+    except:
+        task_id = 0
     final_fit = args.pop('final_fit', False)
     # train, val data
     train_data = args.pop('train_data')
@@ -333,7 +336,7 @@ class ObjectDetection(BaseTask):
         transfer = config.get('transfer', None)
         if not transfer:
             config['train_dataset'] = train_data
-            auto_suggest(self._config, estimator, self._logger)
+            auto_suggest(config, estimator, self._logger)
             config.pop('train_dataset')
 
         # register args
