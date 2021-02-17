@@ -102,25 +102,26 @@ def _train_object_detection(args, reporter):
             args['faster_rcnn']['max_num_gt'] = max_gt_count
         if final_fit:
             # load from previous dumps
-            is_valid_dir_fn = lambda d : d.startswith('.trial_') and os.path.isdir(os.path.join(log_dir, d))
-            trial_dirs = [d for d in os.listdir(log_dir) if is_valid_dir_fn(d)]
-            best_checkpoint = ''
-            best_acc = -1
-            result = {}
-            for dd in trial_dirs:
-                try:
-                    with open(os.path.join(log_dir, dd, valid_summary_file), 'r') as f:
-                        result = json.load(f)
-                        acc = result.get('valid_map', -1)
-                        if acc > best_acc and os.path.isfile(os.path.join(log_dir, dd, _BEST_CHECKPOINT_FILE)):
-                            best_checkpoint = os.path.join(log_dir, dd, _BEST_CHECKPOINT_FILE)
-                            best_acc = acc
-                except:
-                    pass
-            if best_checkpoint:
-                estimator = estimator_cls.load(best_checkpoint)
-            else:
-                estimator = None
+            estimator = None
+            if os.path.isdir(log_dir):
+                is_valid_dir_fn = lambda d : d.startswith('.trial_') and os.path.isdir(os.path.join(log_dir, d))
+                trial_dirs = [d for d in os.listdir(log_dir) if is_valid_dir_fn(d)]
+                best_checkpoint = ''
+                best_acc = -1
+                result = {}
+                for dd in trial_dirs:
+                    try:
+                        with open(os.path.join(log_dir, dd, valid_summary_file), 'r') as f:
+                            result = json.load(f)
+                            acc = result.get('valid_map', -1)
+                            if acc > best_acc and os.path.isfile(os.path.join(log_dir, dd, _BEST_CHECKPOINT_FILE)):
+                                best_checkpoint = os.path.join(log_dir, dd, _BEST_CHECKPOINT_FILE)
+                                best_acc = acc
+                    except:
+                        pass
+                if best_checkpoint:
+                    estimator = estimator_cls.load(best_checkpoint)
+            if estimator is None:
                 result.update({'traceback': 'timeout'})
         else:
             # create independent log_dir for each trial

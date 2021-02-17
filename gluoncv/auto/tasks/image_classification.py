@@ -11,7 +11,6 @@ import pickle
 from typing import Union, Tuple
 import uuid
 import shutil
-import importlib
 
 from autocfg import dataclass
 import numpy as np
@@ -94,32 +93,31 @@ def _train_image_classification(args, reporter):
                 'time': 0, 'train_acc': -1, 'valid_acc': -1}
 
     try:
-        import mxnet
-        importlib.reload(mxnet)
         valid_summary_file = 'fit_summary_img_cls.ag'
         estimator_cls = args.pop('estimator', None)
         assert estimator_cls == ImageClassificationEstimator
         if final_fit:
             # load from previous dumps
-            is_valid_dir_fn = lambda d : d.startswith('.trial_') and os.path.isdir(os.path.join(log_dir, d))
-            trial_dirs = [d for d in os.listdir(log_dir) if is_valid_dir_fn(d)]
-            best_checkpoint = ''
-            best_acc = -1
-            result = {}
-            for dd in trial_dirs:
-                try:
-                    with open(os.path.join(log_dir, dd, valid_summary_file), 'r') as f:
-                        result = json.load(f)
-                        acc = result.get('valid_acc', -1)
-                        if acc > best_acc and os.path.isfile(os.path.join(log_dir, dd, _BEST_CHECKPOINT_FILE)):
-                            best_checkpoint = os.path.join(log_dir, dd, _BEST_CHECKPOINT_FILE)
-                            best_acc = acc
-                except:
-                    pass
-            if best_checkpoint:
-                estimator = estimator_cls.load(best_checkpoint)
-            else:
-                estimator = None
+            estimator = None
+            if os.path.isdir(log_dir):
+                is_valid_dir_fn = lambda d : d.startswith('.trial_') and os.path.isdir(os.path.join(log_dir, d))
+                trial_dirs = [d for d in os.listdir(log_dir) if is_valid_dir_fn(d)]
+                best_checkpoint = ''
+                best_acc = -1
+                result = {}
+                for dd in trial_dirs:
+                    try:
+                        with open(os.path.join(log_dir, dd, valid_summary_file), 'r') as f:
+                            result = json.load(f)
+                            acc = result.get('valid_acc', -1)
+                            if acc > best_acc and os.path.isfile(os.path.join(log_dir, dd, _BEST_CHECKPOINT_FILE)):
+                                best_checkpoint = os.path.join(log_dir, dd, _BEST_CHECKPOINT_FILE)
+                                best_acc = acc
+                    except:
+                        pass
+                if best_checkpoint:
+                    estimator = estimator_cls.load(best_checkpoint)
+            if estimator is None:
                 result.update({'traceback': 'timeout'})
         else:
             # create independent log_dir for each trial
