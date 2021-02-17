@@ -24,7 +24,7 @@ from ....utils import LRScheduler, LRSequential
 from ....utils.metrics import VOCMApMetric, VOC07MApMetric
 from .default import CenterNetCfg
 from ...data.dataset import ObjectDetectionDataset
-from .conf import _BEST_CHECKPOINT_FILE
+from ..conf import _BEST_CHECKPOINT_FILE
 
 __all__ = ['CenterNetEstimator']
 

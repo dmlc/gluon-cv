@@ -25,7 +25,7 @@ from .utils import _get_dataloader, _get_dali_dataloader
 from ..base_estimator import BaseEstimator, set_default
 from .default import SSDCfg
 from ...data.dataset import ObjectDetectionDataset
-from .conf import _BEST_CHECKPOINT_FILE
+from ..conf import _BEST_CHECKPOINT_FILE
 
 try:
     import horovod.mxnet as hvd

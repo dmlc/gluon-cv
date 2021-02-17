@@ -21,7 +21,7 @@ from ..base_estimator import BaseEstimator, set_default
 from .utils import get_data_loader, get_data_rec, smooth
 from .default import ImageClassificationCfg
 from ...data.dataset import ImageClassificationDataset
-from .conf import _BEST_CHECKPOINT_FILE
+from ..conf import _BEST_CHECKPOINT_FILE
 
 __all__ = ['ImageClassificationEstimator']
 

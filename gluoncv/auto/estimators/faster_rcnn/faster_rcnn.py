@@ -22,7 +22,7 @@ from ....utils.metrics.voc_detection import VOC07MApMetric, VOCMApMetric
 from ..base_estimator import BaseEstimator, set_default
 from .utils import _get_lr_at_iter, _get_dataloader, _split_and_load
 from ...data.dataset import ObjectDetectionDataset
-from .conf import _BEST_CHECKPOINT_FILE
+from ..conf import _BEST_CHECKPOINT_FILE
 
 try:
     import horovod.mxnet as hvd

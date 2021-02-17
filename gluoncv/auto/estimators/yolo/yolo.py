@@ -23,7 +23,7 @@ from ....utils import LRScheduler, LRSequential
 from ..base_estimator import BaseEstimator, set_default
 from .utils import _get_dataloader
 from ...data.dataset import ObjectDetectionDataset
-from .conf import _BEST_CHECKPOINT_FILE
+from ..conf import _BEST_CHECKPOINT_FILE
 
 try:
     import horovod.mxnet as hvd
