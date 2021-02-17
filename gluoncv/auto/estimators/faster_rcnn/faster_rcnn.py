@@ -133,7 +133,6 @@ class FasterRCNNEstimator(BaseEstimator):
             if self._best_map >= 1.0:
                 self._logger.info('[Epoch %d] Early stopping as mAP is reaching 1.0', epoch)
                 break
-            btic = time.time()
             rcnn_task = ForwardBackwardTask(self.net, self.trainer, rpn_cls_loss, rpn_box_loss,
                                             rcnn_cls_loss, rcnn_box_loss, mix_ratio=1.0,
                                             amp_enabled=self._cfg.faster_rcnn.amp)
@@ -160,6 +159,7 @@ class FasterRCNNEstimator(BaseEstimator):
             base_lr = self.trainer.learning_rate
             rcnn_task.mix_ratio = mix_ratio
             for i, batch in enumerate(train_data):
+                btic = time.time()
                 if self._time_elapsed > time_limit:
                     self._logger.warn(f'`time_limit={time_limit}` reached, exit early...')
                     return {'train_map': float(mean_ap[-1]), 'valid_map': self._best_map, 'time': self._time_elapsed}
@@ -205,8 +205,9 @@ class FasterRCNNEstimator(BaseEstimator):
                         epoch, i,
                         self._cfg.train.log_interval * self.batch_size / (
                             time.time() - btic), msg))
-                    btic = time.time()
+                self._time_elapsed += time.time() - btic
 
+            post_tic = time.time()
             if not self._cfg.horovod or hvd.rank() == 0:
                 msg = ','.join(['{}={:.3f}'.format(*metric.get()) for metric in metrics])
                 # pylint: disable=logging-format-interpolation
@@ -226,7 +227,7 @@ class FasterRCNNEstimator(BaseEstimator):
                         self._best_map = current_map
                 if self._reporter:
                     self._reporter(epoch=epoch, map_reward=current_map)
-            self._time_elapsed += time.time() - tic
+            self._time_elapsed += time.time() - post_tic
         # map on train data
         tic = time.time()
         map_name, mean_ap = self._evaluate(train_eval_data)

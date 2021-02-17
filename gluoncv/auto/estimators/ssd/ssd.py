@@ -134,7 +134,6 @@ class SSDEstimator(BaseEstimator):
         for self.epoch in range(max(self._cfg.train.start_epoch, self.epoch), self._cfg.train.epochs):
             epoch = self.epoch
             tic = time.time()
-            btic = time.time()
             if self._best_map >= 1.0:
                 self._logger.info('[Epoch {}] Early stopping as mAP is reaching 1.0'.format(epoch))
                 break
@@ -148,6 +147,7 @@ class SSDEstimator(BaseEstimator):
             self.net.hybridize(static_alloc=True, static_shape=True)
 
             for i, batch in enumerate(train_data):
+                btic = time.time()
                 if self._time_elapsed > time_limit:
                     self._logger.warn(f'`time_limit={time_limit}` reached, exit early...')
                     return {'train_map': float(mean_ap[-1]), 'valid_map': self._best_map, 'time': self._time_elapsed}
@@ -191,8 +191,9 @@ class SSDEstimator(BaseEstimator):
                         self._logger.info('[Epoch %d][Batch %d], Speed: %f samples/sec, %s=%f, %s=%f',
                                           epoch, i, self._cfg.train.batch_size/(time.time()-btic),
                                           name1, loss1, name2, loss2)
-                    btic = time.time()
+                self._time_elapsed += time.time() - btic
 
+            post_tic = time.time()
             if not self._cfg.horovod or hvd.rank() == 0:
                 name1, loss1 = ce_metric.get()
                 name2, loss2 = smoothl1_metric.get()
@@ -213,7 +214,7 @@ class SSDEstimator(BaseEstimator):
                         self._best_map = current_map
                 if self._reporter:
                     self._reporter(epoch=epoch, map_reward=current_map)
-            self._time_elapsed += time.time() - tic
+            self._time_elapsed += time.time() - post_tic
         # map on train data
         tic = time.time()
         map_name, mean_ap = self._evaluate(train_eval_data)

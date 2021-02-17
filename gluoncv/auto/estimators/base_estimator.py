@@ -154,7 +154,8 @@ class BaseEstimator:
             assert val_data is not None, \
                 "Please provide `val_data` as we do not know how to split `train_data` of type: \
                 {}".format(type(train_data))
-            return self._fit(train_data, val_data) if not resume else self._resume_fit(train_data, val_data)
+            return self._fit(train_data, val_data, time_limit=time_limit) if not resume \
+                else self._resume_fit(train_data, val_data, time_limit=time_limit)
 
         if val_data is None:
             assert 0 <= train_size <= 1.0

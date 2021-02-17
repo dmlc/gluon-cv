@@ -141,7 +141,6 @@ class CenterNetEstimator(BaseEstimator):
         for self.epoch in range(max(self._cfg.train.start_epoch, self.epoch), self._cfg.train.epochs):
             epoch = self.epoch
             tic = time.time()
-            btic = time.time()
             if self._best_map >= 1.0:
                 self._logger.info('[Epoch %d] Early stopping as mAP is reaching 1.0', epoch)
                 break
@@ -151,6 +150,7 @@ class CenterNetEstimator(BaseEstimator):
             self.net.hybridize()
 
             for i, batch in enumerate(train_data):
+                btic = time.time()
                 if self._time_elapsed > time_limit:
                     self._logger.warn(f'`time_limit={time_limit}` reached, exit early...')
                     return {'train_map': float(mean_ap[-1]), 'valid_map': self._best_map, 'time': self._time_elapsed}
@@ -192,8 +192,9 @@ class CenterNetEstimator(BaseEstimator):
                         'LR={}, {}={:.3f}, {}={:.3f}, {}={:.3f}'.format(
                             epoch, i, batch_size / (time.time() - btic),
                             self.trainer.learning_rate, name2, loss2, name3, loss3, name4, loss4))
-                btic = time.time()
+                self._time_elapsed += time.time() - btic
 
+            post_tic = time.time()
             name2, loss2 = wh_metric.get()
             name3, loss3 = center_reg_metric.get()
             name4, loss4 = heatmap_loss_metric.get()
@@ -214,7 +215,7 @@ class CenterNetEstimator(BaseEstimator):
                     self._best_map = current_map
                 if self._reporter:
                     self._reporter(epoch=epoch, map_reward=current_map)
-            self._time_elapsed += time.time() - tic
+            self._time_elapsed += time.time() - post_tic
         # map on train data
         tic = time.time()
         map_name, mean_ap = self._evaluate(train_eval_data)
