@@ -65,8 +65,8 @@ def _train_image_classification(args, reporter):
     """
     tic = time.time()
     task_id = int(args.task_id)
-    print(args)
-    final_fit = args.get('final_fit')
+    final_fit = args.get('final_fit', False)
+    print('final_fit', final_fit)
     # train, val data
     train_data = args.pop('train_data')
     val_data = args.pop('val_data')
@@ -88,6 +88,10 @@ def _train_image_classification(args, reporter):
         task = None
     # convert user defined config to nested form
     args = config_to_nested(args)
+
+    if wall_clock_tick < tic and not final_fit:
+        return {'traceback': 'time_out', 'args': str(args),
+                'time': 0, 'train_acc': -1, 'valid_acc': -1}
 
     try:
         valid_summary_file = 'fit_summary_img_cls.ag'
@@ -213,6 +217,7 @@ class ImageClassification(BaseTask):
         config['num_workers'] = nthreads_per_trial
         config['gpus'] = [int(i) for i in range(ngpus_per_trial)]
         config['seed'] = config.get('seed', np.random.randint(32,767))
+        config['final_fit'] = False
         self._cleanup_disk = config.get('cleanup_disk', True)
         self._config = config
 
