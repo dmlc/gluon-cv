@@ -22,6 +22,7 @@ from ....utils.metrics.voc_detection import VOC07MApMetric, VOCMApMetric
 from ..base_estimator import BaseEstimator, set_default
 from .utils import _get_lr_at_iter, _get_dataloader, _split_and_load
 from ...data.dataset import ObjectDetectionDataset
+from .conf import _BEST_CHECKPOINT_FILE
 
 try:
     import horovod.mxnet as hvd
@@ -126,6 +127,7 @@ class FasterRCNNEstimator(BaseEstimator):
         self.net.target_generator.collect_params().reset_ctx(self.ctx)
 
         mean_ap = [-1]
+        cp_name = ''
         self._time_elapsed += time.time() - start_tic
         for self.epoch in range(max(self._cfg.train.start_epoch, self.epoch), self._cfg.train.epochs):
             epoch = self.epoch
@@ -162,8 +164,9 @@ class FasterRCNNEstimator(BaseEstimator):
             for i, batch in enumerate(train_data):
                 btic = time.time()
                 if self._time_elapsed > time_limit:
-                    self._logger.warn(f'`time_limit={time_limit}` reached, exit early...')
-                    return {'train_map': float(mean_ap[-1]), 'valid_map': self._best_map, 'time': self._time_elapsed}
+                    self._logger.warning(f'`time_limit={time_limit}` reached, exit early...')
+                    return {'train_map': float(mean_ap[-1]), 'valid_map': self._best_map,
+                            'time': self._time_elapsed, 'checkpoint': cp_name}
                 if epoch == 0 and i <= lr_warmup:
                     # adjust based on real percentage
                     new_lr = base_lr * _get_lr_at_iter(i / lr_warmup,
@@ -222,7 +225,7 @@ class FasterRCNNEstimator(BaseEstimator):
                     self._logger.info('[Epoch {}] Validation: \n{}'.format(epoch, val_msg))
                     current_map = float(mean_ap[-1])
                     if current_map > self._best_map:
-                        cp_name = os.path.join(self._logdir, 'best_checkpoint.pkl')
+                        cp_name = os.path.join(self._logdir, _BEST_CHECKPOINT_FILE)
                         self._logger.info('[Epoch %d] Current best map: %f vs previous %f, saved to %s',
                                           self.epoch, current_map, self._best_map, cp_name)
                         self.save(cp_name)
@@ -234,7 +237,8 @@ class FasterRCNNEstimator(BaseEstimator):
         tic = time.time()
         map_name, mean_ap = self._evaluate(train_eval_data)
         self._time_elapsed += time.time() - tic
-        return {'train_map': float(mean_ap[-1]), 'valid_map': self._best_map, 'time': self._time_elapsed}
+        return {'train_map': float(mean_ap[-1]), 'valid_map': self._best_map,
+                'time': self._time_elapsed, 'checkpoint': cp_name}
 
     def _evaluate(self, val_data):
         """Evaluate on validation dataset."""

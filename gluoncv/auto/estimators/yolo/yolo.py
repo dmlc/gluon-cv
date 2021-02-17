@@ -23,6 +23,7 @@ from ....utils import LRScheduler, LRSequential
 from ..base_estimator import BaseEstimator, set_default
 from .utils import _get_dataloader
 from ...data.dataset import ObjectDetectionDataset
+from .conf import _BEST_CHECKPOINT_FILE
 
 try:
     import horovod.mxnet as hvd
@@ -121,6 +122,7 @@ class YOLOv3Estimator(BaseEstimator):
         trainer = self.trainer
         self._logger.info('Start training from [Epoch %d]', max(self._cfg.train.start_epoch, self.epoch))
         mean_ap = [-1]
+        cp_name = ''
         self._time_elapsed += time.time() - start_tic
         for self.epoch in range(max(self._cfg.train.start_epoch, self.epoch), self._cfg.train.epochs):
             epoch = self.epoch
@@ -146,8 +148,9 @@ class YOLOv3Estimator(BaseEstimator):
             for i, batch in enumerate(train_data):
                 btic = time.time()
                 if self._time_elapsed > time_limit:
-                    self._logger.warn(f'`time_limit={time_limit}` reached, exit early...')
-                    return {'train_map': float(mean_ap[-1]), 'valid_map': self._best_map, 'time': self._time_elapsed}
+                    self._logger.warning(f'`time_limit={time_limit}` reached, exit early...')
+                    return {'train_map': float(mean_ap[-1]), 'valid_map': self._best_map,
+                            'time': self._time_elapsed, 'checkpoint': cp_name}
                 data = gluon.utils.split_and_load(batch[0], ctx_list=self.ctx, batch_axis=0, even_split=False)
                 # objectness, center_targets, scale_targets, weights, class_targets
                 fixed_targets = [gluon.utils.split_and_load(batch[it], ctx_list=self.ctx,
@@ -206,7 +209,7 @@ class YOLOv3Estimator(BaseEstimator):
                     self._logger.info('[Epoch {}] Validation: \n{}'.format(epoch, val_msg))
                     current_map = float(mean_ap[-1])
                     if current_map > self._best_map:
-                        cp_name = os.path.join(self._logdir, 'best_checkpoint.pkl')
+                        cp_name = os.path.join(self._logdir, _BEST_CHECKPOINT_FILE)
                         self._logger.info('[Epoch %d] Current best map: %f vs previous %f, saved to %s',
                                           self.epoch, current_map, self._best_map, cp_name)
                         self.save(cp_name)
@@ -219,7 +222,8 @@ class YOLOv3Estimator(BaseEstimator):
         tic = time.time()
         map_name, mean_ap = self._evaluate(train_eval_data)
         self._time_elapsed += time.time() - tic
-        return {'train_map': float(mean_ap[-1]), 'valid_map': self._best_map, 'time': self._time_elapsed}
+        return {'train_map': float(mean_ap[-1]), 'valid_map': self._best_map,
+                'time': self._time_elapsed, 'checkpoint': cp_name}
 
     def _evaluate(self, val_data):
         """Evaluate the current model on dataset."""

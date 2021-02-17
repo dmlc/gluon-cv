@@ -25,6 +25,7 @@ from .utils import _get_dataloader, _get_dali_dataloader
 from ..base_estimator import BaseEstimator, set_default
 from .default import SSDCfg
 from ...data.dataset import ObjectDetectionDataset
+from .conf import _BEST_CHECKPOINT_FILE
 
 try:
     import horovod.mxnet as hvd
@@ -130,6 +131,7 @@ class SSDEstimator(BaseEstimator):
 
         self.net.collect_params().reset_ctx(self.ctx)
         mean_ap = [-1]
+        cp_name = ''
         self._time_elapsed += time.time() - start_tic
         for self.epoch in range(max(self._cfg.train.start_epoch, self.epoch), self._cfg.train.epochs):
             epoch = self.epoch
@@ -150,8 +152,9 @@ class SSDEstimator(BaseEstimator):
             for i, batch in enumerate(train_data):
                 btic = time.time()
                 if self._time_elapsed > time_limit:
-                    self._logger.warn(f'`time_limit={time_limit}` reached, exit early...')
-                    return {'train_map': float(mean_ap[-1]), 'valid_map': self._best_map, 'time': self._time_elapsed}
+                    self._logger.warning(f'`time_limit={time_limit}` reached, exit early...')
+                    return {'train_map': float(mean_ap[-1]), 'valid_map': self._best_map,
+                            'time': self._time_elapsed, 'checkpoint': cp_name}
                 if self._cfg.train.dali:
                     # dali iterator returns a mxnet.io.DataBatch
                     data = [d.data[0] for d in batch]
@@ -209,7 +212,7 @@ class SSDEstimator(BaseEstimator):
                     self._logger.info('[Epoch %d] Validation: \n%s', epoch, str(val_msg))
                     current_map = float(mean_ap[-1])
                     if current_map > self._best_map:
-                        cp_name = os.path.join(self._logdir, 'best_checkpoint.pkl')
+                        cp_name = os.path.join(self._logdir, _BEST_CHECKPOINT_FILE)
                         self._logger.info('[Epoch %d] Current best map: %f vs previous %f, saved to %s',
                                           self.epoch, current_map, self._best_map, cp_name)
                         self.save(cp_name)
@@ -221,7 +224,8 @@ class SSDEstimator(BaseEstimator):
         tic = time.time()
         map_name, mean_ap = self._evaluate(train_eval_data)
         self._time_elapsed += time.time() - tic
-        return {'train_map': float(mean_ap[-1]), 'valid_map': self._best_map, 'time': self._time_elapsed}
+        return {'train_map': float(mean_ap[-1]), 'valid_map': self._best_map,
+                'time': self._time_elapsed, 'checkpoint': cp_name}
 
     def _evaluate(self, val_data):
         """Evaluate on validation dataset."""

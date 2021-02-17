@@ -29,9 +29,7 @@ def set_default(cfg):
                         "  Config used to override default configurations. \n"
                         "  If `str`, assume config file (.yml, .yaml) is used. \n"
                         "logger : logger, default is `None`.\n"
-                        "  If not `None`, will use default logging object.\n"
-                        "logdir : str, default is None.\n"
-                        "  Directory for saving logs. If `None`, current working directory is used.\n")
+                        "  If not `None`, will use default logging object.\n")
         cls.__doc__ += '\nDefault configurations: \n--------------------\n'
         sio = io.StringIO()
         cfg.save(sio)
@@ -81,7 +79,7 @@ class BaseEstimator:
         self.dataset = 'auto'
 
         # logdir
-        logdir = config.pop('logdir', None) if isinstance(config, dict) else None
+        logdir = config.pop('log_dir', None) if isinstance(config, dict) else None
         self._logdir = os.path.abspath(logdir) if logdir else os.getcwd()
 
         # finalize config

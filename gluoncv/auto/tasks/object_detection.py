@@ -22,6 +22,7 @@ from ..estimators.base_estimator import BaseEstimator
 from ..estimators import SSDEstimator, FasterRCNNEstimator, YOLOv3Estimator, CenterNetEstimator
 from .utils import auto_suggest, config_to_nested
 from ..data.dataset import ObjectDetectionDataset
+from ..estimators.conf import _BEST_CHECKPOINT_FILE
 
 __all__ = ['ObjectDetection']
 
@@ -79,6 +80,17 @@ def _train_object_detection(args, reporter):
         num_trials = args.pop('num_trials')
     except AttributeError:
         task = None
+
+    final_fit = args.pop('final_fit', False)
+    # handle time_limit
+    if wall_clock_tick < tic:
+        # already exceeds time_limit, skip
+        if not final_fit:
+            return {'time': 0, 'train_map': -1, 'valid_map': -1}
+        else:
+            # try to load back the previous best model
+
+
     # convert user defined config to nested form
     args = config_to_nested(args)
 
@@ -262,7 +274,10 @@ class ObjectDetection(BaseTask):
 
         """
         if time_limit is None:
-            time_limit = math.inf
+            if self._config.get('time_limits', None):
+                time_limit = self._config['time_limits']
+            else:
+                time_limit = math.inf
         elif not isinstance(time_limit, int):
             raise TypeError(f'Invalid type `time_limit={time_limit}`, int or None expected')
         wall_clock_tick = time.time() + time_limit
@@ -312,6 +327,7 @@ class ObjectDetection(BaseTask):
                                       'valid_map': results.get('valid_map', -1),
                                       'total_time': results.get('time', time.time() - start_time),
                                       'best_config': best_config})
+            self._results = self._fit_summary
         else:
             self._logger.info("Starting HPO experiments")
             results = self.run_fit(_train_object_detection, self.search_strategy,

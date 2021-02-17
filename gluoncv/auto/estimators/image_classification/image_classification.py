@@ -21,6 +21,7 @@ from ..base_estimator import BaseEstimator, set_default
 from .utils import get_data_loader, get_data_rec, smooth
 from .default import ImageClassificationCfg
 from ...data.dataset import ImageClassificationDataset
+from .conf import _BEST_CHECKPOINT_FILE
 
 __all__ = ['ImageClassificationEstimator']
 
@@ -133,6 +134,7 @@ class ImageClassificationEstimator(BaseEstimator):
 
         self._logger.info('Start training from [Epoch %d]', max(self._cfg.train.start_epoch, self.epoch))
         train_metric_score = -1
+        cp_name = ''
         self._time_elapsed += time.time() - start_tic
         for self.epoch in range(max(self._cfg.train.start_epoch, self.epoch), self._cfg.train.epochs):
             epoch = self.epoch
@@ -150,8 +152,9 @@ class ImageClassificationEstimator(BaseEstimator):
             for i, batch in enumerate(train_data):
                 btic = time.time()
                 if self._time_elapsed > time_limit:
-                    self._logger.warn(f'`time_limit={time_limit}` reached, exit early...')
-                    return {'train_acc': train_metric_score, 'valid_acc': self._best_acc, 'time': self._time_elapsed}
+                    self._logger.warning(f'`time_limit={time_limit}` reached, exit early...')
+                    return {'train_acc': train_metric_score, 'valid_acc': self._best_acc,
+                            'time': self._time_elapsed, 'checkpoint': cp_name}
                 data, label = self.batch_fn(batch, self.ctx)
 
                 if self._cfg.train.mixup:
@@ -219,7 +222,7 @@ class ImageClassificationEstimator(BaseEstimator):
             self._logger.info('[Epoch %d] validation: top1=%f top5=%f', epoch, top1_val, top5_val)
 
             if top1_val > self._best_acc:
-                cp_name = os.path.join(self._logdir, 'best_checkpoint.pkl')
+                cp_name = os.path.join(self._logdir, _BEST_CHECKPOINT_FILE)
                 self._logger.info('[Epoch %d] Current best top-1: %f vs previous %f, saved to %s',
                                   self.epoch, top1_val, self._best_acc, cp_name)
                 self.save(cp_name)
@@ -227,7 +230,8 @@ class ImageClassificationEstimator(BaseEstimator):
             if self._reporter:
                 self._reporter(epoch=epoch, acc_reward=top1_val)
             self._time_elapsed += time.time() - post_tic
-        return {'train_acc': train_metric_score, 'valid_acc': self._best_acc, 'time': self._time_elapsed}
+        return {'train_acc': train_metric_score, 'valid_acc': self._best_acc,
+                'time': self._time_elapsed, 'checkpoint': cp_name}
 
     def _init_network(self):
         if not self.num_class:
