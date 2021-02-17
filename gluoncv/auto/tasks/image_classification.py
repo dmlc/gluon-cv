@@ -94,8 +94,8 @@ def _train_image_classification(args, reporter):
         assert estimator_cls == ImageClassificationEstimator
         if final_fit:
             # load from previous dumps
-            trial_dirs = [d if d.startswith('.trial_') and os.path.isdir(os.path.join(log_dir, d)) \
-                for d in os.listdir(log_dir)]
+            is_valid_dir_fn = lambda d : d.startswith('.trial_') and os.path.isdir(os.path.join(log_dir, d))
+            trial_dirs = [d for d in os.listdir(log_dir) if is_valid_dir_fn(d)]
             best_checkpoint = ''
             best_acc = -1
             result = {}
