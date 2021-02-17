@@ -80,7 +80,10 @@ class BaseEstimator:
 
         # logdir
         logdir = config.pop('log_dir', None) if isinstance(config, dict) else None
-        self._logdir = os.path.abspath(logdir) if logdir else os.getcwd()
+        if logdir:
+            self._logdir = os.path.abspath(logdir)
+        else:
+            self._logdir = os.path.join(os.getcwd(), name.lower() + datetime.now().strftime("-%m-%d-%Y"))
 
         # finalize config
         cfg = self._default_cfg.merge(config)  # config can be dict or yaml file
@@ -92,9 +95,6 @@ class BaseEstimator:
             self._logger.info('}')
         self._cfg = cfg
 
-        prefix = name.lower() + datetime.now().strftime("-%m-%d-%Y")
-        self._logdir = os.path.join(self._logdir, prefix)
-        # r.config['logdir'] = self._logdir
         os.makedirs(self._logdir, exist_ok=True)
         config_file = os.path.join(self._logdir, 'config.yaml')
         # log file

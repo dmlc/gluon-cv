@@ -65,8 +65,7 @@ def _train_image_classification(args, reporter):
     """
     tic = time.time()
     task_id = int(args.task_id)
-    final_fit = args.get('final_fit', False)
-    print('final_fit', final_fit)
+    final_fit = args.pop('final_fit', False)
     # train, val data
     train_data = args.pop('train_data')
     val_data = args.pop('val_data')
@@ -373,7 +372,7 @@ class ImageClassification(BaseTask):
         # TODO: checkpointing needs to be done in a better way
         model_checkpoint = results.get('model_checkpoint', None)
         if self._cleanup_disk:
-            shutil.rmtree(config['log_dir'])
+            shutil.rmtree(config['log_dir'], ignore_errors=True)
         if model_checkpoint is None:
             raise RuntimeError(f'Unexpected error happened during fit: {pprint.pformat(results, indent=2)}')
         estimator = pickle.loads(results['model_checkpoint'])
