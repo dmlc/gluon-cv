@@ -1,6 +1,7 @@
 """CenterNet Estimator"""
-# pylint: disable=unused-variable,missing-function-docstring,abstract-method
+# pylint: disable=unused-variable,missing-function-docstring,abstract-method,logging-format-interpolation
 import os
+import math
 import time
 import warnings
 from collections import OrderedDict
@@ -23,6 +24,7 @@ from ....utils import LRScheduler, LRSequential
 from ....utils.metrics import VOCMApMetric, VOC07MApMetric
 from .default import CenterNetCfg
 from ...data.dataset import ObjectDetectionDataset
+from ..conf import _BEST_CHECKPOINT_FILE
 
 __all__ = ['CenterNetEstimator']
 
@@ -79,7 +81,8 @@ class CenterNetEstimator(BaseEstimator):
         valid_df = df[df['predict_score'] > 0].reset_index(drop=True)
         return valid_df
 
-    def _fit(self, train_data, val_data):
+    def _fit(self, train_data, val_data, time_limit=math.inf):
+        tic = time.time()
         self._best_map = 0
         self.epoch = 0
         self._time_elapsed = 0
@@ -90,9 +93,11 @@ class CenterNetEstimator(BaseEstimator):
         else:
             self.last_train = train_data
         self._init_trainer()
-        return self._resume_fit(train_data, val_data)
+        self._time_elapsed += time.time() - tic
+        return self._resume_fit(train_data, val_data, time_limit=time_limit)
 
-    def _resume_fit(self, train_data, val_data):
+    def _resume_fit(self, train_data, val_data, time_limit=math.inf):
+        tic = time.time()
         if max(self._cfg.train.start_epoch, self.epoch) >= self._cfg.train.epochs:
             return {'time', self._time_elapsed}
         if not self.classes or not self.num_class:
@@ -119,10 +124,11 @@ class CenterNetEstimator(BaseEstimator):
             train_dataset.transform(CenterNetDefaultValTransform(width, height)),
             self._cfg.valid.batch_size, False, batchify_fn=val_batchify_fn, last_batch='keep',
             num_workers=self._cfg.valid.num_workers)
+        self._time_elapsed += time.time() - tic
+        return self._train_loop(train_loader, val_loader, train_eval_loader, time_limit=time_limit)
 
-        return self._train_loop(train_loader, val_loader, train_eval_loader)
-
-    def _train_loop(self, train_data, val_data, train_eval_data):
+    def _train_loop(self, train_data, val_data, train_eval_data, time_limit=math.inf):
+        start_tic = time.time()
         wh_loss = MaskedL1Loss(weight=self._cfg.center_net.wh_weight)
         heatmap_loss = HeatmapFocalLoss(from_logits=True)
         center_reg_loss = MaskedL1Loss(weight=self._cfg.center_net.center_reg_weight)
@@ -131,19 +137,27 @@ class CenterNetEstimator(BaseEstimator):
         center_reg_metric = mx.metric.Loss('CenterRegL1')
 
         self._logger.info('Start training from [Epoch %d]', max(self._cfg.train.start_epoch, self.epoch))
+        mean_ap = [-1]
+        cp_name = ''
+        self._time_elapsed += time.time() - start_tic
         for self.epoch in range(max(self._cfg.train.start_epoch, self.epoch), self._cfg.train.epochs):
             epoch = self.epoch
+            tic = time.time()
+            last_tic = time.time()
             if self._best_map >= 1.0:
                 self._logger.info('[Epoch %d] Early stopping as mAP is reaching 1.0', epoch)
                 break
             wh_metric.reset()
             center_reg_metric.reset()
             heatmap_loss_metric.reset()
-            tic = time.time()
-            btic = time.time()
             self.net.hybridize()
 
             for i, batch in enumerate(train_data):
+                btic = time.time()
+                if self._time_elapsed > time_limit:
+                    self._logger.warning(f'`time_limit={time_limit}` reached, exit early...')
+                    return {'train_map': float(mean_ap[-1]), 'valid_map': self._best_map,
+                            'time': self._time_elapsed, 'checkpoint': cp_name}
                 split_data = [
                     gluon.utils.split_and_load(batch[ind], ctx_list=self.ctx, batch_axis=0, even_split=False) for ind
                     in range(6)]
@@ -180,10 +194,12 @@ class CenterNetEstimator(BaseEstimator):
                     self._logger.info(
                         '[Epoch {}][Batch {}], Speed: {:.3f} samples/sec, '
                         'LR={}, {}={:.3f}, {}={:.3f}, {}={:.3f}'.format(
-                            epoch, i, batch_size / (time.time() - btic),
+                            epoch, i, batch_size / (time.time() - last_tic),
                             self.trainer.learning_rate, name2, loss2, name3, loss3, name4, loss4))
-                btic = time.time()
+                    last_tic = time.time()
+                self._time_elapsed += time.time() - btic
 
+            post_tic = time.time()
             name2, loss2 = wh_metric.get()
             name3, loss3 = center_reg_metric.get()
             name4, loss4 = heatmap_loss_metric.get()
@@ -197,17 +213,20 @@ class CenterNetEstimator(BaseEstimator):
                 self._logger.info('[Epoch %d] Validation: \n%s', epoch, val_msg)
                 current_map = float(mean_ap[-1])
                 if current_map > self._best_map:
-                    cp_name = os.path.join(self._logdir, 'best_checkpoint.pkl')
+                    cp_name = os.path.join(self._logdir, _BEST_CHECKPOINT_FILE)
                     self._logger.info('[Epoch %d] Current best map: %f vs previous %f, saved to %s',
                                       self.epoch, current_map, self._best_map, cp_name)
                     self.save(cp_name)
                     self._best_map = current_map
                 if self._reporter:
                     self._reporter(epoch=epoch, map_reward=current_map)
-            self._time_elapsed += time.time() - btic
+            self._time_elapsed += time.time() - post_tic
         # map on train data
+        tic = time.time()
         map_name, mean_ap = self._evaluate(train_eval_data)
-        return {'train_map': float(mean_ap[-1]), 'valid_map': self._best_map, 'time': self._time_elapsed}
+        self._time_elapsed += time.time() - tic
+        return {'train_map': float(mean_ap[-1]), 'valid_map': self._best_map,
+                'time': self._time_elapsed, 'checkpoint': cp_name}
 
     def _evaluate(self, val_data):
         """Test on validation dataset."""

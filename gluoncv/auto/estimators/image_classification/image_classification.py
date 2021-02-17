@@ -21,6 +21,7 @@ from ..base_estimator import BaseEstimator, set_default
 from .utils import get_data_loader, get_data_rec, smooth
 from .default import ImageClassificationCfg
 from ...data.dataset import ImageClassificationDataset
+from ..conf import _BEST_CHECKPOINT_FILE
 
 __all__ = ['ImageClassificationEstimator']
 
@@ -62,7 +63,8 @@ class ImageClassificationEstimator(BaseEstimator):
                 assert isinstance(optimizer, Optimizer)
         self._optimizer = optimizer
 
-    def _fit(self, train_data, val_data):
+    def _fit(self, train_data, val_data, time_limit=math.inf):
+        tic = time.time()
         self._best_acc = 0
         self.epoch = 0
         self._time_elapsed = 0
@@ -73,9 +75,11 @@ class ImageClassificationEstimator(BaseEstimator):
         else:
             self.last_train = train_data
         self._init_trainer()
-        return self._resume_fit(train_data, val_data)
+        self._time_elapsed += time.time() - tic
+        return self._resume_fit(train_data, val_data, time_limit=time_limit)
 
-    def _resume_fit(self, train_data, val_data):
+    def _resume_fit(self, train_data, val_data, time_limit=math.inf):
+        tic = time.time()
         if max(self._cfg.train.start_epoch, self.epoch) >= self._cfg.train.epochs:
             return {'time', self._time_elapsed}
         if not self.classes or not self.num_class:
@@ -100,9 +104,11 @@ class ImageClassificationEstimator(BaseEstimator):
                                                                       self._cfg.train.crop_ratio,
                                                                       train_dataset=train_dataset,
                                                                       val_dataset=val_dataset)
-        return self._train_loop(train_loader, val_loader)
+        self._time_elapsed += time.time() - tic
+        return self._train_loop(train_loader, val_loader, time_limit=time_limit)
 
-    def _train_loop(self, train_data, val_data):
+    def _train_loop(self, train_data, val_data, time_limit=math.inf):
+        start_tic = time.time()
         if self._cfg.train.no_wd:
             for k, v in self.net.collect_params('.*beta|.*gamma|.*bias').items():
                 v.wd_mult = 0.0
@@ -127,20 +133,28 @@ class ImageClassificationEstimator(BaseEstimator):
                 self.teacher.hybridize(static_alloc=True, static_shape=True)
 
         self._logger.info('Start training from [Epoch %d]', max(self._cfg.train.start_epoch, self.epoch))
+        train_metric_score = -1
+        cp_name = ''
+        self._time_elapsed += time.time() - start_tic
         for self.epoch in range(max(self._cfg.train.start_epoch, self.epoch), self._cfg.train.epochs):
             epoch = self.epoch
             if self._best_acc >= 1.0:
                 self._logger.info('[Epoch {}] Early stopping as acc is reaching 1.0'.format(epoch))
                 break
-            mx.nd.waitall()
             tic = time.time()
-            btic = time.time()
+            last_tic = time.time()
+            mx.nd.waitall()
             if self._cfg.train.use_rec:
                 train_data.reset()
             train_metric.reset()
 
             # pylint: disable=undefined-loop-variable
             for i, batch in enumerate(train_data):
+                btic = time.time()
+                if self._time_elapsed > time_limit:
+                    self._logger.warning(f'`time_limit={time_limit}` reached, exit early...')
+                    return {'train_acc': train_metric_score, 'valid_acc': self._best_acc,
+                            'time': self._time_elapsed, 'checkpoint': cp_name}
                 data, label = self.batch_fn(batch, self.ctx)
 
                 if self._cfg.train.mixup:
@@ -192,10 +206,12 @@ class ImageClassificationEstimator(BaseEstimator):
                     train_metric_name, train_metric_score = train_metric.get()
                     self._logger.info('Epoch[%d] Batch [%d]\tSpeed: %f samples/sec\t%s=%f\tlr=%f',
                                       epoch, i,
-                                      self._cfg.train.batch_size*self._cfg.train.log_interval/(time.time()-btic),
+                                      self._cfg.train.batch_size*self._cfg.train.log_interval/(time.time()-last_tic),
                                       train_metric_name, train_metric_score, self.trainer.learning_rate)
-                    btic = time.time()
+                    last_tic = time.time()
+                self._time_elapsed += time.time() - btic
 
+            post_tic = time.time()
             train_metric_name, train_metric_score = train_metric.get()
             throughput = int(self.batch_size * i /(time.time() - tic))
 
@@ -206,15 +222,16 @@ class ImageClassificationEstimator(BaseEstimator):
             self._logger.info('[Epoch %d] validation: top1=%f top5=%f', epoch, top1_val, top5_val)
 
             if top1_val > self._best_acc:
-                cp_name = os.path.join(self._logdir, 'best_checkpoint.pkl')
+                cp_name = os.path.join(self._logdir, _BEST_CHECKPOINT_FILE)
                 self._logger.info('[Epoch %d] Current best top-1: %f vs previous %f, saved to %s',
                                   self.epoch, top1_val, self._best_acc, cp_name)
                 self.save(cp_name)
                 self._best_acc = top1_val
             if self._reporter:
                 self._reporter(epoch=epoch, acc_reward=top1_val)
-            self._time_elapsed += time.time() - btic
-        return {'train_acc': train_metric_score, 'valid_acc': self._best_acc, 'time': self._time_elapsed}
+            self._time_elapsed += time.time() - post_tic
+        return {'train_acc': train_metric_score, 'valid_acc': self._best_acc,
+                'time': self._time_elapsed, 'checkpoint': cp_name}
 
     def _init_network(self):
         if not self.num_class:

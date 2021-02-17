@@ -1,16 +1,20 @@
 """Auto pipeline for image classification task"""
-# pylint: disable=bad-whitespace,missing-class-docstring
+# pylint: disable=bad-whitespace,missing-class-docstring,bare-except
 import time
+import os
+import math
 import copy
 import logging
 import pprint
 import json
 import pickle
 from typing import Union, Tuple
+import uuid
+import shutil
 
-from autocfg import dataclass
 import numpy as np
 import pandas as pd
+from autocfg import dataclass
 import autogluon.core as ag
 from autogluon.core.decorator import sample_config
 from autogluon.core.scheduler.resource import get_cpu_count, get_gpu_count
@@ -21,6 +25,7 @@ from ..estimators.base_estimator import BaseEstimator
 from ..estimators import ImageClassificationEstimator
 from .utils import config_to_nested
 from ..data.dataset import ImageClassificationDataset
+from ..estimators.conf import _BEST_CHECKPOINT_FILE
 
 
 __all__ = ['ImageClassification']
@@ -58,9 +63,18 @@ def _train_image_classification(args, reporter):
     ----------
     args: <class 'autogluon.utils.edict.EasyDict'>
     """
+    tic = time.time()
+    try:
+        task_id = int(args.task_id)
+    except:
+        task_id = 0
+    final_fit = args.pop('final_fit', False)
     # train, val data
     train_data = args.pop('train_data')
     val_data = args.pop('val_data')
+    # wall clock tick limit
+    wall_clock_tick = args.pop('wall_clock_tick')
+    log_dir = args.pop('log_dir', os.getcwd())
     # exponential batch size for Int() space batch sizes
     try:
         exp_batch_size = args.pop('exp_batch_size')
@@ -77,37 +91,67 @@ def _train_image_classification(args, reporter):
     # convert user defined config to nested form
     args = config_to_nested(args)
 
-    tic = time.time()
+    if wall_clock_tick < tic and not final_fit:
+        return {'traceback': 'timeout', 'args': str(args),
+                'time': 0, 'train_acc': -1, 'valid_acc': -1}
+
     try:
+        valid_summary_file = 'fit_summary_img_cls.ag'
         estimator_cls = args.pop('estimator', None)
         assert estimator_cls == ImageClassificationEstimator
-        custom_net = args.pop('custom_net', None)
-        custom_optimizer = args.pop('custom_optimizer', None)
-        estimator = estimator_cls(args, reporter=reporter,
-                                  net=custom_net, optimizer=custom_optimizer)
-        # training
-        result = estimator.fit(train_data=train_data, val_data=val_data)
-        # save config and result
-        if task is not None:
-            trial_log = {}
-            trial_log.update(args)
-            trial_log.update(result)
-            json_str = json.dumps(trial_log)
-            time_str = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
-            json_file_name = task + '_dataset-' + dataset + '_trials-' + str(num_trials) + '_' + time_str + '.json'
-            with open(json_file_name, 'w') as json_file:
-                json_file.write(json_str)
-            logging.info('Config and result in this trial have been saved to %s.', json_file_name)
-    # pylint: disable=bare-except
+        if final_fit:
+            # load from previous dumps
+            estimator = None
+            if os.path.isdir(log_dir):
+                is_valid_dir_fn = lambda d : d.startswith('.trial_') and os.path.isdir(os.path.join(log_dir, d))
+                trial_dirs = [d for d in os.listdir(log_dir) if is_valid_dir_fn(d)]
+                best_checkpoint = ''
+                best_acc = -1
+                result = {}
+                for dd in trial_dirs:
+                    try:
+                        with open(os.path.join(log_dir, dd, valid_summary_file), 'r') as f:
+                            result = json.load(f)
+                            acc = result.get('valid_acc', -1)
+                            if acc > best_acc and os.path.isfile(os.path.join(log_dir, dd, _BEST_CHECKPOINT_FILE)):
+                                best_checkpoint = os.path.join(log_dir, dd, _BEST_CHECKPOINT_FILE)
+                                best_acc = acc
+                    except:
+                        pass
+                if best_checkpoint:
+                    estimator = estimator_cls.load(best_checkpoint)
+            if estimator is None:
+                result.update({'traceback': 'timeout'})
+        else:
+            # create independent log_dir for each trial
+            trial_log_dir = os.path.join(log_dir, '.trial_{}'.format(task_id))
+            args['log_dir'] = trial_log_dir
+            custom_net = args.pop('custom_net', None)
+            custom_optimizer = args.pop('custom_optimizer', None)
+            estimator = estimator_cls(args, reporter=reporter,
+                                      net=custom_net, optimizer=custom_optimizer)
+            # training
+            result = estimator.fit(train_data=train_data, val_data=val_data, time_limit=wall_clock_tick-tic)
+            with open(os.path.join(trial_log_dir, valid_summary_file), 'w') as f:
+                json.dump(result, f)
+            # save config and result
+            if task is not None:
+                trial_log = {}
+                trial_log.update(args)
+                trial_log.update(result)
+                json_str = json.dumps(trial_log)
+                time_str = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
+                json_file_name = task + '_dataset-' + dataset + '_trials-' + str(num_trials) + '_' + time_str + '.json'
+                with open(json_file_name, 'w') as json_file:
+                    json_file.write(json_str)
+                logging.info('Config and result in this trial have been saved to %s.', json_file_name)
     except:
         import traceback
         return {'traceback': traceback.format_exc(), 'args': str(args),
                 'time': time.time() - tic, 'train_acc': -1, 'valid_acc': -1}
 
-    # TODO: checkpointing needs to be done in a better way
-    # unique_checkpoint = 'train_image_classification_' + str(uuid.uuid4()) + '.pkl'
-    # estimator.save(unique_checkpoint)
-    result.update({'model_checkpoint': pickle.dumps(estimator)})
+    if estimator:
+        result.update({'model_checkpoint': pickle.dumps(estimator)})
     return result
 
 
@@ -126,7 +170,7 @@ class ImageClassification(BaseTask):
     """
     Dataset = ImageClassificationDataset
 
-    def __init__(self, config=None, estimator=None, logger=None):
+    def __init__(self, config=None, logger=None):
         super(ImageClassification, self).__init__()
         self._fit_summary = {}
         self._logger = logger if logger is not None else logging.getLogger(__name__)
@@ -179,6 +223,8 @@ class ImageClassification(BaseTask):
         config['num_workers'] = nthreads_per_trial
         config['gpus'] = [int(i) for i in range(ngpus_per_trial)]
         config['seed'] = config.get('seed', np.random.randint(32,767))
+        config['final_fit'] = False
+        self._cleanup_disk = config.get('cleanup_disk', True)
         self._config = config
 
         # scheduler options
@@ -208,7 +254,7 @@ class ImageClassification(BaseTask):
                 'max_t': config.get('epochs', 50),
                 'grace_period': config.get('grace_period', config.get('epochs', 50) // 4)})
 
-    def fit(self, train_data, val_data=None, train_size=0.9, random_state=None):
+    def fit(self, train_data, val_data=None, train_size=0.9, random_state=None, time_limit=None):
         """Fit auto estimator given the input data.
 
         Parameters
@@ -222,6 +268,14 @@ class ImageClassification(BaseTask):
             The portion of train data split from original `train_data` if `val_data` is not provided.
         random_state : int
             Random state for splitting, for `np.random.seed`.
+        time_limit : int, default is None
+            The wall clock time limit(second) for fit process, if `None`, time limit is not enforced.
+            If `fit` takes longer than `time_limit`, the process will terminate early and return the
+            model prematurally.
+            Due to callbacks and additional validation functions, the `time_limit` may not be very precise
+            (few minutes allowance), but you can use it to safe-guard a very long training session.
+            If `time_limits` key set in __init__ with config, the `time_limit` value will overwrite configuration
+            if not `None`.
 
         Returns
         -------
@@ -229,6 +283,16 @@ class ImageClassification(BaseTask):
             The estimator obtained by training on the specified dataset.
 
         """
+        config = self._config.copy()
+        if time_limit is None:
+            if config.get('time_limits', None):
+                time_limit = config['time_limits']
+            else:
+                time_limit = math.inf
+        elif not isinstance(time_limit, int):
+            raise TypeError(f'Invalid type `time_limit={time_limit}`, int or None expected')
+        self.scheduler_options['time_out'] = time_limit
+        wall_clock_tick = time.time() + time_limit
         # split train/val before HPO to make fair comparisons
         if not isinstance(train_data, pd.DataFrame):
             assert val_data is not None, \
@@ -246,7 +310,7 @@ class ImageClassification(BaseTask):
                               len(train), len(val))
             train_data, val_data = train, val
 
-        estimator = self._config.get('estimator', None)
+        estimator = config.get('estimator', None)
         if estimator is None:
             estimator = [ImageClassificationEstimator]
         else:
@@ -262,14 +326,15 @@ class ImageClassification(BaseTask):
         if not estimator:
             raise ValueError('Unable to determine the estimator for fit function.')
         if len(estimator) == 1:
-            self._config['estimator'] = estimator[0]
+            config['estimator'] = estimator[0]
         else:
-            self._config['estimator'] = ag.Categorical(*estimator)
+            config['estimator'] = ag.Categorical(*estimator)
 
         # register args
-        config = self._config.copy()
         config['train_data'] = train_data
         config['val_data'] = val_data
+        config['wall_clock_tick'] = wall_clock_tick
+        config['log_dir'] = os.path.join(config.get('log_dir', os.getcwd()), str(uuid.uuid4())[:8])
         _train_image_classification.register_args(**config)
 
         start_time = time.time()
@@ -286,6 +351,7 @@ class ImageClassification(BaseTask):
                                       'valid_acc': results.get('valid_acc', -1),
                                       'total_time': results.get('time', time.time() - start_time),
                                       'best_config': best_config})
+            self._results = self._fit_summary
         else:
             self._logger.info("Starting HPO experiments")
             results = self.run_fit(_train_image_classification, self.search_strategy,
@@ -294,8 +360,7 @@ class ImageClassification(BaseTask):
                 ks = ('best_reward', 'best_config', 'total_time', 'config_history', 'reward_attr')
                 self._results.update({k: v for k, v in results.items() if k in ks})
         end_time = time.time()
-        self._logger.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> finish model fitting")
-        self._logger.info("total runtime is %.2f s", end_time - start_time)
+        self._logger.info("Finished, total runtime is %.2f s", end_time - start_time)
         if config.get('num_trials', 1) > 1:
             best_config = sample_config(_train_image_classification.args, results['best_config'])
             # convert best config to nested form
@@ -308,9 +373,12 @@ class ImageClassification(BaseTask):
                                       'best_config': best_config})
         self._logger.info(pprint.pformat(self._fit_summary, indent=2))
 
-        # TODO: checkpointing needs to be done in a better way
+        if self._cleanup_disk:
+            shutil.rmtree(config['log_dir'], ignore_errors=True)
         model_checkpoint = results.get('model_checkpoint', None)
         if model_checkpoint is None:
+            if results.get('traceback', '') == 'timeout':
+                raise TimeoutError(f'Unable to fit a usable model given `time_limit={time_limit}`')
             raise RuntimeError(f'Unexpected error happened during fit: {pprint.pformat(results, indent=2)}')
         estimator = pickle.loads(results['model_checkpoint'])
         return estimator

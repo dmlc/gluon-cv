@@ -1,6 +1,7 @@
 from gluoncv.auto.tasks import ImageClassification
 from gluoncv.auto.tasks import ObjectDetection
 import autogluon.core as ag
+import time
 
 IMAGE_CLASS_DATASET, _, IMAGE_CLASS_TEST = ImageClassification.Dataset.from_folders(
     'https://autogluon.s3.amazonaws.com/datasets/shopee-iet.zip')
@@ -36,3 +37,22 @@ def test_object_detection_estimator_transfer():
     detector = task.fit(OBJECT_DETECTION_TRAIN)
     assert task.fit_summary().get('valid_map', 0) > 0
     test_result = detector.predict(OBJECT_DETECTION_TEST)
+
+def test_time_out_image_classification():
+    time_limit = 30
+    from gluoncv.auto.tasks import ImageClassification
+    task = ImageClassification({'num_trials': 1, 'epochs': 50})
+
+    tic = time.time()
+    classifier = task.fit(IMAGE_CLASS_DATASET, time_limit=time_limit)
+    # check time_limit with a little bit overhead
+    assert (time.time() - tic) < time_limit + 180
+
+def test_time_out_detection():
+    time_limit = 30
+    from gluoncv.auto.tasks import ObjectDetection
+    task = ObjectDetection({'num_trials': 1, 'epochs': 50, 'time_limits': time_limit})
+    tic = time.time()
+    detector = task.fit(OBJECT_DETECTION_TRAIN)
+    # check time_limit with a little bit overhead
+    assert (time.time() - tic) < time_limit + 180
