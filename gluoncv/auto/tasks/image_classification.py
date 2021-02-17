@@ -274,6 +274,8 @@ class ImageClassification(BaseTask):
             model prematurally.
             Due to callbacks and additional validation functions, the `time_limit` may not be very precise
             (few minutes allowance), but you can use it to safe-guard a very long training session.
+            If `time_limits` key set in __init__ with config, the `time_limit` value will overwrite configuration
+            if not `None`.
 
         Returns
         -------
@@ -287,7 +289,7 @@ class ImageClassification(BaseTask):
                 time_limit = config['time_limits']
             else:
                 time_limit = math.inf
-            self.scheduler_options['time_out'] = time_limit + 300  # allow overhead in scheduler
+            self.scheduler_options['time_out'] = time_limit
         elif not isinstance(time_limit, int):
             raise TypeError(f'Invalid type `time_limit={time_limit}`, int or None expected')
         wall_clock_tick = time.time() + time_limit
