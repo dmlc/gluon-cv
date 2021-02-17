@@ -94,6 +94,8 @@ def _train_image_classification(args, reporter):
                 'time': 0, 'train_acc': -1, 'valid_acc': -1}
 
     try:
+        import mxnet
+        importlib.reload(mxnet)
         valid_summary_file = 'fit_summary_img_cls.ag'
         estimator_cls = args.pop('estimator', None)
         assert estimator_cls == ImageClassificationEstimator
@@ -120,7 +122,6 @@ def _train_image_classification(args, reporter):
                 estimator = None
                 result.update({'traceback': 'timeout'})
         else:
-            # importlib.reload(mxnet)
             # create independent log_dir for each trial
             trial_log_dir = os.path.join(log_dir, '.trial_{}'.format(task_id))
             args['log_dir'] = trial_log_dir
