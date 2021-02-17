@@ -144,8 +144,8 @@ class BaseEstimator:
         """
         if time_limit is None:
             time_limit = math.inf
-        elif not isinstance(time_limit, int):
-            raise TypeError(f'Invalid type `time_limit={time_limit}`, int or None expected')
+        elif not isinstance(time_limit, (int, float)):
+            raise TypeError(f'Invalid type `time_limit={time_limit}`, int/float or None expected')
         if not resume:
             self.classes = train_data.classes
             self.num_class = len(self.classes)
