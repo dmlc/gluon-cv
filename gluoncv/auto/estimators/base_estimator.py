@@ -279,8 +279,12 @@ class BaseEstimator:
         # logger
         self._logger = logging.getLogger(state.get('_name', self.__class__.__name__))
         self._logger.setLevel(logging.ERROR)
-        fh = logging.FileHandler(self._log_file)
-        self._logger.addHandler(fh)
+        try:
+            fh = logging.FileHandler(self._log_file)
+            self._logger.addHandler(fh)
+        #pylint: disable=bare-except
+        except:
+            pass
         try:
             import mxnet as _
             net_params = state['net']

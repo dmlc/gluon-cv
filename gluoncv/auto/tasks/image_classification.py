@@ -1,5 +1,5 @@
 """Auto pipeline for image classification task"""
-# pylint: disable=bad-whitespace,missing-class-docstring,disable=bare-except
+# pylint: disable=bad-whitespace,missing-class-docstring,bare-except
 import time
 import os
 import math
@@ -115,6 +115,8 @@ def _train_image_classification(args, reporter):
                     pass
             if best_checkpoint:
                 estimator = estimator_cls.load(best_checkpoint)
+            else:
+                result.update({'traceback': 'timeout'})
         else:
             # create independent log_dir for each trial
             trial_log_dir = os.path.join(log_dir, '.trial_{}'.format(task_id))
@@ -364,10 +366,12 @@ class ImageClassification(BaseTask):
         self._logger.info(pprint.pformat(self._fit_summary, indent=2))
 
         # TODO: checkpointing needs to be done in a better way
-        model_checkpoint = results.get('model_checkpoint', None)
         if self._cleanup_disk:
             shutil.rmtree(config['log_dir'], ignore_errors=True)
+        model_checkpoint = results.get('model_checkpoint', None)
         if model_checkpoint is None:
+            if results.get('traceback', '') == 'timeout':
+                raise TimeoutError(f'Unable to fit a usable model given `time_limit={time_limit}`')
             raise RuntimeError(f'Unexpected error happened during fit: {pprint.pformat(results, indent=2)}')
         estimator = pickle.loads(results['model_checkpoint'])
         return estimator

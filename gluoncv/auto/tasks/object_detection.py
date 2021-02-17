@@ -1,5 +1,5 @@
 """Auto pipeline for object detection task"""
-# pylint: disable=bad-whitespace,missing-class-docstring
+# pylint: disable=bad-whitespace,missing-class-docstring,bare-except
 import time
 import math
 import copy
