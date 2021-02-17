@@ -165,10 +165,11 @@ class BaseEstimator:
             val = train_data[~split_mask]
             self._logger.info('Randomly split train_data into train[%d]/validation[%d] splits.',
                               len(train), len(val))
-            return self._fit(train, val) if not resume else self._resume_fit(train, val, time_limit=time_limit)
+            return self._fit(train, val, time_limit=time_limit) if not resume else \
+                self._resume_fit(train, val, time_limit=time_limit)
 
-        return self._fit(train_data, val_data) if not resume else self._resume_fit(train_data, val_data,
-                                                                                   time_limit=time_limit)
+        return self._fit(train_data, val_data, time_limit=time_limit) if not resume else \
+            self._resume_fit(train_data, val_data, time_limit=time_limit)
 
     def evaluate(self, val_data):
         """Evaluate estimator on validation data.
