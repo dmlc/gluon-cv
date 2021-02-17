@@ -140,7 +140,6 @@ class ImageClassificationEstimator(BaseEstimator):
                 self._logger.info('[Epoch {}] Early stopping as acc is reaching 1.0'.format(epoch))
                 break
             tic = time.time()
-            btic = time.time()
             mx.nd.waitall()
             if self._cfg.train.use_rec:
                 train_data.reset()
@@ -148,6 +147,7 @@ class ImageClassificationEstimator(BaseEstimator):
 
             # pylint: disable=undefined-loop-variable
             for i, batch in enumerate(train_data):
+                btic = time.time()
                 self._logger.info(f'time_limit: {time_limit}, elapsed: {self._time_elapsed}')
                 if self._time_elapsed > time_limit:
                     self._logger.warn(f'`time_limit={time_limit}` reached, exit early...')
@@ -205,8 +205,9 @@ class ImageClassificationEstimator(BaseEstimator):
                                       epoch, i,
                                       self._cfg.train.batch_size*self._cfg.train.log_interval/(time.time()-btic),
                                       train_metric_name, train_metric_score, self.trainer.learning_rate)
-                    btic = time.time()
+                self._time_elapsed += time.time() - btic
 
+            post_tic = time.time()
             train_metric_name, train_metric_score = train_metric.get()
             throughput = int(self.batch_size * i /(time.time() - tic))
 
@@ -224,7 +225,7 @@ class ImageClassificationEstimator(BaseEstimator):
                 self._best_acc = top1_val
             if self._reporter:
                 self._reporter(epoch=epoch, acc_reward=top1_val)
-            self._time_elapsed += time.time() - tic
+            self._time_elapsed += time.time() - post_tic
         return {'train_acc': train_metric_score, 'valid_acc': self._best_acc, 'time': self._time_elapsed}
 
     def _init_network(self):
