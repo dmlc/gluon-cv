@@ -114,6 +114,9 @@ def _train_image_classification(args, reporter):
                         best_acc = acc
                 except:
                     pass
+            print('tiral_dirs', trial_dirs)
+            print('best_checkpoint', best_checkpoint)
+            print('result', result)
             if best_checkpoint:
                 estimator = estimator_cls.load(best_checkpoint)
         else:
