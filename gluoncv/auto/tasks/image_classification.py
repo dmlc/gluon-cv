@@ -116,6 +116,7 @@ def _train_image_classification(args, reporter):
             if best_checkpoint:
                 estimator = estimator_cls.load(best_checkpoint)
             else:
+                estimator = None
                 result.update({'traceback': 'timeout'})
         else:
             # create independent log_dir for each trial
@@ -145,7 +146,8 @@ def _train_image_classification(args, reporter):
         return {'traceback': traceback.format_exc(), 'args': str(args),
                 'time': time.time() - tic, 'train_acc': -1, 'valid_acc': -1}
 
-    result.update({'model_checkpoint': pickle.dumps(estimator)})
+    if estimator:
+        result.update({'model_checkpoint': pickle.dumps(estimator)})
     return result
 
 
@@ -369,6 +371,7 @@ class ImageClassification(BaseTask):
             shutil.rmtree(config['log_dir'], ignore_errors=True)
         model_checkpoint = results.get('model_checkpoint', None)
         if model_checkpoint is None:
+            print('results', results)
             if results.get('traceback', '') == 'timeout':
                 raise TimeoutError(f'Unable to fit a usable model given `time_limit={time_limit}`')
             raise RuntimeError(f'Unexpected error happened during fit: {pprint.pformat(results, indent=2)}')
