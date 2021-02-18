@@ -1,3 +1,6 @@
+"""
+Provide a general object detector interface for SMOT
+"""
 # pylint: disable=unused-wildcard-import,wildcard-import
 import logging
 import numpy as np

@@ -1,6 +1,7 @@
 """
 Tractor module for SMOT
 """
+# pylint: disable=arguments-differ
 from abc import ABC, abstractmethod
 import numpy as np
 
