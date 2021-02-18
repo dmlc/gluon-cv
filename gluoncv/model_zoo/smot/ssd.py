@@ -3,15 +3,18 @@ from __future__ import absolute_import
 
 import os
 import warnings
+import logging
+
 import mxnet as mx
 from mxnet import autograd
 from mxnet.gluon import nn
 from mxnet.gluon import HybridBlock
+
 from gluoncv.nn.feature import FeatureExpander
-from .anchor import SSDAnchorGenerator
 from gluoncv.nn.predictor import ConvPredictor
 from gluoncv.nn.coder import MultiPerClassDecoder, NormalizedBoxCenterDecoder
-import logging
+from ..ssd.anchor import SSDAnchorGenerator
+
 __all__ = ['SSD', 'get_ssd', 'custom_ssd']
 
 
@@ -206,23 +209,19 @@ class SSD(HybridBlock):
 
     # pylint: disable=arguments-differ
     def forward_features(self, F, x):
-        # tic = time.time()
         features = self.features(x)
 
         anchors = [F.reshape(ag(feat), shape=(1, -1))
                    for feat, ag in zip(features, self.anchor_generators)]
         anchors = F.concat(*anchors, dim=1).reshape((1, -1, 4))
         return features, anchors
+
     def hybrid_forward(self, F, x, tracking_indices, tracking_weights):
         """Hybrid forward"""
-
-
-        #features = self.features(x)
         if not self._two_phase_run:
             features, _ = self.forward_features(F, x)
         else:
             features = x
-
 
         cls_preds = [F.flatten(F.transpose(cp(feat), (0, 2, 3, 1)))
                      for feat, cp in zip(features, self.class_predictors)]
@@ -255,15 +254,14 @@ class SSD(HybridBlock):
 
 
         result = F.concat(*results, dim=1)
-        ##%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%--->
+
         tracking_results = F.take(result, tracking_indices, axis=1)
         tracking_results = F.squeeze(tracking_results, axis=0)
         tracking_weights = F.expand_dims(tracking_weights, axis=2)
 
         tracking_results = F.broadcast_mul(tracking_results, tracking_weights)
         tracking_results = F.sum(tracking_results, axis=1)
-        # print("result bbox shape {} and anchor array shape {}".format(result.shape, anchors.shape))
-        ##%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
         if self.nms_thresh > 0 and self.nms_thresh < 1:
             result = F.contrib.box_nms(
                 result, overlap_thresh=self.nms_thresh, topk=self.nms_topk, valid_thresh=0.01,
@@ -274,21 +272,15 @@ class SSD(HybridBlock):
         scores = F.slice_axis(result, axis=2, begin=1, end=2)
         bboxes = F.slice_axis(result, axis=2, begin=2, end=6)
 
-
         ##########################################-->
         anchor_indices = F.slice_axis(result, axis=2, begin=-1, end=None)
         ##########################################
 
         outputs = [ids, scores, bboxes]
 
-        ##$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$-->
         outputs.append(anchor_indices)
         outputs.append(tracking_results)
         outputs.append(anchors)
-        ##%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-        # print("ssd anchor array display {}".format(anchors))
-        # print("ssd bbox display {}".format(bboxes))
 
         return tuple(outputs)
 
@@ -397,6 +389,7 @@ class SSD(HybridBlock):
             self.class_predictors = class_predictors
             self.cls_decoder = MultiPerClassDecoder(len(self.classes) + 1, thresh=0.01)
 
+
 def get_ssd(name, base_size, features, filters, sizes, ratios, steps, classes,
             dataset, pretrained=False, pretrained_base=True, ctx=mx.cpu(),
             root=os.path.join('~', '.mxnet', 'models'), **kwargs):
@@ -464,6 +457,7 @@ def get_ssd(name, base_size, features, filters, sizes, ratios, steps, classes,
         full_name = '_'.join(('ssd', str(base_size), name, dataset))
         net.load_parameters(get_model_file(full_name, tag=pretrained, root=root), ctx=ctx)
     return net
+
 
 def custom_ssd(base_network_name, base_size, filters, sizes, ratios, steps,
                classes, dataset, pretrained_base, **kwargs):

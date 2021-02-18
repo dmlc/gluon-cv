@@ -2,10 +2,11 @@
 from __future__ import absolute_import
 
 import warnings
-from gluoncv.model_zoo.smot.ssd.ssd import get_ssd
-from gluoncv.model_zoo.smot.ssd.anchor import LiteAnchorGenerator
-from gluoncv.model_zoo.smot.ssd.vgg_atrous import vgg16_atrous_300, vgg16_atrous_512
 from gluoncv.data import VOCDetection
+
+from .ssd import get_ssd
+from ..ssd.anchor import LiteAnchorGenerator
+from ..ssd.vgg_atrous import vgg16_atrous_300, vgg16_atrous_512
 
 __all__ = ['ssd_300_vgg16_atrous_voc',
            'ssd_300_vgg16_atrous_coco',
