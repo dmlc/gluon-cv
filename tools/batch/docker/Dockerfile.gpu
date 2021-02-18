@@ -1,5 +1,26 @@
 FROM nvidia/cuda:10.2-cudnn7-devel-ubuntu18.04
 
+# Install conda
+ENV PATH="/root/miniconda3/bin:${PATH}"
+ARG PATH="/root/miniconda3/bin:${PATH}"
+RUN apt-get update
+
+RUN apt-get install -y wget git cmake && rm -rf /var/lib/apt/lists/*
+
+RUN wget \
+    https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
+    && mkdir /root/.conda \
+    && bash Miniconda3-latest-Linux-x86_64.sh -b \
+    && rm -f Miniconda3-latest-Linux-x86_64.sh
+
+# Clone TVM
+RUN git clone --recursive https://github.com/apache/tvm tvm
+WORKDIR tvm
+RUN conda env create -f conda/build-environment.yaml
+RUN echo "source activate $(head -1 /conda/build-environment.yml | cut -d' ' -f2)" > ~/.bashrc
+ENV PATH /opt/conda/envs/$(head -1 /conda/build-environment.yml | cut -d' ' -f2)/bin:$PATH
+RUN mkdir build &&  cp cmake/config.cmake build && cd build && cmake .. && make -j4
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
       build-essential \
       locales \
@@ -23,6 +44,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       libgl1-mesa-glx \
       libxft-dev &&\
   rm -rf /var/lib/apt/lists/*
+
 
 RUN pip3 install --upgrade pip
 RUN pip3 install  --no-cache --upgrade \
