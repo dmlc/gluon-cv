@@ -34,7 +34,7 @@ optparser.add_argument("--synthetic", action="store_true", help="use no pipeline
 optparser.add_argument("--no-dali", action="store_true", default=False,
                        help="use default MXNet pipeline instead of DALI")
 optparser.add_argument("--kv-store", type=str, help="set kv-store type", default="device")
-optparser.add_argument("--network", type=str, help="Network to train, available networks: resnet-v1, resnet-v1b, resnet-v1-normconv, resnet-v1b-normconv, resnet-v1-normconv2, resnet-v1b-normconv2", default="resnet-v1")
+optparser.add_argument("--network", type=str, help="Network to train, available networks: resnet-v1, resnet-v1b, resnet-v1b-normconv, resnet-v1b-normconv2, resnet, resnetv1, resnext", default="resnet-v1")
 optparser.add_argument("--data-root", type=str, help="Directory with RecordIO data files", default=data_dir + 'rec')
 optparser.add_argument("--data-nthreads", type=int, help="number of threads for data loading; default = 40", default=40)
 optparser.add_argument("--dtype", type=str, choices=['float16', 'float32'], help="Precision, float16 or float32", default="float16")
