@@ -1,18 +1,14 @@
-"""
-MXNet implementation of tracktor in SMOT: Single-Shot Multi Object Tracking
-https://arxiv.org/abs/2010.16031
-"""
 from abc import ABC, abstractmethod
+
 import mxnet as mx
 import numpy as np
 
-from .utils import timeit
-from .object_detector import JointObjectDetector
 
+from .utils import timeit
+from .general_detector import GeneralDetector
+#from general_object_yolo3.general_detector import GeneralDetector
 
 class BaseAnchorBasedTracktor(ABC):
-    """Base tracktor class
-    """
 
     @abstractmethod
     def anchors(self):
@@ -28,12 +24,10 @@ class BaseAnchorBasedTracktor(ABC):
         """
         This method should run anything that needs to happen before the motion prediction.
         It can prepare the detector or even run the backbone feature extractions.
-        It can also provide data to motion prediction
-
+        It can also  provide data to motion prediction
         Parameters
         ----------
-            frame: the frame data, the same as in the detect_and_track method
-
+        frame: the frame data, the same as in the detect_and_track method
         Returns
         -------
             motion_predict_data: optional data provided to motion prediction, if no data is provided, return None
@@ -47,10 +41,10 @@ class BaseAnchorBasedTracktor(ABC):
 
         Parameters
         ----------
-            frame: HxWx3 RGB image
-            tracking_anchor_indices: NxM ndarray
-            tracking_anchor_weights: NxM ndarray
-            tracking_classes: Nx1 ndarray of the class ids of the tracked object
+        frame: HxWx3 RGB image
+        tracking_anchor_indices: NxM ndarray
+        tracking_anchor_weights NxM ndarray
+        tracking_classes: Nx1 ndarray of the class ids of the tracked object
 
         Returns
             detection_bounding_boxes: all detection results, in (x0, y0, x1, y1, confidence, cls) format
@@ -66,19 +60,27 @@ class BaseAnchorBasedTracktor(ABC):
     def clean_up(self):
         """
         Clean up after running one video
+        Returns
         -------
 
         """
         raise NotImplementedError
 
 
+
 class GluonSSDMultiClassTracktor(BaseAnchorBasedTracktor):
     """
-    The tracktor based on GluonCV SSD detector.
+    The tracktor based on Rekognition V6 face-body detector
+    Implemented through GluonCV interface
     """
-    def __init__(self, gpu_id, detector_thresh=0.5):
+    def __init__(self, gpu_id=0, detector_thresh=0.5, model_name="", param_path = "", data_shape = 512):
 
-        self.detector = JointObjectDetector(gpu_id, data_shape=1080)
+        self.detector = GeneralDetector(gpu_id,
+                                        aspect_ratio=1.,
+                                        data_shape=data_shape,
+                                        model_name=model_name,
+                                        param_path=param_path
+                                        )
         self._anchor_tensor = None
         self._detector_thresh = detector_thresh
         self._ctx = mx.gpu(gpu_id)
@@ -91,13 +93,13 @@ class GluonSSDMultiClassTracktor(BaseAnchorBasedTracktor):
         return self.detector.anchor_tensor
 
     def clean_up(self):
+        # we don't need clean up anythin now
         pass
 
     def prepare_for_frame(self, frame):
         return None
 
     @timeit
-    #pylint: disable=arguments-differ
     def detect_and_track(self, frame, tracking_anchor_indices, tracking_anchor_weights, tracking_object_classes):
 
         with_tracking = len(tracking_anchor_indices) > 0
@@ -110,7 +112,8 @@ class GluonSSDMultiClassTracktor(BaseAnchorBasedTracktor):
             tracking_classes = tracking_indices = tracking_weights = self._dummy_ti
 
         ids, scores, bboxes, voted_tracking_bboxes, detection_anchor_indices = \
-            self.detector.run_detection(frame, tracking_indices, tracking_weights, tracking_classes)
+            self.detector.run_detection(
+            frame, tracking_indices, tracking_weights, tracking_classes)
 
         valid_det_num = (scores > self._detector_thresh).sum().astype(int).asnumpy()[0]
 
@@ -118,14 +121,18 @@ class GluonSSDMultiClassTracktor(BaseAnchorBasedTracktor):
             valid_scores = scores[:valid_det_num]
             valid_bboxes = bboxes[:valid_det_num, :]
             valid_classes = ids[:valid_det_num, :]
+            # valid_kp = bbox_keypoints[:valid_det_num, :].asnumpy()
             detection_output = mx.nd.concat(valid_bboxes, valid_scores, valid_classes, dim=1).asnumpy()
             anchor_indices_output = detection_anchor_indices[:valid_det_num, :]
         else:
             # no detection
             detection_output = np.array([])
             anchor_indices_output = np.array([])
+            valid_kp = np.array([])
 
         tracking_response = voted_tracking_bboxes.asnumpy() \
             if with_tracking else np.array([])
 
-        return detection_output, anchor_indices_output, tracking_response, {}
+
+        return detection_output, anchor_indices_output, tracking_response, \
+               {}
