@@ -1,12 +1,11 @@
 from abc import ABC, abstractmethod
-
-import mxnet as mx
 import numpy as np
 
+import mxnet as mx
 
 from .utils import timeit
 from .general_detector import GeneralDetector
-#from general_object_yolo3.general_detector import GeneralDetector
+
 
 class BaseAnchorBasedTracktor(ABC):
 
@@ -70,8 +69,8 @@ class BaseAnchorBasedTracktor(ABC):
 
 class GluonSSDMultiClassTracktor(BaseAnchorBasedTracktor):
     """
-    The tracktor based on Rekognition V6 face-body detector
-    Implemented through GluonCV interface
+    The tracktor based on a face-body detector
+    implemented through GluonCV interface
     """
     def __init__(self, gpu_id=0, detector_thresh=0.5, model_name="", param_path = "", data_shape = 512):
 
