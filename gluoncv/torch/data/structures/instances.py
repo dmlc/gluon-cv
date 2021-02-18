@@ -135,7 +135,8 @@ class Instances:
 
     def __len__(self) -> int:
         for v in self._fields.values():
-            return len(v)
+            # use __len__ because len() has to be int and is not friendly to tracing
+            return v.__len__()
         raise NotImplementedError("Empty Instances does not support __len__!")
 
     def __iter__(self):
@@ -157,7 +158,8 @@ class Instances:
 
         image_size = instance_lists[0].image_size
         for i in instance_lists[1:]:
-            assert i.image_size == image_size
+            # assert i.image_size == image_size
+            assert tuple(i.image_size) == tuple(image_size)
         ret = Instances(image_size)
         for k in instance_lists[0]._fields.keys():
             values = [i.get(k) for i in instance_lists]

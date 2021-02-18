@@ -703,11 +703,11 @@ class DLAFPNDirectPose(nn.Module):
     def __init__(self, backbone, pose):
         super(DLAFPNDirectPose, self).__init__()
         self.backbone = backbone
-        self.pose = pose
+        self.proposal_generator = pose
 
     def forward(self, images, gt_instances=None, top_module=None):
         features = self.backbone(images)
-        return self.pose(images, features, gt_instances, top_module)
+        return self.proposal_generator(images, features, gt_instances, top_module)
 
 
 def dla34_fpn_directpose(cfg):

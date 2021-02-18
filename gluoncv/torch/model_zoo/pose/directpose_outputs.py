@@ -610,16 +610,20 @@ class DirectPoseOutputs(nn.Module):
                 ) * i
 
         boxlists = list(zip(*sampled_boxes))
-        boxlists = [Instances.cat(boxlist) for boxlist in boxlists]
-        boxlists = self.select_over_all_levels(boxlists)
+        # boxlists = [Instances.cat(boxlist) for boxlist in boxlists]
+        boxlists = [self.select_over_all_level(Instances.cat(boxlist)) for boxlist in boxlists]
+        pred_boxes = [boxlist.pred_boxes.tensor for boxlist in boxlists]
+        pred_keypoints = [boxlist.pred_keypoints for boxlist in boxlists]
 
         if self.enable_hm_branch and self.combine_hm_and_kpt:
-            boxlists = self.refine_kpt(boxlists, hms, hms_offset, images, topk=40, thresh=0.1)
+            # boxlists = self.refine_kpt(boxlists, hms, hms_offset, images, topk=40, thresh=0.1)
+            pred_keypoints = self._refine_kpt(pred_boxes, pred_keypoints, hms, hms_offset, images, topk=40, thresh=0.1)
 
         # visualize_kpt_offset(images, boxlists, vis_dir=self.vis_res_dir, cnt=self.cnt)
         # self.cnt += 1
 
-        return boxlists
+        return pred_boxes, pred_keypoints
+        # return boxlists
 
     def forward_for_single_feature_map(
             self, locations, logits_pred, bbox_reg_pred, kpt_reg_pred, kpt_vis_pred,
@@ -736,6 +740,49 @@ class DirectPoseOutputs(nn.Module):
 
         return results
 
+    def _refine_kpt(self, pred_boxes, pred_keypoints, heatmaps, hms_offset=None, images=None, stride=8, topk=40, thresh=0.2):
+        heatmaps = torch.clamp(heatmaps.sigmoid_(), min=1e-4, max=1-1e-4)
+        # visualize_hm(heatmaps, None, images)
+        heatmaps = _nms(heatmaps)
+        hm_score, hm_inds, hm_ys, hm_xs = _topk_channel(heatmaps, K=topk)
+        if hms_offset is not None:
+            hp_offset = _transpose_and_gather_feat(hms_offset, hm_inds.view(len(pred_keypoints), -1))
+            hp_offset = hp_offset.view(len(pred_keypoints), self.num_kpts, topk, 2)
+            hm_xs = hm_xs + hp_offset[:, :, :, 0]
+            hm_ys = hm_ys + hp_offset[:, :, :, 1]
+        else:
+            hm_xs += 0.5
+            hm_ys += 0.5
+        hm_xs *= stride
+        hm_ys *= stride
+        # visualize_hm_xy(hm_xs, hm_ys, hm_score, images, thresh=0.1)
+
+        mask = (hm_score > thresh).float()
+        hm_score = (1 - mask) * -1 + mask * hm_score
+        hm_ys = (1 - mask) * (-10000) + mask * hm_ys
+        hm_xs = (1 - mask) * (-10000) + mask * hm_xs
+        hm_kps = torch.stack([hm_xs, hm_ys], dim=-1)
+
+        for i in range(len(pred_keypoints)):
+            bbox_pred = pred_boxes[i]
+            kpt_regression = pred_keypoints[i][:, :, 0:2].permute(1, 0, 2).contiguous()
+            kpt_regression_score = pred_keypoints[i][:, :, 2].permute(1, 0).contiguous()
+            dist = (((kpt_regression[:, :, None, :] - hm_kps[i][:, None, :, :]) ** 2).sum(dim=3) ** 0.5)
+            min_dist, min_ind = dist.min(dim=2)
+            cur_hm_score = hm_score[i].gather(1, min_ind)
+            cur_hm_kps = hm_kps[i].gather(1, min_ind[:, :, None].expand(-1, -1, 2))
+            mask = (cur_hm_kps[:, :, 0] < bbox_pred[None, :, 0]) + (cur_hm_kps[:, :, 0] > bbox_pred[None, :, 2]) + \
+                   (cur_hm_kps[:, :, 1] < bbox_pred[None, :, 1]) + (cur_hm_kps[:, :, 1] > bbox_pred[None, :, 3]) + \
+                   (cur_hm_score < thresh) + \
+                   (min_dist > (torch.max(bbox_pred[:, 2] - bbox_pred[:, 0], bbox_pred[:, 3] - bbox_pred[:, 1]) * 0.1)[None])
+            mask = (mask > 0).float()
+            kps_score = (1 - mask) * cur_hm_score + mask * kpt_regression_score
+            mask = mask[:, :, None].expand(-1, -1, 2)
+            kps = (1 - mask) * cur_hm_kps + mask * kpt_regression
+            kps = torch.cat((kps, kps_score[:, :, None]), dim=2)
+            pred_keypoints[i] = kps.permute(1, 0, 2).contiguous()
+        return pred_keypoints
+
     def refine_kpt(self, boxlists, heatmaps, hms_offset=None, images=None, stride=8, topk=40, thresh=0.2):
         heatmaps = torch.clamp(heatmaps.sigmoid_(), min=1e-4, max=1-1e-4)
         # visualize_hm(heatmaps, None, images)
@@ -806,6 +853,28 @@ class DirectPoseOutputs(nn.Module):
                 result = result[keep]
             results.append(result)
         return results
+    
+    def select_over_all_level(self, boxlist):
+        # multiclass nms
+        result = ml_nms(boxlist, self.nms_thresh)
+        # # Remove skeleton based NMS because seen from the result it is not helping
+        # if self.enable_kpt_vis_branch:
+        #     result = oks_nms(result, thresh=0.8, in_vis_thre=0.2)
+        # if self.enable_close_kpt_nms:
+        #     result = close_kpt_nms(result)
+        number_of_detections = len(result)
+
+        # Limit to max_per_image detections **over all classes**
+        if number_of_detections > self.post_nms_topk > 0:
+            cls_scores = result.scores
+            image_thresh, _ = torch.kthvalue(
+                cls_scores.cpu(),
+                number_of_detections - self.post_nms_topk + 1
+            )
+            keep = cls_scores >= image_thresh.item()
+            keep = torch.nonzero(keep).squeeze(1)
+            result = result[keep]
+        return result
 
 
     def get_gaussian_kernel(self, sigma):

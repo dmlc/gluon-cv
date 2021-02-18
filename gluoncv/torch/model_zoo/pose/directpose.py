@@ -54,7 +54,7 @@ class Predictor(nn.Module):
         return F.pad(features, [0, pad_w, 0, pad_h])
 
     def forward(self, kpt_bases, sampler_feature, sampled_feature_stride, fpn_stride):
-        assert kpt_bases.size(1) == 2
+        # assert kpt_bases.size(1) == 2
         assert fpn_stride % sampled_feature_stride == 0
         stride = int(fpn_stride / sampled_feature_stride)
         padded_sampler_feature = self.pad_to_target_size(sampler_feature,
@@ -138,8 +138,9 @@ class DirectPose(nn.Module):
                 logits_pred, bbox_reg_pred, kpt_reg_pred, ctrness_pred, hms, hms_offset,
                 locations, image_sizes, top_feats, None
             )
-
-            return results, {}
+            
+            # return results, {}
+            return results
 
     def compute_locations(self, features):
         locations = []

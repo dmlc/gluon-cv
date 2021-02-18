@@ -146,7 +146,8 @@ class Boxes:
             tensor (Tensor[float]): a Nx4 matrix.  Each row is (x1, y1, x2, y2).
         """
         device = tensor.device if isinstance(tensor, torch.Tensor) else torch.device("cpu")
-        tensor = torch.as_tensor(tensor, dtype=torch.float32, device=device)
+        # tensor = torch.as_tensor(tensor, dtype=torch.float32, device=device)
+        tensor = tensor.float().to(device)
         if tensor.numel() == 0:
             # Use reshape, so we don't end up creating a new tensor that does not depend on
             # the inputs (and consequently confuses jit)
@@ -271,8 +272,10 @@ class Boxes:
         """
         Scale the box with horizontal and vertical scaling factors
         """
-        self.tensor[:, 0::2] *= scale_x
-        self.tensor[:, 1::2] *= scale_y
+        # self.tensor[:, 0::2] *= scale_x
+        # self.tensor[:, 1::2] *= scale_y
+        self.tensor = torch.stack([self.tensor[:, 0] * scale_x, self.tensor[:, 1] * scale_y,
+                                   self.tensor[:, 2] * scale_x, self.tensor[:, 3] * scale_y])
 
     # classmethod not supported by torchscript. TODO try staticmethod
     @classmethod
