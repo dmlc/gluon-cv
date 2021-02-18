@@ -1,43 +1,44 @@
+# pylint: disable=unused-wildcard-import,wildcard-import
 import logging
 import numpy as np
 
 import mxnet as mx
 
 from gluoncv.data import COCODetection
-from .ssd import get_ssd
 from .utils import mxnet_frame_preprocessing, timeit_context
 from .utils import remap_bboxes as _remap_bboxes
 from .presets import *
 
 
-ssd_base_models={'ssd_300_vgg16_atrous_voc': ssd_300_vgg16_atrous_voc,
-    'ssd_300_vgg16_atrous_coco': ssd_300_vgg16_atrous_coco,
-    'ssd_300_vgg16_atrous_custom': ssd_300_vgg16_atrous_custom,
-    'ssd_512_vgg16_atrous_voc': ssd_512_vgg16_atrous_voc,
-    'ssd_512_vgg16_atrous_coco': ssd_512_vgg16_atrous_coco,
-    'ssd_512_vgg16_atrous_custom': ssd_512_vgg16_atrous_custom,
-    'ssd_512_resnet18_v1_voc': ssd_512_resnet18_v1_voc,
-    'ssd_512_resnet18_v1_coco': ssd_512_resnet18_v1_coco,
-    'ssd_512_resnet50_v1_voc': ssd_512_resnet50_v1_voc,
-    'ssd_512_resnet50_v1_coco': ssd_512_resnet50_v1_coco,
-    'ssd_512_resnet50_v1_custom': ssd_512_resnet50_v1_custom,
-    'ssd_512_resnet101_v2_voc': ssd_512_resnet101_v2_voc,
-    'ssd_512_resnet152_v2_voc': ssd_512_resnet152_v2_voc,
-    'ssd_512_mobilenet1.0_voc': ssd_512_mobilenet1_0_voc,
-    'ssd_512_mobilenet1.0_coco': ssd_512_mobilenet1_0_coco,
-    'ssd_300_mobilenet1.0_lite_coco': ssd_300_mobilenet1_0_lite_coco,
-    'ssd_512_mobilenet1.0_custom': ssd_512_mobilenet1_0_custom,
-    'ssd_300_mobilenet0.25_voc': ssd_300_mobilenet0_25_voc,
-    'ssd_300_mobilenet0.25_coco': ssd_300_mobilenet0_25_coco,
-    'ssd_300_mobilenet0.25_custom': ssd_300_mobilenet0_25_custom,
-    'ssd_300_resnet34_v1b_voc': ssd_300_resnet34_v1b_voc,
-    'ssd_300_resnet34_v1b_coco': ssd_300_resnet34_v1b_coco,
-    'ssd_300_resnet34_v1b_custom': ssd_300_resnet34_v1b_custom,}
+ssd_base_models = {'ssd_300_vgg16_atrous_voc': ssd_300_vgg16_atrous_voc,
+                   'ssd_300_vgg16_atrous_coco': ssd_300_vgg16_atrous_coco,
+                   'ssd_300_vgg16_atrous_custom': ssd_300_vgg16_atrous_custom,
+                   'ssd_512_vgg16_atrous_voc': ssd_512_vgg16_atrous_voc,
+                   'ssd_512_vgg16_atrous_coco': ssd_512_vgg16_atrous_coco,
+                   'ssd_512_vgg16_atrous_custom': ssd_512_vgg16_atrous_custom,
+                   'ssd_512_resnet18_v1_voc': ssd_512_resnet18_v1_voc,
+                   'ssd_512_resnet18_v1_coco': ssd_512_resnet18_v1_coco,
+                   'ssd_512_resnet50_v1_voc': ssd_512_resnet50_v1_voc,
+                   'ssd_512_resnet50_v1_coco': ssd_512_resnet50_v1_coco,
+                   'ssd_512_resnet50_v1_custom': ssd_512_resnet50_v1_custom,
+                   'ssd_512_resnet101_v2_voc': ssd_512_resnet101_v2_voc,
+                   'ssd_512_resnet152_v2_voc': ssd_512_resnet152_v2_voc,
+                   'ssd_512_mobilenet1.0_voc': ssd_512_mobilenet1_0_voc,
+                   'ssd_512_mobilenet1.0_coco': ssd_512_mobilenet1_0_coco,
+                   'ssd_300_mobilenet1.0_lite_coco': ssd_300_mobilenet1_0_lite_coco,
+                   'ssd_512_mobilenet1.0_custom': ssd_512_mobilenet1_0_custom,
+                   'ssd_300_mobilenet0.25_voc': ssd_300_mobilenet0_25_voc,
+                   'ssd_300_mobilenet0.25_coco': ssd_300_mobilenet0_25_coco,
+                   'ssd_300_mobilenet0.25_custom': ssd_300_mobilenet0_25_custom,
+                   'ssd_300_resnet34_v1b_voc': ssd_300_resnet34_v1b_voc,
+                   'ssd_300_resnet34_v1b_coco': ssd_300_resnet34_v1b_coco,
+                   'ssd_300_resnet34_v1b_custom': ssd_300_resnet34_v1b_custom,}
 
 
-def get_net(classes, model_name="", pretrain_weight_file ="",
+# pylint: disable=line-too-long,missing-class-docstring,missing-module-docstring,unused-argument
+def get_net(classes, model_name="", pretrain_weight_file="",
             ctx=None, **kwargs):
-    assert  model_name in ssd_base_models, "the model name is not supported, where the supported models are {}".format(ssd_base_models.keys())
+    assert model_name in ssd_base_models, "the model name is not supported, where the supported models are {}".format(ssd_base_models.keys())
     net = ssd_base_models[model_name](pretrained_base=False, ctx=ctx, **kwargs)
     net.load_parameters(pretrain_weight_file, ctx=ctx)
     net.hybridize()
@@ -100,7 +101,7 @@ class GeneralDetector:
         -------
 
         """
-
+        # pylint: disable=logging-format-interpolation
         with timeit_context("preprocess"):
             data_tensor, padded_w, padded_h, expand = mxnet_frame_preprocessing(image, self.data_shape, self.ratio,
                                                                                 self.mean_mx, self.std_mx, self.ctx)

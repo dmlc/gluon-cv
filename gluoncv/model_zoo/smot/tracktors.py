@@ -1,3 +1,6 @@
+"""
+Tractor module for SMOT
+"""
 from abc import ABC, abstractmethod
 import numpy as np
 
@@ -8,6 +11,9 @@ from .general_detector import GeneralDetector
 
 
 class BaseAnchorBasedTracktor(ABC):
+    """
+    BaseAnchorBasedTracktor
+    """
 
     @abstractmethod
     def anchors(self):
@@ -72,7 +78,7 @@ class GluonSSDMultiClassTracktor(BaseAnchorBasedTracktor):
     The tracktor based on a face-body detector
     implemented through GluonCV interface
     """
-    def __init__(self, gpu_id=0, detector_thresh=0.5, model_name="", param_path = "", data_shape = 512):
+    def __init__(self, gpu_id=0, detector_thresh=0.5, model_name="", param_path="", data_shape=512):
 
         self.detector = GeneralDetector(gpu_id,
                                         aspect_ratio=1.,
@@ -92,7 +98,6 @@ class GluonSSDMultiClassTracktor(BaseAnchorBasedTracktor):
         return self.detector.anchor_tensor
 
     def clean_up(self):
-        # we don't need clean up anythin now
         pass
 
     def prepare_for_frame(self, frame):
@@ -111,8 +116,7 @@ class GluonSSDMultiClassTracktor(BaseAnchorBasedTracktor):
             tracking_classes = tracking_indices = tracking_weights = self._dummy_ti
 
         ids, scores, bboxes, voted_tracking_bboxes, detection_anchor_indices = \
-            self.detector.run_detection(
-            frame, tracking_indices, tracking_weights, tracking_classes)
+            self.detector.run_detection(frame, tracking_indices, tracking_weights, tracking_classes)
 
         valid_det_num = (scores > self._detector_thresh).sum().astype(int).asnumpy()[0]
 
@@ -120,18 +124,15 @@ class GluonSSDMultiClassTracktor(BaseAnchorBasedTracktor):
             valid_scores = scores[:valid_det_num]
             valid_bboxes = bboxes[:valid_det_num, :]
             valid_classes = ids[:valid_det_num, :]
-            # valid_kp = bbox_keypoints[:valid_det_num, :].asnumpy()
             detection_output = mx.nd.concat(valid_bboxes, valid_scores, valid_classes, dim=1).asnumpy()
             anchor_indices_output = detection_anchor_indices[:valid_det_num, :]
         else:
             # no detection
             detection_output = np.array([])
             anchor_indices_output = np.array([])
-            valid_kp = np.array([])
 
         tracking_response = voted_tracking_bboxes.asnumpy() \
             if with_tracking else np.array([])
-
 
         return detection_output, anchor_indices_output, tracking_response, \
                {}

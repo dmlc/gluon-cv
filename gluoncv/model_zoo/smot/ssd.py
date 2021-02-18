@@ -3,7 +3,6 @@ from __future__ import absolute_import
 
 import os
 import warnings
-import logging
 
 import mxnet as mx
 from mxnet import autograd
