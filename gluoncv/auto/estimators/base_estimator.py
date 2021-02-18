@@ -155,6 +155,7 @@ class BaseEstimator:
             return self._fit(train_data, val_data, time_limit=time_limit) if not resume \
                 else self._resume_fit(train_data, val_data, time_limit=time_limit)
 
+        os.makedirs(self._logdir, exist_ok=True)
         if val_data is None:
             assert 0 <= train_size <= 1.0
             if random_state:
