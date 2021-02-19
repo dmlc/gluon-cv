@@ -207,7 +207,8 @@ class DirectPoseOutputs(nn.Module):
         boxes = boxes[None].expand(K, num_gts, 4)
         center_x = center_x[None].expand(K, num_gts)
         center_y = center_y[None].expand(K, num_gts)
-        center_gt = boxes.new_zeros(boxes.shape)
+        # center_gt = boxes.new_zeros(boxes.shape)
+        center_gts = []
         # no gt
         if center_x.numel() == 0 or center_x[..., 0].sum() == 0:
             return loc_xs.new_zeros(loc_xs.shape, dtype=torch.uint8)
@@ -220,11 +221,17 @@ class DirectPoseOutputs(nn.Module):
             xmax = center_x[beg:end] + stride
             ymax = center_y[beg:end] + stride
             # limit sample region in gt
-            center_gt[beg:end, :, 0] = torch.where(xmin > boxes[beg:end, :, 0], xmin, boxes[beg:end, :, 0])
-            center_gt[beg:end, :, 1] = torch.where(ymin > boxes[beg:end, :, 1], ymin, boxes[beg:end, :, 1])
-            center_gt[beg:end, :, 2] = torch.where(xmax > boxes[beg:end, :, 2], boxes[beg:end, :, 2], xmax)
-            center_gt[beg:end, :, 3] = torch.where(ymax > boxes[beg:end, :, 3], boxes[beg:end, :, 3], ymax)
+            center_gts.append(torch.cat([
+                torch.where(xmin > boxes[beg:end, :, 0], xmin, boxes[beg:end, :, 0]),
+                torch.where(ymin > boxes[beg:end, :, 1], ymin, boxes[beg:end, :, 1]),
+                torch.where(xmax > boxes[beg:end, :, 2], boxes[beg:end, :, 2], xmax),
+                torch.where(ymax > boxes[beg:end, :, 3], boxes[beg:end, :, 3], ymax)], dim=2))
+            # center_gt[beg:end, :, 0] = torch.where(xmin > boxes[beg:end, :, 0], xmin, boxes[beg:end, :, 0])
+            # center_gt[beg:end, :, 1] = torch.where(ymin > boxes[beg:end, :, 1], ymin, boxes[beg:end, :, 1])
+            # center_gt[beg:end, :, 2] = torch.where(xmax > boxes[beg:end, :, 2], boxes[beg:end, :, 2], xmax)
+            # center_gt[beg:end, :, 3] = torch.where(ymax > boxes[beg:end, :, 3], boxes[beg:end, :, 3], ymax)
             beg = end
+        center_gt = torch.cat(center_gts, dim=0)
         left = loc_xs[:, None] - center_gt[..., 0]
         right = center_gt[..., 2] - loc_xs[:, None]
         top = loc_ys[:, None] - center_gt[..., 1]
@@ -622,7 +629,7 @@ class DirectPoseOutputs(nn.Module):
         # visualize_kpt_offset(images, boxlists, vis_dir=self.vis_res_dir, cnt=self.cnt)
         # self.cnt += 1
 
-        return pred_boxes, pred_keypoints
+        return tuple(pred_boxes), tuple(pred_keypoints)
         # return boxlists
 
     def forward_for_single_feature_map(
@@ -723,10 +730,16 @@ class DirectPoseOutputs(nn.Module):
                     min_xy, _ = keypoints.min(dim=1)
                     max_xy, _ = keypoints.max(dim=1)
                     detections = torch.cat((min_xy[:, 0:2], max_xy[:, 0:2]), dim=1)
-                    detections[:, 0] = detections[:, 0].clamp(min=0, max=image_sizes[i][1])
-                    detections[:, 1] = detections[:, 1].clamp(min=0, max=image_sizes[i][0])
-                    detections[:, 2] = detections[:, 2].clamp(min=0, max=image_sizes[i][1])
-                    detections[:, 3] = detections[:, 3].clamp(min=0, max=image_sizes[i][0])
+                    detections = torch.stack((
+                        detections[:, 0].clamp(min=0, max=image_sizes[i][1]),
+                        detections[:, 1].clamp(min=0, max=image_sizes[i][0]),
+                        detections[:, 2].clamp(min=0, max=image_sizes[i][1]),
+                        detections[:, 3].clamp(min=0, max=image_sizes[i][0])
+                    ), dim=1)
+                    # detections[:, 0] = detections[:, 0].clamp(min=0, max=image_sizes[i][1])
+                    # detections[:, 1] = detections[:, 1].clamp(min=0, max=image_sizes[i][0])
+                    # detections[:, 2] = detections[:, 2].clamp(min=0, max=image_sizes[i][1])
+                    # detections[:, 3] = detections[:, 3].clamp(min=0, max=image_sizes[i][0])
 
             boxlist = Instances(image_sizes[i])
             boxlist.pred_boxes = Boxes(detections)

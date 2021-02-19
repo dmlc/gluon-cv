@@ -383,8 +383,11 @@ class DIRECTPOSEHead(nn.Module):
                     per_group_kpt_bases, sampler_features,
                     sampler_features_stride, self.fpn_strides[l]
                 ).reshape(b, self.kpt_per_group[group_id], -1, h, w)
-                per_group_kps_offsets[:, :, 0:2, :, :] /= float(self.fpn_strides[l] / sampler_features_stride)
-                per_group_kps_offsets[:, :, 0:2, :, :] += per_group_kpt_bases[:, None]
+                per_group_kps_offsets = torch.cat(
+                    [per_group_kps_offsets[:, :, 0:2, :, :] / float(self.fpn_strides[l] / sampler_features_stride) + per_group_kpt_bases[:, None],
+                     per_group_kps_offsets[:, :, 2:, :, :]], dim=2)
+                # per_group_kps_offsets[:, :, 0:2, :, :] /= float(self.fpn_strides[l] / sampler_features_stride)
+                # per_group_kps_offsets[:, :, 0:2, :, :] += per_group_kpt_bases[:, None]
                 cur_kpt_reg.append(per_group_kps_offsets)
 
             cur_kpt_reg = torch.cat(cur_kpt_reg, dim=1)
