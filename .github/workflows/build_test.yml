@@ -207,7 +207,7 @@ jobs:
   #                                            --command "chmod +x ./.github/workflows/gpu_test.sh && ./.github/workflows/gpu_test.sh gluoncv tests/auto" \
   #                                            --wait
   build-docs:
-    needs: [unittest-check, model_zoo_mxnet, model_zoo_torch, auto]
+    needs: [unittest-check, model_zoo_mxnet, model_zoo_torch]
     runs-on: ubuntu-latest
     steps:
       - uses: haya14busa/action-workflow_run-status@v1
