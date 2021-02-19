@@ -39,11 +39,17 @@ ssd_base_models = {'ssd_300_vgg16_atrous_voc': ssd_300_vgg16_atrous_voc,
 
 
 # pylint: disable=line-too-long,missing-class-docstring,missing-module-docstring,unused-argument
-def get_net(classes, model_name="", pretrain_weight_file="",
+def get_net(classes, model_name="", use_pretrained=False, param_path="",
             ctx=None, **kwargs):
     assert model_name in ssd_base_models, "the model name is not supported, where the supported models are {}".format(ssd_base_models.keys())
-    net = ssd_base_models[model_name](pretrained_base=False, ctx=ctx, **kwargs)
-    net.load_parameters(pretrain_weight_file, ctx=ctx)
+    if use_pretrained:
+        # use off-the-shelf GluonCV pretrained SSD models
+        net = ssd_base_models[model_name](pretrained=use_pretrained,
+                                          pretrained_base=False, ctx=ctx, **kwargs)
+    else:
+        # use finetuned model weights or customized trained model weights
+        net = ssd_base_models[model_name](pretrained_base=False, ctx=ctx, **kwargs)
+        net.load_parameters(param_path, ctx=ctx)
     net.hybridize()
     return net
 
@@ -76,13 +82,15 @@ class GeneralDetector:
                  aspect_ratio=1.,
                  data_shape=512,
                  model_name="",
+                 use_pretrained=False,
                  param_path=""):
         self.ctx = mx.gpu(gpu_id)
 
         self.net = get_net(classes=COCODetection.CLASSES,
                            ctx=mx.gpu(0),
                            model_name=model_name,
-                           pretrain_weight_file=param_path)
+                           use_pretrained=use_pretrained,
+                           param_path=param_path)
 
         self.anchor_tensor = None
         self._anchor_image_shape = (1, 1)

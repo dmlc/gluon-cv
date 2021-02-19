@@ -79,12 +79,14 @@ class GluonSSDMultiClassTracktor(BaseAnchorBasedTracktor):
     The tracktor based on a face-body detector
     implemented through GluonCV interface
     """
-    def __init__(self, gpu_id=0, detector_thresh=0.5, model_name="", param_path="", data_shape=512):
+    def __init__(self, gpu_id=0, detector_thresh=0.5, model_name="",
+                 use_pretrained=False, param_path="", data_shape=512):
 
         self.detector = GeneralDetector(gpu_id,
                                         aspect_ratio=1.,
                                         data_shape=data_shape,
                                         model_name=model_name,
+                                        use_pretrained=use_pretrained,
                                         param_path=param_path
                                         )
         self._anchor_tensor = None
