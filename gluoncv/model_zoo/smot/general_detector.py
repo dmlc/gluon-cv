@@ -38,7 +38,7 @@ ssd_base_models = {'ssd_300_vgg16_atrous_voc': ssd_300_vgg16_atrous_voc,
                    'ssd_300_resnet34_v1b_custom': ssd_300_resnet34_v1b_custom,}
 
 
-# pylint: disable=line-too-long,missing-class-docstring,missing-module-docstring,unused-argument
+# pylint: disable=line-too-long,missing-class-docstring,missing-module-docstring,missing-function-docstring,unused-argument
 def get_net(classes, model_name="", use_pretrained=False, param_path="",
             ctx=None, **kwargs):
     assert model_name in ssd_base_models, "the model name is not supported, where the supported models are {}".format(ssd_base_models.keys())
