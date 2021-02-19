@@ -25,8 +25,8 @@ parser.add_argument('--track-thresh', type=float, default=0.3)
 parser.add_argument('--gpu', type=int, default=0)
 parser.add_argument('--save-path', type=str, default='./smot_vis')
 parser.add_argument('--save-filename', type=str, default='pred.npy')
-parser.add_argument('--param_path', type=str, default='')
-parser.add_argument('--network_name', type=str, default='')
+parser.add_argument('--param_path', type=str, default='~/.mxnet/models/ssd_512_mobilenet1.0_coco-da9756fa.params')
+parser.add_argument('--network_name', type=str, default='ssd_512_mobilenet1.0_coco')
 parser.add_argument('--data_shape', type=int, default=512)
 
 

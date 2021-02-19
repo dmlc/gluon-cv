@@ -75,8 +75,8 @@ class GeneralDetector:
     def __init__(self, gpu_id,
                  aspect_ratio=1.,
                  data_shape=512,
-                 model_name="ssd_512_mobilenet1.0_coco",
-                 param_path="/home/ubuntu/.mxnet/models/ssd_512_mobilenet1.0_coco-da9756fa.params"):
+                 model_name="",
+                 param_path=""):
         self.ctx = mx.gpu(gpu_id)
 
         self.net = get_net(classes=COCODetection.CLASSES,
