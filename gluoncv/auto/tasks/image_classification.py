@@ -121,7 +121,12 @@ def _train_image_classification(args, reporter):
                 if best_checkpoint:
                     estimator = estimator_cls.load(best_checkpoint)
             if estimator is None:
-                result.update({'traceback': 'timeout'})
+                if wall_clock_tick < tic:
+                    result.update({'traceback': 'timeout'})
+                else:
+                    # unknown error yet, try reproduce it
+                    args.final_fit = False
+                    return _train_image_classification(args, reporter)
         else:
             # create independent log_dir for each trial
             trial_log_dir = os.path.join(log_dir, '.trial_{}'.format(task_id))
