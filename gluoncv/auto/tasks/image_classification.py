@@ -125,9 +125,8 @@ def _train_image_classification(args, reporter):
                     result.update({'traceback': 'timeout'})
                 else:
                     # unknown error yet, try reproduce it
-                    args['final_fit'] = False
-                    return _train_image_classification(args, reporter)
-        else:
+                    final_fit = False
+        if not final_fit:
             # create independent log_dir for each trial
             trial_log_dir = os.path.join(log_dir, '.trial_{}'.format(task_id))
             args['log_dir'] = trial_log_dir
