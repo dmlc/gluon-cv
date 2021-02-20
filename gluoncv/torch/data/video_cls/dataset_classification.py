@@ -8,7 +8,7 @@ import torch
 from torch.utils.data import Dataset
 
 from ..transforms.videotransforms import video_transforms, volume_transforms
-from .multigrid_helper import multiGridSampler, MultiGridBatchSampler
+from .multigrid_helper import multiGridHelper, MultiGridBatchSampler
 
 
 __all__ = ['VideoClsDataset', 'build_dataloader', 'build_dataloader_test']
@@ -45,12 +45,12 @@ class VideoClsDataset(Dataset):
 
         if (mode == 'train'):
             if self.use_multigrid:
-                self.MG_sampler = multiGridSampler()
+                self.mg_helper = multiGridHelper()
                 self.data_transform = []
-                for alpha in range(self.MG_sampler.mod_long):
+                for alpha in range(self.mg_helper.mod_long):
                     tmp = []
-                    for beta in range(self.MG_sampler.mod_short):
-                        info = self.MG_sampler.get_resize(alpha, beta)
+                    for beta in range(self.mg_helper.mod_short):
+                        info = self.mg_helper.get_resize(alpha, beta)
                         scale_s = info[1]
                         tmp.append(video_transforms.Compose([
                             video_transforms.Resize(int(self.short_side_size / scale_s),
@@ -108,7 +108,7 @@ class VideoClsDataset(Dataset):
         if self.mode == 'train':
             if self.use_multigrid is True:
                 index, alpha, beta = index
-                info = self.MG_sampler.get_resize(alpha, beta)
+                info = self.mg_helper.get_resize(alpha, beta)
                 scale_t = info[0]
                 data_transform_func = self.data_transform[alpha][beta]
             else:
@@ -241,7 +241,8 @@ def build_dataloader(cfg):
     train_dataset = VideoClsDataset(anno_path=cfg.CONFIG.DATA.TRAIN_ANNO_PATH,
                                     data_path=cfg.CONFIG.DATA.TRAIN_DATA_PATH,
                                     mode='train',
-                                    use_multigrid=cfg.CONFIG.DATA.MULTIGRID,
+                                    use_multigrid=cfg.CONFIG.TRAIN.MULTIGRID.USE_SHORT_CYCLE \
+                                                  or cfg.CONFIG.TRAIN.MULTIGRID.USE_LONG_CYCLE ,
                                     clip_len=cfg.CONFIG.DATA.CLIP_LEN,
                                     frame_sample_rate=cfg.CONFIG.DATA.FRAME_RATE,
                                     num_segment=cfg.CONFIG.DATA.NUM_SEGMENT,
@@ -254,7 +255,7 @@ def build_dataloader(cfg):
     val_dataset = VideoClsDataset(anno_path=cfg.CONFIG.DATA.VAL_ANNO_PATH,
                                   data_path=cfg.CONFIG.DATA.VAL_DATA_PATH,
                                   mode='validation',
-                                  use_multigrid=cfg.CONFIG.DATA.MULTIGRID,
+                                  use_multigrid=False,
                                   clip_len=cfg.CONFIG.DATA.CLIP_LEN,
                                   frame_sample_rate=cfg.CONFIG.DATA.FRAME_RATE,
                                   num_segment=cfg.CONFIG.DATA.NUM_SEGMENT,
@@ -273,9 +274,11 @@ def build_dataloader(cfg):
         val_sampler = None
 
     mg_sampler = None
-    if cfg.CONFIG.DATA.MULTIGRID:
+    if cfg.CONFIG.TRAIN.MULTIGRID.USE_LONG_CYCLE or cfg.CONFIG.TRAIN.MULTIGRID.USE_SHORT_CYCLE:
         mg_sampler = MultiGridBatchSampler(train_sampler, batch_size=cfg.CONFIG.TRAIN.BATCH_SIZE,
-                                           drop_last=True)
+                                           drop_last=True,
+                                           use_long=cfg.CONFIG.TRAIN.MULTIGRID.USE_LONG_CYCLE,
+                                           use_short=cfg.CONFIG.TRAIN.MULTIGRID.USE_SHORT_CYCLE)
         train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=1, shuffle=False,
                                                    num_workers=9, pin_memory=True,
                                                    batch_sampler=mg_sampler)
