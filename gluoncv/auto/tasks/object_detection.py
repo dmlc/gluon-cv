@@ -131,7 +131,7 @@ def _train_object_detection(args, reporter):
                     result.update({'traceback': 'timeout'})
                 else:
                     # unknown error
-                    args.final_fit = False
+                    args['final_fit'] = False
                     return _train_object_detection(args, reporter)
         else:
             # create independent log_dir for each trial
