@@ -1,17 +1,19 @@
 """
-MXNet implementation of tracktor in SMOT: Single-Shot Multi Object Tracking
-https://arxiv.org/abs/2010.16031
+Tractor module for SMOT
 """
+# pylint: disable=arguments-differ
 from abc import ABC, abstractmethod
-import mxnet as mx
 import numpy as np
 
+import mxnet as mx
+
 from .utils import timeit
-from .object_detector import JointObjectDetector
+from .general_detector import GeneralDetector
 
 
 class BaseAnchorBasedTracktor(ABC):
-    """Base tracktor class
+    """
+    BaseAnchorBasedTracktor
     """
 
     @abstractmethod
@@ -28,12 +30,10 @@ class BaseAnchorBasedTracktor(ABC):
         """
         This method should run anything that needs to happen before the motion prediction.
         It can prepare the detector or even run the backbone feature extractions.
-        It can also provide data to motion prediction
-
+        It can also  provide data to motion prediction
         Parameters
         ----------
-            frame: the frame data, the same as in the detect_and_track method
-
+        frame: the frame data, the same as in the detect_and_track method
         Returns
         -------
             motion_predict_data: optional data provided to motion prediction, if no data is provided, return None
@@ -47,10 +47,10 @@ class BaseAnchorBasedTracktor(ABC):
 
         Parameters
         ----------
-            frame: HxWx3 RGB image
-            tracking_anchor_indices: NxM ndarray
-            tracking_anchor_weights: NxM ndarray
-            tracking_classes: Nx1 ndarray of the class ids of the tracked object
+        frame: HxWx3 RGB image
+        tracking_anchor_indices: NxM ndarray
+        tracking_anchor_weights NxM ndarray
+        tracking_classes: Nx1 ndarray of the class ids of the tracked object
 
         Returns
             detection_bounding_boxes: all detection results, in (x0, y0, x1, y1, confidence, cls) format
@@ -66,19 +66,29 @@ class BaseAnchorBasedTracktor(ABC):
     def clean_up(self):
         """
         Clean up after running one video
+        Returns
         -------
 
         """
         raise NotImplementedError
 
 
+
 class GluonSSDMultiClassTracktor(BaseAnchorBasedTracktor):
     """
-    The tracktor based on GluonCV SSD detector.
+    The tracktor based on a face-body detector
+    implemented through GluonCV interface
     """
-    def __init__(self, gpu_id, detector_thresh=0.5):
+    def __init__(self, gpu_id=0, detector_thresh=0.5, model_name="",
+                 use_pretrained=False, param_path="", data_shape=512):
 
-        self.detector = JointObjectDetector(gpu_id, data_shape=1080)
+        self.detector = GeneralDetector(gpu_id,
+                                        aspect_ratio=1.,
+                                        data_shape=data_shape,
+                                        model_name=model_name,
+                                        use_pretrained=use_pretrained,
+                                        param_path=param_path
+                                        )
         self._anchor_tensor = None
         self._detector_thresh = detector_thresh
         self._ctx = mx.gpu(gpu_id)
@@ -97,7 +107,6 @@ class GluonSSDMultiClassTracktor(BaseAnchorBasedTracktor):
         return None
 
     @timeit
-    #pylint: disable=arguments-differ
     def detect_and_track(self, frame, tracking_anchor_indices, tracking_anchor_weights, tracking_object_classes):
 
         with_tracking = len(tracking_anchor_indices) > 0
@@ -128,4 +137,5 @@ class GluonSSDMultiClassTracktor(BaseAnchorBasedTracktor):
         tracking_response = voted_tracking_bboxes.asnumpy() \
             if with_tracking else np.array([])
 
-        return detection_output, anchor_indices_output, tracking_response, {}
+        return detection_output, anchor_indices_output, tracking_response, \
+               {}
