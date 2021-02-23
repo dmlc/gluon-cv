@@ -165,12 +165,9 @@ class MultiGridBatchSampler(Sampler):
         remain = len(self.sampler) % (self.batch_size * scale_per_short_cycle)
         for x in range(self.mg_helper.mod_short):
             remain = remain - self.mg_helper.get_scale(self.alpha, x)*self.batch_size
-            if remain <= 0:
-                if remain == 0 or self.drop_last is False:
-                    total += 1
-                break
-            else:
+            if remain >= 0 or (remain < 0 and self.drop_last is False):
                 total += 1
+            if remain <= 0:
+                break
         assert remain <= 0
-
         return total
