@@ -38,9 +38,14 @@ RUN git clone --recursive https://github.com/apache/tvm tvm
 WORKDIR tvm
 RUN mkdir build && cp cmake/config.cmake build
 RUN cd build && echo set\(USE_CUDA ON\) >> config.cmake && cmake .. && make -j4
+# Python Binding
 ENV PYTHONPATH=/tvm/python:/tvm/vta/python:${PYTHONPATH}
-RUN echo $PYTHONPATH
-
+RUN pip3 install --upgrade pip
+RUN pip3 install --no-cache --upgrade \
+    numpy \
+    decorator \
+    attrs
+# Prepare gluoncv
 WORKDIR /
 RUN pip3 install --upgrade pip
 RUN pip3 install  --no-cache --upgrade \
