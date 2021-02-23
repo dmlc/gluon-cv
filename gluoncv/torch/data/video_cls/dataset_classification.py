@@ -242,7 +242,7 @@ def build_dataloader(cfg):
                                     data_path=cfg.CONFIG.DATA.TRAIN_DATA_PATH,
                                     mode='train',
                                     use_multigrid=cfg.CONFIG.TRAIN.MULTIGRID.USE_SHORT_CYCLE \
-                                                  or cfg.CONFIG.TRAIN.MULTIGRID.USE_LONG_CYCLE ,
+                                                  or cfg.CONFIG.TRAIN.MULTIGRID.USE_LONG_CYCLE,
                                     clip_len=cfg.CONFIG.DATA.CLIP_LEN,
                                     frame_sample_rate=cfg.CONFIG.DATA.FRAME_RATE,
                                     num_segment=cfg.CONFIG.DATA.NUM_SEGMENT,
