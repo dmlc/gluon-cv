@@ -1,13 +1,13 @@
 # [SMOT](https://arxiv.org/abs/2010.16031)
 
-SMOT: Single-Shot Multi Object Tracking
+**SMOT: Single-Shot Multi Object Tracking**
 
 by Wei Li, Yuanjun Xiong, Shuo Yang, Siqi Deng and Wei Xia
 
 
 ## Introduction
 
-In this we release code and models from the paper [Single-Shot Multi Object Tracking (SMOT)](https://arxiv.org/abs/2010.16031), to perform multi-object tracking. SMOT is a new tracking framework that converts any single-shot detector (SSD) model into an online multiple object tracker. **You can track any object as long as the detector can recognize the category, no training is required.**. We also want to point out that, SMOT is very efficient, its runtime is close to the runtime of the chosen detector.
+In this, we release code and models from the paper [Single-Shot Multi Object Tracking (SMOT)](https://arxiv.org/abs/2010.16031), to perform multi-object tracking. SMOT is a new tracking framework that converts any single-shot detector (SSD) model into an online multiple object tracker. **You can track any object as long as the detector can recognize the category, no training is required.** We also want to point out that, SMOT is very efficient, its runtime is close to the runtime of the chosen detector.
 
 
 ## Installation
@@ -20,18 +20,18 @@ For installation, follow the instruction of GluonCV. Optionally, if you would li
 Want to get multi-person tracking results on a video? Try this
 
 ```
-python demo.py VIDEOFILE --input-type video --network-name --use-pretrained --custom-classes person
+python demo.py VIDEOFILE --input-type video --network-name ssd_512_mobilenet1.0_coco --use-pretrained --custom-classes person
 ```
 
-- `VIDEOFILE` is the path to your demo video.
+- `VIDEOFILE` is the path to your demo video. It can also be the path to a folder of a sequence of images, but in this case, please remember to change the following `--input-type` to `images`.
 
-- `--input-type` indicates the input is a video.
+- `--input-type` indicates the input type. It can be either `video` or `images`.
 
-- `--network-name` is the detector you want to use.
+- `--network-name` is the detector you want to use. We use `ssd_512_mobilenet1.0_coco` here due to its good tradeoff between tracking accuracy and efficiency.
 
 - `--use-pretrained` indicates you want to use the pretrained weights from GluonCV model zoo. If you don't specify `--use-pretrained`, please use `param-path` to pass in your detector pretrained weights.
 
-- `--custom-classes` indicates which object category you want to track. You can also track multiple categories, e.g., `--custom-classes person car dog`.
+- `--custom-classes` indicates which object category you want to track. You can also track multiple categories at the same time, e.g., `--custom-classes person car dog`.
 
 - The tracking visualization results will be saved to `./smot_vis`, but you can change the directory by specifing `--save-path`.
 
@@ -54,10 +54,10 @@ The transformed data in json format will be saved to `./jsons` and its npy forma
 Third, generate predictions using SMOT,
 
 ```
-python demo.py MOT17_DATA/MOT17-02-FRCNN/img1/ --input-type images --use-motion --save-path ./pred
+python demo.py MOT17_DATA/MOT17-02-FRCNN/img1/ --input-type images --network-name ssd_512_mobilenet1.0_coco --use-pretrained --custom-classes person --use-motion --save-path ./pred
 ```
 
-Since MOT data is stored in image sequences, we need to change `input-type` to `images`. `use-motion` can be used optionally to improve the tracking performance. The predictions will be saved in npy format to path `./pred`.
+Since MOT data is stored in image sequences, we need to change `input-type` to `images`. `use-motion` can be used optionally to improve the tracking performance. The predictions will be saved in npy format to the path `./pred`.
 
 
 Finally, run evaluation on the predictions and ground-truth, the results will be printed to console in a table.
