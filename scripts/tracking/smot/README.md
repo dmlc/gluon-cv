@@ -27,9 +27,9 @@ python demo.py VIDEOFILE --input-type video --network-name ssd_512_mobilenet1.0_
 
 - `--input-type` indicates the input type. It can be either `video` or `images`.
 
-- `--network-name` is the detector you want to use. We use `ssd_512_mobilenet1.0_coco` here due to its good tradeoff between tracking accuracy and efficiency.
+- `--network-name` is the detector you want to use. We use `ssd_512_mobilenet1.0_coco` here due to its good tradeoff between tracking accuracy and efficiency. You can find other detetors in our model zoo that suits your use case.
 
-- `--use-pretrained` indicates you want to use the pretrained weights from GluonCV model zoo. If you don't specify `--use-pretrained`, please use `param-path` to pass in your detector pretrained weights.
+- `--use-pretrained` indicates you want to use the pretrained weights from GluonCV model zoo. If you don't specify `--use-pretrained`, please use `--param-path` to pass in your detector pretrained weights.
 
 - `--custom-classes` indicates which object category you want to track. You can also track multiple categories at the same time, e.g., `--custom-classes person car dog`.
 
