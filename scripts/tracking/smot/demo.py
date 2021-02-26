@@ -25,6 +25,10 @@ parser.add_argument('--track-thresh', type=float, default=0.3)
 parser.add_argument('--gpu', type=int, default=0)
 parser.add_argument('--save-path', type=str, default='./smot_vis')
 parser.add_argument('--save-filename', type=str, default='pred.npy')
+parser.add_argument('--network_name', type=str, default='ssd_512_mobilenet1.0_coco')
+parser.add_argument('--use-pretrained', action='store_true', help='enable using pretrained model from gluon.')
+parser.add_argument('--param_path', type=str, default='~/.mxnet/models/ssd_512_mobilenet1.0_coco-da9756fa.params')
+parser.add_argument('--data_shape', type=int, default=512)
 
 
 def track_viz_video(results, video, plot_save_folder):
@@ -106,7 +110,11 @@ if __name__ == '__main__':
 
     # get tracktor
     tracktor = GluonSSDMultiClassTracktor(gpu_id=args.gpu,
-                                          detector_thresh=args.detect_thresh)
+                                          detector_thresh=args.detect_thresh,
+                                          model_name=args.network_name,
+                                          use_pretrained=args.use_pretrained,
+                                          param_path=args.param_path,
+                                          data_shape=args.data_shape)
     logging.info('Trackor is loaded')
 
     # get tracker

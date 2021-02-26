@@ -127,8 +127,12 @@ def _train_object_detection(args, reporter):
                 if best_checkpoint:
                     estimator = estimator_cls.load(best_checkpoint)
             if estimator is None:
-                result.update({'traceback': 'timeout'})
-        else:
+                if wall_clock_tick < tic:
+                    result.update({'traceback': 'timeout'})
+                else:
+                    # unknown error
+                    final_fit = False
+        if not final_fit:
             # create independent log_dir for each trial
             trial_log_dir = os.path.join(log_dir, '.trial_{}'.format(task_id))
             args['log_dir'] = trial_log_dir

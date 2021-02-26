@@ -10,7 +10,7 @@ OBJECT_DETECTION_TRAIN, OBJECT_DETECTION_VAL, OBJECT_DETECTION_TEST = OBJECT_DET
 
 def test_image_classification():
     from gluoncv.auto.tasks import ImageClassification
-    task = ImageClassification({'num_trials': 1, 'epochs': 1})
+    task = ImageClassification({'num_trials': 1, 'epochs': 1, 'batch_size': 8})
     classifier = task.fit(IMAGE_CLASS_DATASET)
     assert task.fit_summary().get('valid_acc', 0) > 0
     test_result = classifier.predict(IMAGE_CLASS_TEST)
@@ -19,39 +19,42 @@ def test_image_classification_custom_net():
     from gluoncv.auto.tasks import ImageClassification
     from gluoncv.model_zoo import get_model
     net = get_model('resnet18_v1')
-    task = ImageClassification({'num_trials': 1, 'epochs': 1, 'custom_net': net})
+    task = ImageClassification({'num_trials': 1, 'epochs': 1, 'custom_net': net, 'batch_size': 8})
     classifier = task.fit(IMAGE_CLASS_DATASET)
     assert task.fit_summary().get('valid_acc', 0) > 0
     test_result = classifier.predict(IMAGE_CLASS_TEST)
 
 def test_object_detection_estimator():
     from gluoncv.auto.tasks import ObjectDetection
-    task = ObjectDetection({'num_trials': 1, 'epochs': 1})
+    task = ObjectDetection({'num_trials': 1, 'epochs': 1, 'batch_size': 4})
     detector = task.fit(OBJECT_DETECTION_TRAIN)
     assert task.fit_summary().get('valid_map', 0) > 0
     test_result = detector.predict(OBJECT_DETECTION_TEST)
 
 def test_object_detection_estimator_transfer():
     from gluoncv.auto.tasks import ObjectDetection
-    task = ObjectDetection({'num_trials': 1, 'epochs': 1, 'transfer': ag.Categorical('yolo3_darknet53_coco', 'ssd_512_resnet50_v1_voc'), 'estimator': 'ssd'})
+    task = ObjectDetection({'num_trials': 1, 'epochs': 1, 'transfer': ag.Categorical('yolo3_darknet53_coco', 'ssd_512_resnet50_v1_voc'), 'estimator': 'ssd', 'batch_size': 4})
     detector = task.fit(OBJECT_DETECTION_TRAIN)
     assert task.fit_summary().get('valid_map', 0) > 0
     test_result = detector.predict(OBJECT_DETECTION_TEST)
 
+import unittest
+@unittest.skip("temporarily disabled")
 def test_time_out_image_classification():
-    time_limit = 30
+    time_limit = 15
     from gluoncv.auto.tasks import ImageClassification
-    task = ImageClassification({'num_trials': 1, 'epochs': 50})
+    task = ImageClassification({'num_trials': 1, 'epochs': 10, 'batch_size': 8})
 
     tic = time.time()
     classifier = task.fit(IMAGE_CLASS_DATASET, time_limit=time_limit)
     # check time_limit with a little bit overhead
     assert (time.time() - tic) < time_limit + 180
 
+@unittest.skip("temporarily disabled")
 def test_time_out_detection():
-    time_limit = 30
+    time_limit = 15
     from gluoncv.auto.tasks import ObjectDetection
-    task = ObjectDetection({'num_trials': 1, 'epochs': 50, 'time_limits': time_limit})
+    task = ObjectDetection({'num_trials': 1, 'epochs': 5, 'time_limits': time_limit, 'batch_size': 4})
     tic = time.time()
     detector = task.fit(OBJECT_DETECTION_TRAIN)
     # check time_limit with a little bit overhead
