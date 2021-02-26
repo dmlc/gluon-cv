@@ -514,8 +514,6 @@ class SMOTTracker:
         logging.info("assigment runtime: {}".format(elapsed_assign))
         return tracking_anchor_indices, tracking_anchor_weights, tracking_anchor_validity
 
-
-
     @timeit
     def _produce_frame_result(self):
         tracked_objects = []
@@ -540,5 +538,4 @@ class SMOTTracker:
                 obj['landmarks'] = track.attributes
             if obj["class_name"] in self.class_set:
                 tracked_objects.append(obj)
-                print(obj)
         return tracked_objects

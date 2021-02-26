@@ -49,6 +49,7 @@ def get_net(classes, model_name="", use_pretrained=False, param_path="",
     else:
         # use finetuned model weights or customized trained model weights
         net = ssd_base_models[model_name](pretrained_base=False, ctx=ctx, **kwargs)
+        assert param_path != '', "Please provide the pretrained model weights if you are not using GluonCV pretrained detectors."
         net.load_parameters(param_path, ctx=ctx)
     net.hybridize()
     return net

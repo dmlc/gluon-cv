@@ -26,10 +26,11 @@ parser.add_argument('--track-thresh', type=float, default=0.3)
 parser.add_argument('--gpu', type=int, default=0)
 parser.add_argument('--save-path', type=str, default='./smot_vis')
 parser.add_argument('--save-filename', type=str, default='pred.npy')
-parser.add_argument('--param_path', type=str, default='')
-parser.add_argument('--network_name', type=str, default='')
-parser.add_argument('--custom_classes', type=str,nargs='+', default=["person"])
-parser.add_argument('--data_shape', type=int, default=512)
+parser.add_argument('--param-path', type=str, default='')
+parser.add_argument('--network-name', type=str, default='')
+parser.add_argument('--use-pretrained', action='store_true', help='enable using pretrained model from gluon.')
+parser.add_argument('--custom-classes', type=str,nargs='+', default=["person"])
+parser.add_argument('--data-shape', type=int, default=512)
 
 
 def track_viz_video(results, video, plot_save_folder):
@@ -113,6 +114,7 @@ if __name__ == '__main__':
     tracktor = GluonSSDMultiClassTracktor(gpu_id=args.gpu,
                                           detector_thresh=args.detect_thresh,
                                           model_name=args.network_name,
+                                          use_pretrained=args.use_pretrained,
                                           param_path=args.param_path,
                                           data_shape=args.data_shape
                                           )
@@ -139,7 +141,7 @@ if __name__ == '__main__':
 
     logging.info('Tracking is done')
 
-    # save results for MOT17 evaluation
+    # NOTE: save results for MOT17 evaluation.
     if args.eval:
         out_npy_list = []
         for i in range(len(results)):
@@ -148,7 +150,7 @@ if __name__ == '__main__':
                 track_id, x, y, w, h = bb["track_id"], bb["bbox"]["left"], bb["bbox"]["top"], bb["bbox"]["width"], \
                                        bb["bbox"]["height"]
                 if int(bb["class_id"]) == 1:
-                    ## only save the body box for mot evaluation
+                    ## only save the body box
                     out_npy_list.append([frame_id, track_id, x, y, w, h, -1, -1, -1, -1])
         out_npy = np.array(out_npy_list)
         track_results_path = os.path.join(args.save_path, args.save_filename)
