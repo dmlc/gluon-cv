@@ -10,10 +10,11 @@ import numpy as np
 
 import mxnet as mx
 from gluoncv.utils.bbox import bbox_iou
+from gluoncv.data import COCODetection
 from .utils import timeit, Track
 from .motion_estimation import FarneBeckFlowMotionEstimator
 from .motion_estimation import DummyMotionEstimator
-from gluoncv.data import COCODetection
+
 
 def nms_fallback(boxes, thresh):
     """
@@ -79,6 +80,7 @@ class SMOTTracker:
     3. Run the detractor with the tracking anchor information
     4. Run tracker.update(new_detection, track_info).
     """
+    # pylint: disable=dangerous-default-value,unnecessary-comprehension
 
     def __init__(self,
                  motion_model='no',
@@ -129,10 +131,10 @@ class SMOTTracker:
         self.anchor_assignment_method = anchor_assignment_method
         self.joint_linking = joint_linking
 
-        if tracking_classes is []:
+        if len(tracking_classes) == 0:
             raise ValueError("Unknown tracking classes, please let us know what object you want to track")
         self.coco_class_set = set(COCODetection.CLASSES)
-        self.coco_class2index_dict = {i:name for i,name in enumerate(COCODetection.CLASSES)}
+        self.coco_class2index_dict = {i:name for i, name in enumerate(COCODetection.CLASSES)}
         self.class_set = set(tracking_classes)
         for class_name in tracking_classes:
             if class_name not in self.coco_class_set:
