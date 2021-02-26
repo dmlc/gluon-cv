@@ -1,11 +1,13 @@
 # [SMOT](https://arxiv.org/abs/2010.16031)
+
 SMOT: Single-Shot Multi Object Tracking
+
 by Wei Li, Yuanjun Xiong, Shuo Yang, Siqi Deng and Wei Xia
 
 
 ## Introduction
 
-In this we release code and models from the paper [Single-Shot Multi Object Tracking (SMOT)](https://arxiv.org/abs/2010.16031), to perform multi-object tracking. SMOT is a new tracking framework that converts any single-shot detector (SSD) model into an online multiple object tracker, no training is required. You can track any object as long as the detector can recognize the category. We also want to point out that, SMOT is very efficient, its runtime is close to the runtime of the chosen detector.
+In this we release code and models from the paper [Single-Shot Multi Object Tracking (SMOT)](https://arxiv.org/abs/2010.16031), to perform multi-object tracking. SMOT is a new tracking framework that converts any single-shot detector (SSD) model into an online multiple object tracker. **You can track any object as long as the detector can recognize the category, no training is required.**. We also want to point out that, SMOT is very efficient, its runtime is close to the runtime of the chosen detector.
 
 
 ## Installation
@@ -15,13 +17,23 @@ For installation, follow the instruction of GluonCV. Optionally, if you would li
 
 ## Demo on a video
 
-Want to get MOT results on a video? Try this
+Want to get multi-person tracking results on a video? Try this
 
 ```
-python demo.py VIDEOFILE
+python demo.py VIDEOFILE --input-type video --network-name --use-pretrained --custom-classes person
 ```
 
-`VIDEOFILE` is the path to your demo video. The visualization results will be saved to `./smot_vis`, but you can change the directory by specifing `--save-path`.
+- `VIDEOFILE` is the path to your demo video.
+
+- `--input-type` indicates the input is a video.
+
+- `--network-name` is the detector you want to use.
+
+- `--use-pretrained` indicates you want to use the pretrained weights from GluonCV model zoo. If you don't specify `--use-pretrained`, please use `param-path` to pass in your detector pretrained weights.
+
+- `--custom-classes` indicates which object category you want to track. You can also track multiple categories, e.g., `--custom-classes person car dog`.
+
+- The tracking visualization results will be saved to `./smot_vis`, but you can change the directory by specifing `--save-path`.
 
 
 ## Eval on exisiting datasets
