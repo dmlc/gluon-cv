@@ -68,6 +68,11 @@ _C.CONFIG.TRAIN.WARMUP_END_LR: 0.1
 # Resume training from a specific epoch. Set to -1 means train from beginning.
 _C.CONFIG.TRAIN.RESUME_EPOCH: -1
 
+# Whether to use multigrid training to speed up.
+_C.CONFIG.TRAIN.MULTIGRID = CN(new_allowed=True)
+_C.CONFIG.TRAIN.MULTIGRID.USE_LONG_CYCLE = False
+_C.CONFIG.TRAIN.MULTIGRID.USE_SHORT_CYCLE = False
+_C.CONFIG.TRAIN.MULTIGRID.LONG_CYCLE_EPOCH = [10, 20, 30]
 
 _C.CONFIG.VAL = CN(new_allowed=True)
 # Evaluate model on test data every eval period epochs.
@@ -91,8 +96,6 @@ _C.CONFIG.DATA.VAL_ANNO_PATH = ''
 _C.CONFIG.DATA.VAL_DATA_PATH = ''
 # The number of classes to predict for the model.
 _C.CONFIG.DATA.NUM_CLASSES = 400
-# Whether to use multigrid training to speed up.
-_C.CONFIG.DATA.MULTIGRID = False
 # The number of frames of the input clip.
 _C.CONFIG.DATA.CLIP_LEN = 16
 # The video sampling rate of the input clip.

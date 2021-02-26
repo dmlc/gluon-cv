@@ -14,6 +14,7 @@ from gluoncv.torch.utils.task_utils import train_classification, validation_clas
 from gluoncv.torch.engine.config import get_cfg_defaults
 from gluoncv.torch.engine.launch import spawn_workers
 from gluoncv.torch.utils.utils import build_log_dir
+from gluoncv.torch.utils.lr_policy import GradualWarmupScheduler
 
 
 def main_worker(cfg):
@@ -66,6 +67,10 @@ def main_worker(cfg):
             scheduler_warmup.step()
         else:
             scheduler.step()
+
+        if cfg.CONFIG.TRAIN.MULTIGRID.USE_LONG_CYCLE:
+            if epoch in cfg.CONFIG.TRAIN.MULTIGRID.LONG_CYCLE_EPOCH:
+                mg_sampler.step_long_cycle()
 
         if epoch % cfg.CONFIG.VAL.FREQ == 0 or epoch == cfg.CONFIG.TRAIN.EPOCH_NUM - 1:
             validation_classification(model, val_loader, epoch, criterion, cfg, writer)
