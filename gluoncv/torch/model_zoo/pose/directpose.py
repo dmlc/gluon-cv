@@ -60,10 +60,10 @@ class Predictor(nn.Module):
         padded_sampler_feature = self.pad_to_target_size(sampler_feature,
                                                          stride * (kpt_bases.size(2) - 1) + 1,
                                                          stride * (kpt_bases.size(3) - 1) + 1)
-
         predictor_offsets = self.kpt_predictor(
             padded_sampler_feature,
-            kpt_bases[:, [1, 0]].contiguous() * stride + stride // 2,
+            torch.cat((kpt_bases[:, 0:1], kpt_bases[:, 1:2]), dim=1) * stride + stride // 2,
+            # kpt_bases[:, [1, 0], :, :].contiguous() * stride + stride // 2,
             stride
         )
         return predictor_offsets
@@ -110,6 +110,17 @@ class DirectPose(nn.Module):
         logits_pred, bbox_reg_pred, kpt_reg_pred, kpts_locator_reg_pred, ctrness_pred, top_feats, kpts_towers, hms, hms_offset = \
             self.directpose_head(features, top_module, self.yield_proposal)
 
+        # output = [logits_pred, bbox_reg_pred, kpt_reg_pred, kpts_locator_reg_pred, ctrness_pred, top_feats, kpts_towers, hms, hms_offset]
+        # output = [x for x in output if x]
+        # return tuple([torch.cat((a, b, c), dim=1) for a, b, c in zip(logits_pred, kpt_reg_pred, ctrness_pred)])
+        # print('logits_pred', logits_pred[0].shape)
+        # print('kpt_reg_pred', kpt_reg_pred[0].shape)
+        # # print('kpts_locator_reg_pred', kpts_locator_reg_pred)
+        # print('ctrness_pred', ctrness_pred[0].shape)
+        # # print('top_feats', top_feats)
+        # # print('kpts_towers', kpts_towers)
+        # raise
+        # return logits_pred, kpt_reg_pred, ctrness_pred
         results = {}
         if self.yield_proposal:
             results["features"] = {
@@ -131,7 +142,7 @@ class DirectPose(nn.Module):
             return results, losses
         else:
             if isinstance(images, torch.Tensor):
-                image_sizes = [image.size()[-2:] for image in images]
+                image_sizes = [(image.size()[-2], image.size()[-1]) for image in images]
             else:
                 image_sizes = images.image_sizes
             results = self.directpose_outputs.predict_proposals(

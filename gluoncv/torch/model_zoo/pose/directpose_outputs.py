@@ -617,6 +617,9 @@ class DirectPoseOutputs(nn.Module):
                 ) * i
 
         boxlists = list(zip(*sampled_boxes))
+        ret = [Instances.cat(boxlist) for boxlist in boxlists]
+        output = [x.pred_boxes.tensor for x in ret] + [x.pred_keypoints for x in ret]
+        return tuple(output)
         # boxlists = [Instances.cat(boxlist) for boxlist in boxlists]
         boxlists = [self.select_over_all_level(Instances.cat(boxlist)) for boxlist in boxlists]
         pred_boxes = [boxlist.pred_boxes.tensor for boxlist in boxlists]
@@ -660,7 +663,7 @@ class DirectPoseOutputs(nn.Module):
             logits_pred = logits_pred * ctrness_pred[:, :, None]
         candidate_inds = logits_pred > self.pre_nms_thresh
         pre_nms_top_n = candidate_inds.view(N, -1).sum(1)
-        pre_nms_top_n = pre_nms_top_n.clamp(max=self.pre_nms_topk)
+        pre_nms_top_n = pre_nms_top_n.clamp(max=float(self.pre_nms_topk))
 
         if not self.thresh_with_ctr:
             logits_pred = logits_pred * ctrness_pred[:, :, None]
@@ -693,7 +696,7 @@ class DirectPoseOutputs(nn.Module):
 
             # It will only happen when there are more than 1000 person candidate in the image
             if per_candidate_inds.sum().item() > per_pre_nms_top_n.item():
-                per_box_cls, top_k_indices = per_box_cls.topk(per_pre_nms_top_n, sorted=False)
+                per_box_cls, top_k_indices = per_box_cls.topk(per_pre_nms_top_n, sorted=True)
                 per_class = per_class[top_k_indices]
 
                 per_kpt_regression = per_kpt_regression[top_k_indices]
@@ -731,10 +734,10 @@ class DirectPoseOutputs(nn.Module):
                     max_xy, _ = keypoints.max(dim=1)
                     detections = torch.cat((min_xy[:, 0:2], max_xy[:, 0:2]), dim=1)
                     detections = torch.stack((
-                        detections[:, 0].clamp(min=0, max=image_sizes[i][1]),
-                        detections[:, 1].clamp(min=0, max=image_sizes[i][0]),
-                        detections[:, 2].clamp(min=0, max=image_sizes[i][1]),
-                        detections[:, 3].clamp(min=0, max=image_sizes[i][0])
+                        detections[:, 0].clamp(min=0., max=float(image_sizes[i][1])),
+                        detections[:, 1].clamp(min=0., max=float(image_sizes[i][0])),
+                        detections[:, 2].clamp(min=0., max=float(image_sizes[i][1])),
+                        detections[:, 3].clamp(min=0., max=float(image_sizes[i][0]))
                     ), dim=1)
                     # detections[:, 0] = detections[:, 0].clamp(min=0, max=image_sizes[i][1])
                     # detections[:, 1] = detections[:, 1].clamp(min=0, max=image_sizes[i][0])
