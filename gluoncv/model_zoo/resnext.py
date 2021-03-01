@@ -363,6 +363,7 @@ def resnext101_64x4d(**kwargs):
 
 
 def resnext101e_64x4d(**kwargs):
+    # pylint: disable=line-too-long
     r"""ResNext101e 64x4d model modified from
     `"Aggregated Residual Transformations for Deep Neural Network"
     <http://arxiv.org/abs/1611.05431>`_ paper.
@@ -388,6 +389,9 @@ def resnext101e_64x4d(**kwargs):
         for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
     kwargs['use_se'] = False
+    if kwargs['pretrained']:
+        msg = 'GluonCV does not have pretrained weights for resnext101e_64x4d at this moment. Please set pretrained=False.'
+        raise RuntimeError(msg)
     return get_resnext(101, 64, 4, deep_stem=True, avg_down=True, **kwargs)
 
 
@@ -479,6 +483,7 @@ def se_resnext101_64x4d(**kwargs):
 
 
 def se_resnext101e_64x4d(**kwargs):
+    # pylint: disable=line-too-long
     r"""SE-ResNext101e 64x4d model modified from
     `"Aggregated Residual Transformations for Deep Neural Network"
     <http://arxiv.org/abs/1611.05431>`_ paper.
@@ -504,4 +509,7 @@ def se_resnext101e_64x4d(**kwargs):
         for :class:`mxnet.gluon.contrib.nn.SyncBatchNorm`.
     """
     kwargs['use_se'] = True
+    if kwargs['pretrained']:
+        msg = 'GluonCV does not have pretrained weights for resnext101e_64x4d at this moment. Please set pretrained=False.'
+        raise RuntimeError(msg)
     return get_resnext(101, 64, 4, deep_stem=True, avg_down=True, **kwargs)
