@@ -4,6 +4,34 @@
 
 [Exported Lists](./exported_models.csv)
 
+### Inference with ONNX model
+
+Inference with ONNX model is straightforward:
+
+1. Prepare the input data. 
+
+   All 2-D model contains preprocess layer, so you don't need to preprocess it. However, you still need to resize it to match the input shape. For example:
+
+   ```python
+   test_img_file = os.path.join('test_imgs', 'bikers.jpg')
+   img = mx.image.imread(test_img_file)
+   img = mx.image.imresize(img, 224, 224)
+   img = img.expand_dims(0).astype('float32')
+   ```
+
+2. Get an ONNX inference session and its input name. For example:
+
+   ```python
+   onnx_session = onnxruntime.InferenceSession(onnx_model, None)
+   input_name = onnx_session.get_inputs()[0].name
+   ```
+
+3. Make the prediction. For example:
+
+   ```
+   onnx_result = onnx_session.run([], {input_name: img.asnumpy()})[0]
+   ```
+
 ### Export GluonCV Models to ONNX
 
 For those who are interested, there are three main steps to export the model:
@@ -70,33 +98,3 @@ model.get_model()
 model.export()
 model.export_onnx()
 ```
-
-### Inference with ONNX model
-
-Inference with ONNX model is straightforward:
-
-1. Prepare the input data. 
-
-   All 2-D model contains preprocess layer, so you don't need to preprocess it. However, you still need to resize it to match the input shape. For example:
-
-   ```python
-   test_img_file = os.path.join('test_imgs', 'bikers.jpg')
-   img = mx.image.imread(test_img_file)
-   img = mx.image.imresize(img, 224, 224)
-   img = img.expand_dims(0).astype('float32')
-   ```
-
-2. Get an ONNX inference session and its input name. For example:
-
-   ```python
-   onnx_session = onnxruntime.InferenceSession(onnx_model, None)
-   input_name = onnx_session.get_inputs()[0].name
-   ```
-
-3. Make the prediction. For example:
-
-   ```
-   onnx_result = onnx_session.run([], {input_name: img.asnumpy()})[0]
-   ```
-
-   
