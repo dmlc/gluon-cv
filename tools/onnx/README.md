@@ -10,7 +10,7 @@ Inference with ONNX model is straightforward:
 
 1. Prepare the input data. 
 
-   All 2-D model contains preprocess layer, so you don't need to preprocess it. However, you still need to resize it to match the input shape. For example:
+   All 2-D models contain preprocess layers, so you don't need to preprocess it. However, you still need to resize it to match the input shape. For example:
 
    ```python
    test_img_file = os.path.join('test_imgs', 'bikers.jpg')
@@ -28,7 +28,7 @@ Inference with ONNX model is straightforward:
 
 3. Make the prediction. For example:
 
-   ```
+   ```python
    onnx_result = onnx_session.run([], {input_name: img.asnumpy()})[0]
    ```
 
