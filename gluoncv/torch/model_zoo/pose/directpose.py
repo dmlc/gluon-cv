@@ -142,7 +142,7 @@ class DirectPose(nn.Module):
             return results, losses
         else:
             if isinstance(images, torch.Tensor):
-                image_sizes = [(image.size()[-2], image.size()[-1]) for image in images]
+                image_sizes = [image.size()[-2:] for image in images]
             else:
                 image_sizes = images.image_sizes
             results = self.directpose_outputs.predict_proposals(

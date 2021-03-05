@@ -29,7 +29,7 @@ def batched_nms(
 
 
 def ml_nms(boxlist, nms_thresh, max_proposals=-1,
-           score_field="scores", label_field="labels"):
+           score_field="scores", label_field="labels", fixed_size=False):
     """
     Performs non-maximum suppression on a boxlist, with scores specified
     in a boxlist field via score_field.
@@ -49,7 +49,13 @@ def ml_nms(boxlist, nms_thresh, max_proposals=-1,
     keep = batched_nms(boxes, scores, labels, nms_thresh)
     if max_proposals > 0:
         keep = keep[: max_proposals]
-    boxlist = boxlist[keep]
+    if fixed_size:
+        result_mask = scores.new_zeros(scores.size(), dtype=torch.bool)
+        result_mask[keep] = True
+        scores[~result_mask] = 0
+        boxlist.scores = scores
+    else:
+        boxlist = boxlist[keep]
     return boxlist
 
 def oks_iou(g, d, a_g, a_d, sigmas=None, in_vis_thre=None):

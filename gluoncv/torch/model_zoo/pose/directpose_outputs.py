@@ -605,6 +605,10 @@ class DirectPoseOutputs(nn.Module):
             c = per_bundle["c"]
             t = per_bundle["t"] if "t" in bundle else None
 
+            # DEBUG:
+            # sampled_boxes.append((l, o, r, kr, kr_vis))
+            # continue
+
             sampled_boxes.append(
                 self.forward_for_single_feature_map(
                     l, o, r, kr, kr_vis, c, image_sizes, t
@@ -618,8 +622,8 @@ class DirectPoseOutputs(nn.Module):
 
         boxlists = list(zip(*sampled_boxes))
         ret = [Instances.cat(boxlist) for boxlist in boxlists]
-        output = [x.pred_boxes.tensor for x in ret] + [x.pred_keypoints for x in ret]
-        return tuple(output)
+        # output = [x.pred_boxes.tensor for x in ret] + [x.pred_keypoints for x in ret]
+        # return output
         # boxlists = [Instances.cat(boxlist) for boxlist in boxlists]
         boxlists = [self.select_over_all_level(Instances.cat(boxlist)) for boxlist in boxlists]
         pred_boxes = [boxlist.pred_boxes.tensor for boxlist in boxlists]
@@ -631,7 +635,6 @@ class DirectPoseOutputs(nn.Module):
 
         # visualize_kpt_offset(images, boxlists, vis_dir=self.vis_res_dir, cnt=self.cnt)
         # self.cnt += 1
-
         return tuple(pred_boxes), tuple(pred_keypoints)
         # return boxlists
 
@@ -672,41 +675,43 @@ class DirectPoseOutputs(nn.Module):
         for i in range(N):
             per_box_cls = logits_pred[i]
             per_candidate_inds = candidate_inds[i]
-            per_box_cls = per_box_cls[per_candidate_inds]
+            per_box_cls = per_box_cls[:, 0]
 
-            per_candidate_nonzeros = per_candidate_inds.nonzero(as_tuple=False)
-            per_box_loc = per_candidate_nonzeros[:, 0]
-            per_class = per_candidate_nonzeros[:, 1]
+            # per_candidate_nonzeros = per_candidate_inds.nonzero(as_tuple=False)
+            # per_box_loc = per_candidate_nonzeros[:, 0]
+            # per_class = per_candidate_nonzeros[:, 1]
+            per_class = per_candidate_inds.argmax(axis=1)
 
             per_kpt_regression = kpt_regression[i]
-            per_kpt_regression = per_kpt_regression[per_box_loc]
-            per_locations = locations[per_box_loc]
+            # per_kpt_regression = per_kpt_regression[per_box_loc]
+            # per_locations = locations[per_box_loc]
+            per_locations = locations
 
             if self.enable_bbox_branch:
                 per_box_regression = box_regression[i]
-                per_box_regression = per_box_regression[per_box_loc]
+                # per_box_regression = per_box_regression[per_box_loc]
             if self.enable_kpt_vis_branch:
                 per_kpt_vis = kpt_vis_pred[i]
-                per_kpt_vis = per_kpt_vis[per_box_loc]
+                # per_kpt_vis = per_kpt_vis[per_box_loc]
             if top_feat is not None:
                 per_top_feat = top_feat[i]
-                per_top_feat = per_top_feat[per_box_loc]
+                # per_top_feat = per_top_feat[per_box_loc]
 
             per_pre_nms_top_n = pre_nms_top_n[i]
 
             # It will only happen when there are more than 1000 person candidate in the image
-            if per_candidate_inds.sum().item() > per_pre_nms_top_n.item():
-                per_box_cls, top_k_indices = per_box_cls.topk(per_pre_nms_top_n, sorted=True)
-                per_class = per_class[top_k_indices]
+            # if per_candidate_inds.sum().item() > per_pre_nms_top_n.item():
+            #     per_box_cls, top_k_indices = per_box_cls.topk(per_pre_nms_top_n, sorted=True)
+            #     per_class = per_class[top_k_indices]
 
-                per_kpt_regression = per_kpt_regression[top_k_indices]
-                per_locations = per_locations[top_k_indices]
-                if self.enable_bbox_branch:
-                    per_box_regression = per_box_regression[top_k_indices]
-                if self.enable_kpt_vis_branch:
-                    per_kpt_vis = per_kpt_vis[top_k_indices]
-                if top_feat is not None:
-                    per_top_feat = per_top_feat[top_k_indices]
+            #     per_kpt_regression = per_kpt_regression[top_k_indices]
+            #     per_locations = per_locations[top_k_indices]
+            #     if self.enable_bbox_branch:
+            #         per_box_regression = per_box_regression[top_k_indices]
+            #     if self.enable_kpt_vis_branch:
+            #         per_kpt_vis = per_kpt_vis[top_k_indices]
+            #     if top_feat is not None:
+            #         per_top_feat = per_top_feat[top_k_indices]
 
             if self.enable_kpt_vis_branch:
                 keypoints = torch.stack([
@@ -727,7 +732,7 @@ class DirectPoseOutputs(nn.Module):
                     per_locations[:, 1] + per_box_regression[:, 3],
                 ], dim=1)
             else:
-                if per_pre_nms_top_n == 0:
+                if False and per_pre_nms_top_n == 0:
                     detections = torch.empty(0, 4).to(keypoints.device)
                 else:
                     min_xy, _ = keypoints.min(dim=1)
@@ -745,6 +750,7 @@ class DirectPoseOutputs(nn.Module):
                     # detections[:, 3] = detections[:, 3].clamp(min=0, max=image_sizes[i][0])
 
             boxlist = Instances(image_sizes[i])
+            print(detections.shape, keypoints.shape, per_box_cls.shape, per_class.shape)
             boxlist.pred_boxes = Boxes(detections)
             boxlist.pred_keypoints = keypoints
             boxlist.scores = torch.sqrt(per_box_cls)
@@ -872,7 +878,8 @@ class DirectPoseOutputs(nn.Module):
     
     def select_over_all_level(self, boxlist):
         # multiclass nms
-        result = ml_nms(boxlist, self.nms_thresh)
+        result = ml_nms(boxlist, self.nms_thresh, fixed_size=True)
+        return result
         # # Remove skeleton based NMS because seen from the result it is not helping
         # if self.enable_kpt_vis_branch:
         #     result = oks_nms(result, thresh=0.8, in_vis_thre=0.2)
