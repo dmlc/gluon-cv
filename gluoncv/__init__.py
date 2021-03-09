@@ -6,7 +6,7 @@ from __future__ import absolute_import
 from .check import _deprecate_python2
 from .check import _require_mxnet_version, _require_pytorch_version
 
-__version__ = '0.10.0'
+__version__ = '0.11.0'
 
 _deprecate_python2()
 
