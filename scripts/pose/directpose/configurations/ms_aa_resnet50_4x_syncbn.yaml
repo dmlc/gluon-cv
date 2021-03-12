@@ -1,0 +1,66 @@
+DDP_CONFIG:
+  WORLD_SIZE: 1
+  WORLD_RANK: 0
+  GPU_WORLD_SIZE: 8
+  GPU_WORLD_RANK: 0
+  DIST_URL: 'tcp://172.31.72.252:23456'
+  WOLRD_URLS: ['172.31.72.252']
+  AUTO_RANK_MATCH: True
+  DIST_BACKEND: 'nccl'
+  GPU: 0
+  DISTRIBUTED: True
+
+CONFIG:
+  INPUT:
+    MIN_SIZE_RANGE_TRAIN: (480, 1600)
+    MIN_SIZE_TRAIN: (800,)
+    MAX_SIZE_TRAIN: 2666
+    MAX_SIZE_TEST: 1333
+    MIN_SIZE_TEST: 800
+    CROP:
+      ENABLED: True
+      TYPE: "absolute"
+      SIZE: [800, 800]
+  MODEL:
+    BACKBONE:
+      NAME: "build_directpose_resnet_fpn_backbone"
+      ANTI_ALIAS: True
+      FREEZE_AT: 0
+    WEIGHTS: "model/resnet50_lpf3.pth"
+    RESNETS:
+      OUT_FEATURES: ["res3", "res4", "res5"]
+      DEPTH: 50
+      NORM: "SyncBN"
+    FPN:
+      IN_FEATURES: ["res3", "res4", "res5"]
+    KEYPOINT_ON: True
+    DIRECTPOSE:
+      TOP_LEVELS: 2
+      SIZES_OF_INTEREST: [64, 128, 256, 512]
+      FPN_STRIDES: [8, 16, 32, 64, 128]
+      IN_FEATURES: ['p3', 'p4', 'p5', 'p6', 'p7']
+      ENABLE_HM_BRANCH: False   # Enable it during training and disable it during testing
+      HM_OFFSET: False
+      HM_TYPE: 'BinaryLabels'
+      HM_LOSS_WEIGHT: 4.0
+      REFINE_KPT: False
+      SAMPLE_FEATURE: 'lower'
+      KPALIGN_GROUPS: 9
+      SEPERATE_CONV_FEATURE: True
+      LOSS_ON_LOCATOR: False
+      KPT_VIS: True
+      CLOSEKPT_NMS: False
+      CENTER_BRANCH: 'kpt'
+      USE_SCALE: False
+  DATASETS:
+    TRAIN: ("keypoints_coco_2017_train",)
+    TEST: ("keypoints_coco_2017_val",)
+  SOLVER:
+    IMS_PER_BATCH: 32
+    STEPS: (60000, 80000)
+    MAX_ITER: 180000
+    CHECKPOINT_PERIOD: 60000
+    LR_SCHEDULER_NAME: "WarmupLinearLR"    # ("WarmupLinearLR", "WarmupCosineLR", "WarmupMultiStepLR")
+  TEST:
+    EVAL_PERIOD: 10000
+  OUTPUT_DIR: "output/directpose/DIRECTPOSE_RT_MS_R50_syncbn_3FPN_debug"

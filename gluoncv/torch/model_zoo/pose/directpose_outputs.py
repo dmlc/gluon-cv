@@ -750,7 +750,6 @@ class DirectPoseOutputs(nn.Module):
                     # detections[:, 3] = detections[:, 3].clamp(min=0, max=image_sizes[i][0])
 
             boxlist = Instances(image_sizes[i])
-            print(detections.shape, keypoints.shape, per_box_cls.shape, per_class.shape)
             boxlist.pred_boxes = Boxes(detections)
             boxlist.pred_keypoints = keypoints
             boxlist.scores = torch.sqrt(per_box_cls)

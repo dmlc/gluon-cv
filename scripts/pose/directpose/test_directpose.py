@@ -25,7 +25,7 @@ def get_image(img_name='street_small.jpg', img_url=None):
         img_path = os.path.join(save_dir, img_name)
         download(img_url, img_path)
         orig_img = Image.open(img_path).convert("RGB")
-        img = orig_img.resize((512, 512), Image.LANCZOS)
+        img = orig_img.resize((800, 1280), Image.LANCZOS)
         return img, orig_img, img_path
 
     def get_transforms():
@@ -44,13 +44,18 @@ def get_image(img_name='street_small.jpg', img_url=None):
 if __name__ == '__main__':
     device = torch.device('cuda')
     cfg = get_cfg_defaults()
-    cfg.merge_from_file('./configurations/ms_dla_34_4x_syncbn.yaml')
-    net = model_zoo.dla34_fpn_directpose(cfg).to(device).eval()
-    model = torch.load('model_final.pth')['model']
+    # cfg.merge_from_file('./configurations/ms_dla_34_4x_syncbn.yaml')
+    # net = model_zoo.dla34_fpn_directpose(cfg).to(device).eval()
+    # model = torch.load('model_final.pth')['model']
+    cfg.merge_from_file('./configurations/ms_aa_resnet50_4x_syncbn.yaml')
+    net = model_zoo.resnet_lpf_fpn_directpose(cfg).to(device).eval()
+    model = torch.load('model_final_resnet.pth')['model']
     net.load_state_dict(model, strict=False)
     # images = torch.zeros(1, 3, 512, 512).cuda()
     images, orig_image = get_image()
     y = net(images.to(device))
+    print(y)
+    raise
     # with torch.no_grad():
     #     scripted_model = torch.jit.trace(debug_trace, torch.zeros(1, 2, 48, 48))
     # torch._C._jit_pass_inline(scripted_model.graph)
@@ -66,12 +71,17 @@ if __name__ == '__main__':
     shape_list = [(input_name, images.shape)]
     mod, params = relay.frontend.from_pytorch(scripted_model, shape_list)
 
-    target = "llvm"
+    target = "cuda"
     target_host = "llvm"
-    ctx = tvm.cpu(0)
+    ctx = tvm.gpu(0)
     with tvm.transform.PassContext(opt_level=3):
         lib = relay.build(mod, target=target, target_host=target_host, params=params)
-    # lib.export_library('tvm_runtime.so')
+    export_graph, export_lib, export_params = lib
+    export_lib.export_library('compiled.so')
+    with open('compiled.json', 'w') as f:
+        f.write(export_graph)
+    with open('compiled.params', 'wb') as f:
+        f.write(relay.save_param_dict(export_params))
     print('export complete')
 
     from tvm.contrib import graph_runtime
