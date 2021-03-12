@@ -248,7 +248,7 @@ class ImageClassificationEstimator(BaseEstimator):
             elif len(valid_gpus) != len(self._cfg.gpus):
                 self._logger.warning(
                     f'Loaded on gpu({valid_gpus}), different from gpu({self._cfg.gpus}).')
-        ctx = [mx.gpu(int(i)) for i in valid_gpus]
+        self.ctx = [mx.gpu(int(i)) for i in valid_gpus]
         self.ctx = self.ctx if self.ctx else [mx.cpu()]
 
         # network
