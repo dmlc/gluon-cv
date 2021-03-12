@@ -261,8 +261,8 @@ class BaseEstimator:
         try:
             import mxnet as mx
             if isinstance(self.net, mx.gluon.Block):
-                for ctx in ctx_list:
-                    assert isinstance(ctx, mx.Context)
+                for c in ctx_list:
+                    assert isinstance(c, mx.Context)
                 self.net.reset_ctx(ctx_list)
         except ImportError:
             pass
