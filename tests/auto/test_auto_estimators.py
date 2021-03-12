@@ -97,6 +97,7 @@ def test_frcnn_estimator():
     _save_load_test(est, 'frcnn.pkl')
 
 def _save_load_test(est, filename):
+    est._cfg.unfreeze()
     est._cfg.gpus = list(range(16))  # invalid cfg, check if load can restore succesfully
     est.save(filename)
     est2 = est.__class__.load(filename)
