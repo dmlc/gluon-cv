@@ -231,10 +231,10 @@ class BaseEstimator:
         valid_gpus = []
         try:
             import mxnet as mx
-            for id in gpu_ids:
+            for gid in gpu_ids:
                 try:
-                    a = mx.nd.zeros((1,), ctx=mx.gpu(id))
-                    valid_gpus.append(id)
+                    _ = mx.nd.zeros((1,), ctx=mx.gpu(gid))
+                    valid_gpus.append(gid)
                 except:
                     pass
         except ImportError:
@@ -242,17 +242,28 @@ class BaseEstimator:
         return valid_gpus
 
     def reset_ctx(self, ctx=None):
+        """Reset model context.
+
+        Parameters
+        ----------
+        ctx : list or ctx
+            The desired new ctx list, the type must match the network.
+            For example, if using mxnet, the ctx must be `mxnet.Context`.
+
+        """
         if not ctx:
             return
         if not isinstance(ctx, (tuple, list)):
-            ctx = [ctx]
+            ctx_list = [ctx]
+        else:
+            ctx_list = ctx
         done = False
         try:
             import mxnet as mx
             if isinstance(self.net, mx.gluon.Block):
-                for ctx in ctx:
+                for ctx in ctx_list:
                     assert isinstance(ctx, mx.Context)
-                self.net.reset_ctx(ctx)
+                self.net.reset_ctx(ctx_list)
         except ImportError:
             pass
         if not done:
