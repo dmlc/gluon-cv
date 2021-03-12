@@ -244,8 +244,8 @@ class BaseEstimator:
     def reset_ctx(self, ctx=None):
         if not ctx:
             return
-        if not isinstance(ctx, (tuple, list))
-        ctx = [ctx]
+        if not isinstance(ctx, (tuple, list)):
+            ctx = [ctx]
         done = False
         try:
             import mxnet as mx
