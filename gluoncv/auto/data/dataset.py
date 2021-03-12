@@ -559,6 +559,7 @@ class ObjectDetectionDataset(pd.DataFrame):
         new_df = new_df.drop(image_attr_columns, axis=1, errors='ignore')
         new_df = self.__class__(new_df.reset_index(drop=True))
         new_df.classes = orig_classes
+        return new_df
 
     def unpack(self):
         """Convert image-centric entries to object-centric entries.
@@ -574,6 +575,7 @@ class ObjectDetectionDataset(pd.DataFrame):
         new_df = pd.concat([new_df.drop(['image_attr'], axis=1), new_df['image_attr'].apply(pd.Series)], axis=1)
         new_df = self.__class__(new_df.reset_index(drop=True))
         new_df.classes = orig_classes
+        return new_df
 
     def is_packed(self):
         """Check whether the current dataframe is providing packed representation of rois.

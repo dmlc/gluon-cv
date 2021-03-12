@@ -1,4 +1,5 @@
 """Auto data preparation."""
+# pylint: disable=bare-except
 import os
 import re
 from pathlib import Path

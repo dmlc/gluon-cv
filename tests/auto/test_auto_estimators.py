@@ -34,6 +34,8 @@ def test_image_classification_estimator():
     test_result = est.predict(IMAGE_CLASS_TEST)
     evaluate_result = est.evaluate(IMAGE_CLASS_TEST)
     feature = est.predict_feature(IMAGE_CLASS_TEST)
+    # test save/load
+    _save_load_test(est, 'imgcls.pkl')
 
 def test_image_classification_estimator_custom_net_optimizer():
     from gluoncv.auto.estimators import ImageClassificationEstimator
@@ -59,6 +61,8 @@ def test_center_net_estimator():
     assert res.get('valid_map', 0) > 0
     test_result = est.predict(OBJECT_DETECTION_TEST)
     evaluate_result = est.evaluate(OBJECT_DETECTION_VAL)
+    # test save/load
+    _save_load_test(est, 'center_net.pkl')
 
 def test_ssd_estimator():
     from gluoncv.auto.estimators import SSDEstimator
@@ -67,6 +71,8 @@ def test_ssd_estimator():
     assert res.get('valid_map', 0) > 0
     test_result = est.predict(OBJECT_DETECTION_TEST)
     evaluate_result = est.evaluate(OBJECT_DETECTION_VAL)
+    # test save/load
+    _save_load_test(est, 'ssd.pkl')
 
 def test_yolo3_estimator():
     from gluoncv.auto.estimators import YOLOv3Estimator
@@ -75,6 +81,8 @@ def test_yolo3_estimator():
     assert res.get('valid_map', 0) > 0
     test_result = est.predict(OBJECT_DETECTION_TEST)
     evaluate_result = est.evaluate(OBJECT_DETECTION_VAL)
+    # test save/load
+    _save_load_test(est, 'yolo3.pkl')
 
 def test_frcnn_estimator():
     from gluoncv.auto.estimators import FasterRCNNEstimator
@@ -85,6 +93,13 @@ def test_frcnn_estimator():
     assert res.get('valid_map', 0) > 0
     test_result = est.predict(OBJECT_DETECTION_TEST_MINI)
     evaluate_result = est.evaluate(OBJECT_DETECTION_VAL_MINI)
+    # test save/load
+    _save_load_test(est, 'frcnn.pkl')
+
+def _save_load_test(est, filename):
+    est._cfg.gpus = list(range(16))  # invalid cfg, check if load can restore succesfully
+    est.save(filename)
+    est2 = est.__class__.load(filename)
 
 if __name__ == '__main__':
     import nose

@@ -1,4 +1,5 @@
 """Base Estimator"""
+# pylint: disable=bare-except
 import os
 import math
 import pickle
@@ -224,6 +225,38 @@ class BaseEstimator:
 
     def _init_trainer(self):
         raise NotImplementedError
+
+    def _validate_gpus(self, gpu_ids):
+        """validate if requested gpus are actually available"""
+        valid_gpus = []
+        try:
+            import mxnet as mx
+            for id in gpu_ids:
+                try:
+                    a = mx.nd.zeros((1,), ctx=mx.gpu(id))
+                    valid_gpus.append(id)
+                except:
+                    pass
+        except ImportError:
+            pass
+        return valid_gpus
+
+    def reset_ctx(self, ctx=None):
+        if not ctx:
+            return
+        if not isinstance(ctx, (tuple, list))
+        ctx = [ctx]
+        done = False
+        try:
+            import mxnet as mx
+            if isinstance(self.net, mx.gluon.Block):
+                for ctx in ctx:
+                    assert isinstance(ctx, mx.Context)
+                self.net.reset_ctx(ctx)
+        except ImportError:
+            pass
+        if not done:
+            raise RuntimeError("Unable to reset_ctx, no `mxnet` and `pytorch`.")
 
     def save(self, filename):
         """Save the state of this estimator to disk.
