@@ -47,12 +47,16 @@ def ml_nms(boxlist, nms_thresh, max_proposals=-1,
     scores = boxlist.scores
     labels = boxlist.pred_classes
     keep = batched_nms(boxes, scores, labels, nms_thresh)
+    # keep = nms(boxes, scores, nms_thresh)
     if max_proposals > 0:
         keep = keep[: max_proposals]
     if fixed_size:
-        result_mask = scores.new_zeros(scores.size(), dtype=torch.bool)
-        result_mask[keep] = True
-        scores[~result_mask] = 0
+        boxlist._keep = keep
+        # scores = -scores
+        # scores[keep] = -scores[keep]
+        # result_mask = torch.zeros(scores.size()).to(scores.device)
+        # result_mask[keep] = 1
+        # scores = torch.where(result_mask == 1, scores, result_mask)
         boxlist.scores = scores
     else:
         boxlist = boxlist[keep]

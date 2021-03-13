@@ -628,6 +628,9 @@ class DirectPoseOutputs(nn.Module):
         boxlists = [self.select_over_all_level(Instances.cat(boxlist)) for boxlist in boxlists]
         pred_boxes = [boxlist.pred_boxes.tensor for boxlist in boxlists]
         pred_keypoints = [boxlist.pred_keypoints for boxlist in boxlists]
+        pred_scores = [boxlist.scores for boxlist in boxlists]
+        pred_ids = [boxlist.pred_classes for boxlist in boxlists]
+        # keep = [boxlist._keep for boxlist in boxlists]
 
         if self.enable_hm_branch and self.combine_hm_and_kpt:
             # boxlists = self.refine_kpt(boxlists, hms, hms_offset, images, topk=40, thresh=0.1)
@@ -635,7 +638,11 @@ class DirectPoseOutputs(nn.Module):
 
         # visualize_kpt_offset(images, boxlists, vis_dir=self.vis_res_dir, cnt=self.cnt)
         # self.cnt += 1
-        return tuple(pred_boxes), tuple(pred_keypoints)
+        if len(pred_ids) == 1:
+            # bs = 1, tvm output
+            from torchvision.ops import nms
+            return pred_ids[0], nms(pred_boxes[0], pred_scores[0], self.nms_thresh), pred_keypoints[0]
+        return tuple(pred_ids), tuple(pred_scores), tuple(pred_boxes), tuple(pred_keypoints) #, tuple(keep)
         # return boxlists
 
     def forward_for_single_feature_map(
@@ -851,6 +858,9 @@ class DirectPoseOutputs(nn.Module):
 
     def select_over_all_levels(self, boxlists):
         num_images = len(boxlists)
+        if num_images == 1:
+            # tvm deployment
+            return boxlists[0]
         results = []
         for i in range(num_images):
             # multiclass nms
