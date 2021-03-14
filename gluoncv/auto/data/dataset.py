@@ -53,8 +53,9 @@ class ImageClassificationDataset(pd.DataFrame):
     _metadata = ['classes', 'to_mxnet', 'show_images', 'random_split']
 
     def __init__(self, data, classes=None, **kwargs):
+        root = kwargs.pop('root', None)
         if isinstance(data, str) and data.endswith('csv'):
-            data = self.from_csv(data, root=kwargs.get('root', None))
+            data = self.from_csv(data, root=root)
         self.classes = classes
         super().__init__(data, **kwargs)
 
@@ -150,11 +151,11 @@ class ImageClassificationDataset(pd.DataFrame):
 
         """
         if is_url(csv_file):
-            csv_file = url_data(csv_file)
+            csv_file = url_data(csv_file, disp_depth=0)
         df = pd.read_csv(csv_file)
         assert 'image' in df.columns, "`image` column is required, used for accessing the original images"
         if not 'label' in df.columns:
-            logger.debug('label not in columns, no access to labels of images')
+            logger.info('label not in columns, no access to labels of images')
             classes = None
         else:
             classes = df['label'].unique()
@@ -545,6 +546,7 @@ class ObjectDetectionDataset(pd.DataFrame):
         """
         if self.is_packed():
             return self
+        orig_classes = self.classes
         rois_columns = ['class', 'xmin', 'ymin', 'xmax', 'ymax', 'difficult']
         image_attr_columns = ['width', 'height']
         new_df = self.groupby(['image'], as_index=False).agg(list).reset_index(drop=True)
@@ -555,7 +557,9 @@ class ObjectDetectionDataset(pd.DataFrame):
         new_df['image_attr'] = new_df.agg(
             lambda y: {k : y[new_df.columns.get_loc(k)][0] for k in image_attr_columns if k in new_df.columns}, axis=1)
         new_df = new_df.drop(image_attr_columns, axis=1, errors='ignore')
-        return self.__class__(new_df.reset_index(drop=True))
+        new_df = self.__class__(new_df.reset_index(drop=True))
+        new_df.classes = orig_classes
+        return new_df
 
     def unpack(self):
         """Convert image-centric entries to object-centric entries.
@@ -565,10 +569,13 @@ class ObjectDetectionDataset(pd.DataFrame):
         """
         if not self.is_packed():
             return self
+        orig_classes = self.classes
         new_df = self.explode('rois')
         new_df = pd.concat([new_df.drop(['rois'], axis=1), new_df['rois'].apply(pd.Series)], axis=1)
         new_df = pd.concat([new_df.drop(['image_attr'], axis=1), new_df['image_attr'].apply(pd.Series)], axis=1)
-        return self.__class__(new_df.reset_index(drop=True))
+        new_df = self.__class__(new_df.reset_index(drop=True))
+        new_df.classes = orig_classes
+        return new_df
 
     def is_packed(self):
         """Check whether the current dataframe is providing packed representation of rois.
@@ -695,7 +702,7 @@ class _MXObjectDetectionDataset(MXDataset):
         width, height = img.shape[1], img.shape[0]
         def convert_entry(roi):
             return [float(roi[key]) for key in ['xmin', 'ymin', 'xmax', 'ymax']] + \
-                [self.classes.index(roi['class']), float(roi['difficult'])]
+                [self.classes.index(roi['class']), float(roi.get('difficult', 0))]
         label = np.array([convert_entry(roi) for roi in rois])
         label[:, (0, 2)] *= width
         label[:, (1, 3)] *= height

@@ -239,7 +239,16 @@ class ImageClassificationEstimator(BaseEstimator):
                 It should be inferred from dataset or resumed from saved states.')
         assert len(self.classes) == self.num_class
         # ctx
-        self.ctx = [mx.gpu(int(i)) for i in self._cfg.gpus]
+        valid_gpus = []
+        if self._cfg.gpus:
+            valid_gpus = self._validate_gpus(self._cfg.gpus)
+            if not valid_gpus:
+                self._logger.warning(
+                    'No gpu detected, fallback to cpu. You can ignore this warning if this is intended.')
+            elif len(valid_gpus) != len(self._cfg.gpus):
+                self._logger.warning(
+                    f'Loaded on gpu({valid_gpus}), different from gpu({self._cfg.gpus}).')
+        self.ctx = [mx.gpu(int(i)) for i in valid_gpus]
         self.ctx = self.ctx if self.ctx else [mx.cpu()]
 
         # network

@@ -1,4 +1,5 @@
 """Auto data preparation."""
+# pylint: disable=bare-except
 import os
 import re
 from pathlib import Path
@@ -51,8 +52,11 @@ def url_data(url, path=None, overwrite=False, overwrite_folder=False, sha1_hash=
         raise ValueError('Unknown url data with file: {}'.format(fname))
 
     if disp_depth > 0:
-        path_tree = PathTree(folder, disp_depth)
-        print(path_tree)
+        try:
+            path_tree = PathTree(folder, disp_depth)
+            print(path_tree)
+        except:
+            pass
 
     return Path(folder)
 

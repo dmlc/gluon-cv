@@ -318,7 +318,16 @@ class SSDEstimator(BaseEstimator):
         if self._cfg.horovod:
             self.ctx = [mx.gpu(hvd.local_rank())]
         else:
-            ctx = [mx.gpu(int(i)) for i in self._cfg.gpus]
+            valid_gpus = []
+            if self._cfg.gpus:
+                valid_gpus = self._validate_gpus(self._cfg.gpus)
+                if not valid_gpus:
+                    self._logger.warning(
+                        'No gpu detected, fallback to cpu. You can ignore this warning if this is intended.')
+                elif len(valid_gpus) != len(self._cfg.gpus):
+                    self._logger.warning(
+                        f'Loaded on gpu({valid_gpus}), different from gpu({self._cfg.gpus}).')
+            ctx = [mx.gpu(int(i)) for i in valid_gpus]
             self.ctx = ctx if ctx else [mx.cpu()]
 
         if self._cfg.ssd.transfer is not None:

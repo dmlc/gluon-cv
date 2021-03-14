@@ -285,7 +285,16 @@ class CenterNetEstimator(BaseEstimator):
                 It should be inferred from dataset or resumed from saved states.')
         assert len(self.classes) == self.num_class
         # network
-        ctx = [mx.gpu(int(i)) for i in self._cfg.gpus]
+        valid_gpus = []
+        if self._cfg.gpus:
+            valid_gpus = self._validate_gpus(self._cfg.gpus)
+            if not valid_gpus:
+                self._logger.warning(
+                    'No gpu detected, fallback to cpu. You can ignore this warning if this is intended.')
+            elif len(valid_gpus) != len(self._cfg.gpus):
+                self._logger.warning(
+                    f'Loaded on gpu({valid_gpus}), different from gpu({self._cfg.gpus}).')
+        ctx = [mx.gpu(int(i)) for i in valid_gpus]
         ctx = ctx if ctx else [mx.cpu()]
         self.ctx = ctx
         if self._cfg.center_net.transfer is not None:
