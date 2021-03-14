@@ -76,7 +76,7 @@ def get_image(img_name='street_small.jpg', img_url=None):
         img_path = os.path.join(save_dir, img_name)
         download(img_url, img_path)
         orig_img = Image.open(img_path).convert("RGB")
-        img = orig_img.resize((800, 1280), Image.LANCZOS)
+        img = orig_img.resize((736, 1280), Image.LANCZOS)
         return img, orig_img, img_path
 
     def get_transforms():
