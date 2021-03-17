@@ -1,4 +1,5 @@
 import os
+import numpy as np
 from gluoncv.torch import model_zoo
 from gluoncv.torch.engine.config import get_cfg_defaults
 import torch
@@ -23,16 +24,18 @@ def nms(inputs, input_types):
     iou_threshold = inputs[2]
 
     # TVM NMS assumes score > 0
-    scores = scores - _op.min(scores) + _op.const(1.0)
+    # scores = scores - _op.min(scores) + _op.const(1.0)
 
     num_boxes = _op.shape_of(scores)
     # PyTorch NMS doesn't have score_threshold, so no need to run get_valid_count
     indices = _op.transform.arange(_op.squeeze(num_boxes), dtype="int32")
+    indices_value = _op.cast(indices, dtype="float32")
+    indices_value = _op.expand_dims(indices_value, -1, 1)
     indices = _op.expand_dims(indices, 0, 1)
 
     # Generate data with shape (1, num_anchors, 5)
     scores = AttrCvt(op_name="expand_dims", extras={"axis": -1, "num_newaxis": 1})([scores], {})
-    data = _op.concatenate([scores, boxes], -1)
+    data = _op.concatenate([scores, boxes, indices_value], -1)
     data = _op.expand_dims(data, 0, 1)
 
     # Perform Non-Maximum Suppression,
@@ -49,7 +52,7 @@ def nms(inputs, input_types):
         top_k=top_k,
         coord_start=1,
         score_index=score_index,
-        id_index=-1,
+        id_index=5,
         return_indices=False,
         invalid_to_bottom=False,
     )
@@ -75,12 +78,14 @@ def get_image(img_name='street_small.jpg', img_url=None):
         img_name = img_url.split("/")[-1]
         img_path = os.path.join(save_dir, img_name)
         download(img_url, img_path)
-        orig_img = Image.open(img_path).convert("RGB")
-        img = orig_img.resize((736, 1280), Image.LANCZOS)
+        orig_img = Image.open(img_path)
+        # img = orig_img.resize((736, 1280), Image.LANCZOS)
+        img = orig_img.resize((800, 1280), Image.LANCZOS)
+        img = np.array(img)[:, :, (2, 1, 0)]
         return img, orig_img, img_path
 
     def get_transforms():
-        tforms = T.Compose([T.ToTensor(), T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
+        tforms = T.Compose([T.ToTensor(), T.Normalize(mean=[0.406, 0.456, 0.485], std=[0.00392157, 0.00392157, 0.00392157])])
         return tforms
     
     if img_url is None:
@@ -88,7 +93,7 @@ def get_image(img_name='street_small.jpg', img_url=None):
     img, orig_img, img_path = get_single_image_input(img_url)
 
     tforms = get_transforms()
-    input_data = tforms(img).unsqueeze(0).float()
+    input_data = tforms(img).unsqueeze(0)
     return input_data, orig_img
 
 def convert_pt_to_tvm_type(idtype):
@@ -185,10 +190,19 @@ if __name__ == '__main__':
     cfg.merge_from_file('./configurations/ms_aa_resnet50_4x_syncbn.yaml')
     net = model_zoo.resnet_lpf_fpn_directpose(cfg).to(device).eval()
     model = torch.load('model_final_resnet.pth')['model']
+    print(model['pixel_mean'])
+    print(model['pixel_std'])
+    # np_model = {k: v.cpu().numpy() for k, v in model.items()}
+    # import numpy as np
+    # np.save('np_model.npy', np_model)
+    # raise
     net.load_state_dict(model, strict=False)
     # images = torch.zeros(1, 3, 512, 512).cuda()
-    images, orig_image = get_image()
+    images, orig_image = get_image('soccer.png', img_url='https://github.com/dmlc/web-data/blob/master/gluoncv/pose/soccer.png?raw=true')
     y = net(images.to(device))
+    # for yy in y:
+    #     print(yy.shape, yy)
+    # raise
     # with torch.no_grad():
     #     scripted_model = torch.jit.trace(debug_trace, torch.zeros(1, 2, 48, 48))
     # torch._C._jit_pass_inline(scripted_model.graph)
@@ -268,7 +282,21 @@ if __name__ == '__main__':
     # Execute
     tvm_result = m.run()
     # Get outputs
-    for ii in range(3):
-        tvm_output = m.get_output(ii)
-        # tvm_output = tvm_result[ii].asnumpy()
-        print(tvm_output.shape, tvm_output)
+    # for ii in range(3):
+    #     tvm_output = m.get_output(ii)
+    #     # tvm_output = tvm_result[ii].asnumpy()
+    #     print(tvm_output.shape, tvm_output)
+    ids = m.get_output(0).asnumpy()
+    xxx = m.get_output(1).asnumpy()
+    kpts = m.get_output(2).asnumpy()
+    scores = xxx[:, 0]
+    bboxes = xxx[:, 1:5]
+    orig_indices = xxx[:, 5]
+    valid = np.where(np.logical_and(scores > 0.5, orig_indices > -0.5))[0]
+    print(valid)
+    print(bboxes[valid, :])
+    print(scores[valid])
+    new_idx = orig_indices[valid].astype(int)
+    print('new_idx', new_idx)
+    print(kpts[new_idx, :])
+    print(ids[new_idx])
