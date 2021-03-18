@@ -24,7 +24,7 @@ def nms(inputs, input_types):
     iou_threshold = inputs[2]
 
     # TVM NMS assumes score > 0
-    # scores = scores - _op.min(scores) + _op.const(1.0)
+    scores = scores - _op.min(scores) + _op.const(1.0)
 
     num_boxes = _op.shape_of(scores)
     # PyTorch NMS doesn't have score_threshold, so no need to run get_valid_count
@@ -80,7 +80,7 @@ def get_image(img_name='street_small.jpg', img_url=None):
         download(img_url, img_path)
         orig_img = Image.open(img_path)
         # img = orig_img.resize((736, 1280), Image.LANCZOS)
-        img = orig_img.resize((800, 1280), Image.LANCZOS)
+        img = orig_img.resize((1280, 800), Image.LANCZOS)
         img = np.array(img)[:, :, (2, 1, 0)]
         return img, orig_img, img_path
 
@@ -200,6 +200,7 @@ if __name__ == '__main__':
     # images = torch.zeros(1, 3, 512, 512).cuda()
     images, orig_image = get_image('soccer.png', img_url='https://github.com/dmlc/web-data/blob/master/gluoncv/pose/soccer.png?raw=true')
     y = net(images.to(device))
+    # print(y[0], y[0].shape)
     # for yy in y:
     #     print(yy.shape, yy)
     # raise
@@ -269,7 +270,7 @@ if __name__ == '__main__':
     with open('compiled.params', 'wb') as f:
         f.write(relay.save_param_dict(export_params))
     print('export complete')
-    # raise
+    raise
 
     from tvm.contrib import graph_runtime
 

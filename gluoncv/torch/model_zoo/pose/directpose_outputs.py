@@ -645,7 +645,7 @@ class DirectPoseOutputs(nn.Module):
             # nms_input = torch.cat((, torch.arange(end=int(pred_boxes[0].shape[0])).to(pred_boxes[0].device).unsqueeze(-1)), dim=1)
             # print(nms_input.shape)
             nms_ret = nms(pred_boxes[0], pred_scores[0], self.nms_thresh)
-            return pred_ids[0], nms_ret, pred_keypoints[0]
+            return pred_ids[0], nms_ret, pred_boxes[0], pred_scores[0], pred_keypoints[0]
         return tuple(pred_ids), tuple(pred_scores), tuple(pred_boxes), tuple(pred_keypoints) #, tuple(keep)
         # return boxlists
 
