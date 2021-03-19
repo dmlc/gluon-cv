@@ -772,135 +772,124 @@ class DirectPoseOutputs(nn.Module):
             if top_feat is not None:
                 boxlist.top_feat = per_top_feat
             results.append(boxlist)
-            print(boxlist.pred_boxes.tensor.shape, boxlist.pred_keypoints.shape, boxlist.scores.shape, boxlist.pred_classes.shape, boxlist.locations.shape)
+            # print(boxlist.pred_boxes.tensor.shape, boxlist.pred_keypoints.shape, boxlist.scores.shape, boxlist.pred_classes.shape, boxlist.locations.shape)
 
         return results
 
-    # def forward_for_single_feature_map(
-    #         self, locations, logits_pred, bbox_reg_pred, kpt_reg_pred, kpt_vis_pred,
-    #         ctrness_pred, image_sizes, top_feat=None
-    # ):
-    #     N, C, H, W = logits_pred.shape
+    def forward_for_single_feature_map_v0(
+            self, locations, logits_pred, bbox_reg_pred, kpt_reg_pred, kpt_vis_pred,
+            ctrness_pred, image_sizes, top_feat=None
+    ):
+        N, C, H, W = logits_pred.shape
 
-    #     # put in the same format as locations
-    #     logits_pred = logits_pred.view(N, C, H, W).permute(0, 2, 3, 1)
-    #     logits_pred = logits_pred.reshape(N, -1, C).sigmoid()
-    #     kpt_regression = kpt_reg_pred.view(N, self.num_kpts * 2, H, W).permute(0, 2, 3, 1)
-    #     kpt_regression = kpt_regression.reshape(N, -1, self.num_kpts, 2)
-    #     ctrness_pred = ctrness_pred.view(N, 1, H, W).permute(0, 2, 3, 1)
-    #     ctrness_pred = ctrness_pred.reshape(N, -1).sigmoid()
-    #     if self.enable_bbox_branch:
-    #         box_regression = bbox_reg_pred.view(N, 4, H, W).permute(0, 2, 3, 1)
-    #         box_regression = box_regression.reshape(N, -1, 4)
-    #     if self.enable_kpt_vis_branch:
-    #         kpt_vis_pred = kpt_vis_pred.permute(0, 2, 3, 1).reshape(N, -1, self.num_kpts).sigmoid()
-    #     if top_feat is not None:
-    #         top_feat = top_feat.view(N, -1, H, W).permute(0, 2, 3, 1)
-    #         top_feat = top_feat.reshape(N, H * W, -1)
+        # put in the same format as locations
+        logits_pred = logits_pred.view(N, C, H, W).permute(0, 2, 3, 1)
+        logits_pred = logits_pred.reshape(N, -1, C).sigmoid()
+        kpt_regression = kpt_reg_pred.view(N, self.num_kpts * 2, H, W).permute(0, 2, 3, 1)
+        kpt_regression = kpt_regression.reshape(N, -1, self.num_kpts, 2)
+        ctrness_pred = ctrness_pred.view(N, 1, H, W).permute(0, 2, 3, 1)
+        ctrness_pred = ctrness_pred.reshape(N, -1).sigmoid()
+        if self.enable_bbox_branch:
+            box_regression = bbox_reg_pred.view(N, 4, H, W).permute(0, 2, 3, 1)
+            box_regression = box_regression.reshape(N, -1, 4)
+        if self.enable_kpt_vis_branch:
+            kpt_vis_pred = kpt_vis_pred.permute(0, 2, 3, 1).reshape(N, -1, self.num_kpts).sigmoid()
+        if top_feat is not None:
+            top_feat = top_feat.view(N, -1, H, W).permute(0, 2, 3, 1)
+            top_feat = top_feat.reshape(N, H * W, -1)
 
-    #     # if self.thresh_with_ctr is True, we multiply the classification
-    #     # scores with centerness scores before applying the threshold.
-    #     if self.thresh_with_ctr:
-    #         logits_pred = logits_pred * ctrness_pred[:, :, None]
-    #     candidate_inds = logits_pred > self.pre_nms_thresh
-    #     pre_nms_top_n = candidate_inds.view(N, -1).sum(1)
-    #     pre_nms_top_n = pre_nms_top_n.clamp(max=float(self.pre_nms_topk))
+        # if self.thresh_with_ctr is True, we multiply the classification
+        # scores with centerness scores before applying the threshold.
+        if self.thresh_with_ctr:
+            logits_pred = logits_pred * ctrness_pred[:, :, None]
+        candidate_inds = logits_pred > self.pre_nms_thresh
+        pre_nms_top_n = candidate_inds.view(N, -1).sum(1)
+        pre_nms_top_n = pre_nms_top_n.clamp(max=self.pre_nms_topk)
 
-    #     if not self.thresh_with_ctr:
-    #         logits_pred = logits_pred * ctrness_pred[:, :, None]
+        if not self.thresh_with_ctr:
+            logits_pred = logits_pred * ctrness_pred[:, :, None]
 
-    #     results = []
-    #     for i in range(N):
-    #         per_box_cls = logits_pred[i]
-    #         per_candidate_inds = candidate_inds[i]
-    #         per_box_cls = per_box_cls[:, 0]
+        results = []
+        for i in range(N):
+            per_box_cls = logits_pred[i]
+            per_candidate_inds = candidate_inds[i]
+            per_box_cls = per_box_cls[per_candidate_inds]
 
-    #         # per_candidate_nonzeros = per_candidate_inds.nonzero(as_tuple=False)
-    #         # per_box_loc = per_candidate_nonzeros[:, 0]
-    #         # per_class = per_candidate_nonzeros[:, 1]
-    #         print(per_candidate_inds)
-    #         per_class = per_candidate_inds.argmax(axis=1)
-    #         print(per_class)
-    #         raise
+            per_candidate_nonzeros = per_candidate_inds.nonzero()
+            per_box_loc = per_candidate_nonzeros[:, 0]
+            per_class = per_candidate_nonzeros[:, 1]
 
-    #         per_kpt_regression = kpt_regression[i]
-    #         # per_kpt_regression = per_kpt_regression[per_box_loc]
-    #         # per_locations = locations[per_box_loc]
-    #         per_locations = locations
+            per_kpt_regression = kpt_regression[i]
+            per_kpt_regression = per_kpt_regression[per_box_loc]
+            per_locations = locations[per_box_loc]
 
-    #         if self.enable_bbox_branch:
-    #             per_box_regression = box_regression[i]
-    #             # per_box_regression = per_box_regression[per_box_loc]
-    #         if self.enable_kpt_vis_branch:
-    #             per_kpt_vis = kpt_vis_pred[i]
-    #             # per_kpt_vis = per_kpt_vis[per_box_loc]
-    #         if top_feat is not None:
-    #             per_top_feat = top_feat[i]
-    #             # per_top_feat = per_top_feat[per_box_loc]
+            if self.enable_bbox_branch:
+                per_box_regression = box_regression[i]
+                per_box_regression = per_box_regression[per_box_loc]
+            if self.enable_kpt_vis_branch:
+                per_kpt_vis = kpt_vis_pred[i]
+                per_kpt_vis = per_kpt_vis[per_box_loc]
+            if top_feat is not None:
+                per_top_feat = top_feat[i]
+                per_top_feat = per_top_feat[per_box_loc]
 
-    #         per_pre_nms_top_n = pre_nms_top_n[i]
+            per_pre_nms_top_n = pre_nms_top_n[i]
 
-    #         # It will only happen when there are more than 1000 person candidate in the image
-    #         # if per_candidate_inds.sum().item() > per_pre_nms_top_n.item():
-    #         #     per_box_cls, top_k_indices = per_box_cls.topk(per_pre_nms_top_n, sorted=True)
-    #         #     per_class = per_class[top_k_indices]
+            # It will only happen when there are more than 1000 person candidate in the image
+            if per_candidate_inds.sum().item() > per_pre_nms_top_n.item():
+                per_box_cls, top_k_indices = per_box_cls.topk(per_pre_nms_top_n, sorted=False)
+                per_class = per_class[top_k_indices]
 
-    #         #     per_kpt_regression = per_kpt_regression[top_k_indices]
-    #         #     per_locations = per_locations[top_k_indices]
-    #         #     if self.enable_bbox_branch:
-    #         #         per_box_regression = per_box_regression[top_k_indices]
-    #         #     if self.enable_kpt_vis_branch:
-    #         #         per_kpt_vis = per_kpt_vis[top_k_indices]
-    #         #     if top_feat is not None:
-    #         #         per_top_feat = per_top_feat[top_k_indices]
+                per_kpt_regression = per_kpt_regression[top_k_indices]
+                per_locations = per_locations[top_k_indices]
+                if self.enable_bbox_branch:
+                    per_box_regression = per_box_regression[top_k_indices]
+                if self.enable_kpt_vis_branch:
+                    per_kpt_vis = per_kpt_vis[top_k_indices]
+                if top_feat is not None:
+                    per_top_feat = per_top_feat[top_k_indices]
 
-    #         if self.enable_kpt_vis_branch:
-    #             keypoints = torch.stack([
-    #                 per_locations[:, 0:1] + per_kpt_regression[:, :, 0],
-    #                 per_locations[:, 1:] + per_kpt_regression[:, :, 1],
-    #                 per_kpt_vis], dim=2)
-    #         else:
-    #             keypoints = torch.stack([
-    #                 per_locations[:, 0:1] + per_kpt_regression[:, :, 0],
-    #                 per_locations[:, 1:] + per_kpt_regression[:, :, 1],
-    #                 torch.sqrt(per_box_cls)[:, None].expand(-1, self.num_kpts)], dim=2)
+            if self.enable_kpt_vis_branch:
+                keypoints = torch.stack([
+                    per_locations[:, 0:1] + per_kpt_regression[:, :, 0],
+                    per_locations[:, 1:] + per_kpt_regression[:, :, 1],
+                    per_kpt_vis], dim=2)
+            else:
+                keypoints = torch.stack([
+                    per_locations[:, 0:1] + per_kpt_regression[:, :, 0],
+                    per_locations[:, 1:] + per_kpt_regression[:, :, 1],
+                    torch.sqrt(per_box_cls)[:, None].expand(-1, self.num_kpts)], dim=2)
 
-    #         if self.enable_bbox_branch:
-    #             detections = torch.stack([
-    #                 per_locations[:, 0] - per_box_regression[:, 0],
-    #                 per_locations[:, 1] - per_box_regression[:, 1],
-    #                 per_locations[:, 0] + per_box_regression[:, 2],
-    #                 per_locations[:, 1] + per_box_regression[:, 3],
-    #             ], dim=1)
-    #         else:
-    #             if False and per_pre_nms_top_n == 0:
-    #                 detections = torch.empty(0, 4).to(keypoints.device)
-    #             else:
-    #                 min_xy, _ = keypoints.min(dim=1)
-    #                 max_xy, _ = keypoints.max(dim=1)
-    #                 detections = torch.cat((min_xy[:, 0:2], max_xy[:, 0:2]), dim=1)
-    #                 detections = torch.stack((
-    #                     detections[:, 0].clamp(min=0., max=float(image_sizes[i][1])),
-    #                     detections[:, 1].clamp(min=0., max=float(image_sizes[i][0])),
-    #                     detections[:, 2].clamp(min=0., max=float(image_sizes[i][1])),
-    #                     detections[:, 3].clamp(min=0., max=float(image_sizes[i][0]))
-    #                 ), dim=1)
-    #                 # detections[:, 0] = detections[:, 0].clamp(min=0, max=image_sizes[i][1])
-    #                 # detections[:, 1] = detections[:, 1].clamp(min=0, max=image_sizes[i][0])
-    #                 # detections[:, 2] = detections[:, 2].clamp(min=0, max=image_sizes[i][1])
-    #                 # detections[:, 3] = detections[:, 3].clamp(min=0, max=image_sizes[i][0])
+            if self.enable_bbox_branch:
+                detections = torch.stack([
+                    per_locations[:, 0] - per_box_regression[:, 0],
+                    per_locations[:, 1] - per_box_regression[:, 1],
+                    per_locations[:, 0] + per_box_regression[:, 2],
+                    per_locations[:, 1] + per_box_regression[:, 3],
+                ], dim=1)
+            else:
+                if per_pre_nms_top_n == 0:
+                    detections = torch.empty(0, 4).to(keypoints.device)
+                else:
+                    min_xy, _ = keypoints.min(dim=1)
+                    max_xy, _ = keypoints.max(dim=1)
+                    detections = torch.cat((min_xy[:, 0:2], max_xy[:, 0:2]), dim=1)
+                    detections[:, 0] = detections[:, 0].clamp(min=0, max=image_sizes[i][1])
+                    detections[:, 1] = detections[:, 1].clamp(min=0, max=image_sizes[i][0])
+                    detections[:, 2] = detections[:, 2].clamp(min=0, max=image_sizes[i][1])
+                    detections[:, 3] = detections[:, 3].clamp(min=0, max=image_sizes[i][0])
 
-    #         boxlist = Instances(image_sizes[i])
-    #         boxlist.pred_boxes = Boxes(detections)
-    #         boxlist.pred_keypoints = keypoints
-    #         boxlist.scores = torch.sqrt(per_box_cls)
-    #         boxlist.pred_classes = per_class
-    #         boxlist.locations = per_locations
-    #         if top_feat is not None:
-    #             boxlist.top_feat = per_top_feat
-    #         results.append(boxlist)
+            boxlist = Instances(image_sizes[i])
+            boxlist.pred_boxes = Boxes(detections)
+            boxlist.pred_keypoints = keypoints
+            boxlist.scores = torch.sqrt(per_box_cls)
+            boxlist.pred_classes = per_class
+            boxlist.locations = per_locations
+            if top_feat is not None:
+                boxlist.top_feat = per_top_feat
+            results.append(boxlist)
 
-    #     return results
+        return results
 
     def _refine_kpt(self, pred_boxes, pred_keypoints, heatmaps, hms_offset=None, images=None, stride=8, topk=40, thresh=0.2):
         heatmaps = torch.clamp(heatmaps.sigmoid_(), min=1e-4, max=1-1e-4)
@@ -1021,8 +1010,7 @@ class DirectPoseOutputs(nn.Module):
     
     def select_over_all_level(self, boxlist):
         # multiclass nms
-        result = ml_nms(boxlist, self.nms_thresh, fixed_size=True)
-        return result
+        result = ml_nms(boxlist, self.nms_thresh, fixed_size=False)
         # # Remove skeleton based NMS because seen from the result it is not helping
         # if self.enable_kpt_vis_branch:
         #     result = oks_nms(result, thresh=0.8, in_vis_thre=0.2)

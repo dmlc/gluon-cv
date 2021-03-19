@@ -62,7 +62,7 @@ class Predictor(nn.Module):
                                                          stride * (kpt_bases.size(3) - 1) + 1)
         predictor_offsets = self.kpt_predictor(
             padded_sampler_feature,
-            torch.cat((kpt_bases[:, 0:1], kpt_bases[:, 1:2]), dim=1) * stride + stride // 2,
+            torch.cat((kpt_bases[:, 1:2], kpt_bases[:, 0:1]), dim=1) * stride + stride // 2,
             # kpt_bases[:, [1, 0], :, :].contiguous() * stride + stride // 2,
             stride
         )

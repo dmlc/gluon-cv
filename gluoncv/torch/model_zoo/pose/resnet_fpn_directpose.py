@@ -555,6 +555,8 @@ class FPN(Backbone):
                 ["p2", "p3", ..., "p6"].
         """
         # Reverse feature maps into top-down order (from low to high resolution)
+        # print(x.shape, x[:, :, 100:200, 100:200])
+        # raise
         bottom_up_features = self.bottom_up(x)
         x = [bottom_up_features[f] for f in self.in_features[::-1]]
         results = []
