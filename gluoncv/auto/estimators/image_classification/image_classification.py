@@ -5,7 +5,7 @@ import os
 import math
 import copy
 
-import PIL
+from PIL import Image
 import pandas as pd
 import numpy as np
 import mxnet as mx
@@ -420,7 +420,7 @@ class ImageClassificationEstimator(BaseEstimator):
         resize = int(math.ceil(self.input_size / self._cfg.train.crop_ratio))
         if isinstance(x, str):
             x = transform_eval(mx.image.imread(x), resize_short=resize, crop_size=self.input_size)
-        elif isinstance(x, PIL.Image):
+        elif isinstance(x, Image):
             return self._predict(np.array(x))
         elif isinstance(x, np.ndarray):
             return self._predict(mx.nd.array(x))
@@ -470,6 +470,8 @@ class ImageClassificationEstimator(BaseEstimator):
         resize = int(math.ceil(self.input_size / self._cfg.train.crop_ratio))
         if isinstance(x, str):
             x = transform_eval(mx.image.imread(x), resize_short=resize, crop_size=self.input_size)
+        elif isinstance(x, Image):
+            x = np.array(x)
         elif isinstance(x, mx.nd.NDArray):
             x = transform_eval(x, resize_short=resize, crop_size=self.input_size)
         elif isinstance(x, pd.DataFrame):
