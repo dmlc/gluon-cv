@@ -212,6 +212,7 @@ class BaseEstimator:
     def _reload_best(self, return_value):
         """Applying the best checkpoint before return"""
         cp = return_value.get(_BEST_CHECKPOINT_FILE, '')
+        print(cp)
         if not cp:
             return
         self._logger.info('Applying the state from the best checkpoint...')
