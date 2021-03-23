@@ -46,7 +46,6 @@ Obj Classification,senet_154,"(1, 224, 224, 3)",f8514c02
 Obj Classification,se_resnext101_32x4d,"(1, 224, 224, 3)",fdb491a0
 Obj Classification,se_resnext101_64x4d,"(1, 224, 224, 3)",3b597353
 Obj Classification,se_resnext50_32x4d,"(1, 224, 224, 3)",47f4ea65
-Obj Classification,squeezenet1.0,"(1, 224, 224, 3)",88d2f960
 Obj Classification,squeezenet1.1,"(1, 224, 224, 3)",54b616b2
 Obj Classification,vgg11,"(1, 224, 224, 3)",6f9038da
 Obj Classification,vgg11_bn,"(1, 224, 224, 3)",5cdd2fff
@@ -109,7 +108,6 @@ Pose Estimation,mobile_pose_mobilenet1.0,"(1, 256, 192, 3)",36c28b8f
 Pose Estimation,mobile_pose_mobilenetv2_1.0,"(1, 256, 192, 3)",2d772d7c
 Pose Estimation,mobile_pose_mobilenetv3_large,"(1, 256, 192, 3)",400859ed
 Pose Estimation,mobile_pose_mobilenetv3_small,"(1, 256, 192, 3)",f89956d2
-Pose Estimation,alpha_pose_resnet101_v1b_coco,"(1, 320, 240, 3)",0627bf2e
 Action Recognition,inceptionv1_kinetics400,"(1, 224, 224, 3)",fca83578
 Action Recognition,inceptionv3_kinetics400,"(1, 299, 299, 3)",695477a5
 Action Recognition,resnet18_v1b_kinetics400,"(1, 224, 224, 3)",19f15e8a
