@@ -174,6 +174,7 @@ class BaseEstimator:
 
         ret = self._fit(train_data, val_data, time_limit=time_limit) if not resume else \
             self._resume_fit(train_data, val_data, time_limit=time_limit)
+        print(ret)
         return self._reload_best(ret)
 
     def evaluate(self, val_data):
@@ -214,7 +215,7 @@ class BaseEstimator:
         cp = return_value.get(_BEST_CHECKPOINT_FILE, '')
         print(cp)
         if not cp:
-            return
+            return return_value
         self._logger.info('Applying the state from the best checkpoint...')
         try:
             tmp = self.load(cp)
@@ -222,6 +223,7 @@ class BaseEstimator:
         except:
             self._logger.warning(
                 'Unable to resume the state from the best checkpoint, using the latest state.')
+        return return_value
 
     def _predict(self, x):
         raise NotImplementedError
