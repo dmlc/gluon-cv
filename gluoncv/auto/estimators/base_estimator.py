@@ -218,6 +218,7 @@ class BaseEstimator:
             tmp = self.load(cp)
             self.__dict__.update(tmp.__dict__)
         except:
+            raise
             self._logger.warning(
                 'Unable to resume the state from the best checkpoint, using the latest state.')
         return return_value
@@ -284,6 +285,7 @@ class BaseEstimator:
                     self.net.reset_ctx(ctx_list)
                 else:
                     self.net.collect_params().reset_ctx(ctx_list)
+                done = True
         except ImportError:
             pass
         if not done:
