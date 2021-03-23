@@ -1,0 +1,141 @@
+Type,Model,Input Shape,SHA1
+Obj Classification,alexnet,"(1, 224, 224, 3)",bcad5705
+Obj Classification,darknet53,"(1, 224, 224, 3)",58c7caa4
+Obj Classification,densenet121,"(1, 224, 224, 3)",bd3133d2
+Obj Classification,densenet161,"(1, 224, 224, 3)",b5526d73
+Obj Classification,densenet169,"(1, 224, 224, 3)",24d9f87e
+Obj Classification,densenet201,"(1, 224, 224, 3)",87cace07
+Obj Classification,googlenet,"(1, 224, 224, 3)",fa8779a1
+Obj Classification,mobilenet1.0,"(1, 224, 224, 3)",0620eb3e
+Obj Classification,mobilenet0.75,"(1, 224, 224, 3)",6c175416
+Obj Classification,mobilenet0.5,"(1, 224, 224, 3)",c4d5b2ab
+Obj Classification,mobilenet0.25,"(1, 224, 224, 3)",08630f65
+Obj Classification,mobilenetv2_1.0,"(1, 224, 224, 3)",ea44a2ee
+Obj Classification,mobilenetv2_0.75,"(1, 224, 224, 3)",3dec8caa
+Obj Classification,mobilenetv2_0.5,"(1, 224, 224, 3)",1196de3f
+Obj Classification,mobilenetv2_0.25,"(1, 224, 224, 3)",2e0d3517
+Obj Classification,mobilenetv3_large,"(1, 224, 224, 3)",ad683fdc
+Obj Classification,mobilenetv3_small,"(1, 224, 224, 3)",9312e69f
+Obj Classification,resnest14,"(1, 224, 224, 3)",937b82a3
+Obj Classification,resnest26,"(1, 224, 224, 3)",2b9e94dd
+Obj Classification,resnest50,"(1, 224, 224, 3)",f2f2146c
+Obj Classification,resnest101,"(1, 256, 256, 3)",0ee9cc45
+Obj Classification,resnest200,"(1, 320, 320, 3)",843c49c4
+Obj Classification,resnest269,"(1, 416, 416, 3)",61aa9d17
+Obj Classification,resnet18_v1,"(1, 224, 224, 3)",d1536b5d
+Obj Classification,resnet18_v1b_0.89,"(1, 224, 224, 3)",d90a731c
+Obj Classification,resnet18_v2,"(1, 224, 224, 3)",c50354d5
+Obj Classification,resnet34_v1,"(1, 224, 224, 3)",f88bbdbe
+Obj Classification,resnet34_v2,"(1, 224, 224, 3)",6810f204
+Obj Classification,resnet50_v1,"(1, 224, 224, 3)",96c93a31
+Obj Classification,resnet50_v1d_0.86,"(1, 224, 224, 3)",b17370c2
+Obj Classification,resnet50_v1d_0.48,"(1, 224, 224, 3)",f3bc36fc
+Obj Classification,resnet50_v1d_0.37,"(1, 224, 224, 3)",fc1ce06e
+Obj Classification,resnet50_v1d_0.11,"(1, 224, 224, 3)",ca9100af
+Obj Classification,resnet50_v2,"(1, 224, 224, 3)",3791d635
+Obj Classification,resnet101_v1,"(1, 224, 224, 3)",9292da26
+Obj Classification,resnet101_v1d_0.76,"(1, 224, 224, 3)",b67713f6
+Obj Classification,resnet101_v1d_0.73,"(1, 224, 224, 3)",ade2b349
+Obj Classification,resnet101_v2,"(1, 224, 224, 3)",9485b439
+Obj Classification,resnet152_v1,"(1, 224, 224, 3)",bd91b01b
+Obj Classification,resnet152_v2,"(1, 224, 224, 3)",a0921256
+Obj Classification,resnext50_32x4d,"(1, 224, 224, 3)",f2d754d7
+Obj Classification,resnext101_32x4d,"(1, 224, 224, 3)",4eb7214c
+Obj Classification,resnext101_64x4d,"(1, 224, 224, 3)",cc58a1b3
+Obj Classification,senet_154,"(1, 224, 224, 3)",f8514c02
+Obj Classification,se_resnext101_32x4d,"(1, 224, 224, 3)",fdb491a0
+Obj Classification,se_resnext101_64x4d,"(1, 224, 224, 3)",3b597353
+Obj Classification,se_resnext50_32x4d,"(1, 224, 224, 3)",47f4ea65
+Obj Classification,squeezenet1.1,"(1, 224, 224, 3)",54b616b2
+Obj Classification,vgg11,"(1, 224, 224, 3)",6f9038da
+Obj Classification,vgg11_bn,"(1, 224, 224, 3)",5cdd2fff
+Obj Classification,vgg13,"(1, 224, 224, 3)",c4033b69
+Obj Classification,vgg13_bn,"(1, 224, 224, 3)",b08d2765
+Obj Classification,vgg16,"(1, 224, 224, 3)",295399bd
+Obj Classification,vgg16_bn,"(1, 224, 224, 3)",c3a45b94
+Obj Classification,vgg19,"(1, 224, 224, 3)",22f26895
+Obj Classification,vgg19_bn,"(1, 224, 224, 3)",d2fb213a
+Obj Classification,xception,"(1, 224, 224, 3)",a43aab0b
+Obj Classification,inceptionv3,"(1, 512, 512, 3)",f195ef1e
+Obj Detection,ssd_300_vgg16_atrous_voc,"(1, 300, 300, 3)",63d0cd92
+Obj Detection,ssd_512_vgg16_atrous_voc,"(1, 512, 512, 3)",fdbee07b
+Obj Detection,ssd_512_resnet50_v1_voc,"(1, 512, 512, 3)",e43ff0ea
+Obj Detection,ssd_512_mobilenet1.0_voc,"(1, 512, 512, 3)",308c8ef9
+Obj Detection,faster_rcnn_resnet50_v1b_voc,"(1, 300, 400, 3)",1c5e7498
+Obj Detection,yolo3_darknet53_voc,"(1, 512, 512, 3)",6623c969
+Obj Detection,yolo3_mobilenet1.0_voc,"(1, 512, 512, 3)",49165600
+Obj Detection,center_net_resnet18_v1b_voc,"(1, 512, 512, 3)",cd0f76fb
+Obj Detection,center_net_resnet50_v1b_voc,"(1, 512, 512, 3)",42b8bc7e
+Obj Detection,center_net_resnet101_v1b_voc,"(1, 512, 512, 3)",a0c6a54f
+Obj Detection,ssd_300_vgg16_atrous_coco,"(1, 300, 300, 3)",3b342aa3
+Obj Detection,ssd_512_vgg16_atrous_coco,"(1, 512, 512, 3)",05c7a531
+Obj Detection,ssd_300_resnet34_v1b_coco,"(1, 300, 300, 3)",12243648
+Obj Detection,ssd_512_resnet50_v1_coco,"(1, 512, 512, 3)",3aaa23b1
+Obj Detection,ssd_512_mobilenet1.0_coco,"(1, 512, 512, 3)",ad883918
+Obj Detection,yolo3_darknet53_coco,"(1, 512, 512, 3)",1e6e3a3d
+Obj Detection,yolo3_mobilenet1.0_coco,"(1, 512, 512, 3)",115299e3
+Obj Detection,center_net_resnet18_v1b_coco,"(1, 512, 512, 3)",e9a825ac
+Obj Detection,center_net_resnet50_v1b_coco,"(1, 512, 512, 3)",54b4afc5
+Obj Detection,center_net_resnet101_v1b_coco,"(1, 512, 512, 3)",328f1db0
+Img Segmentation,fcn_resnet50_ade,"(1, 480, 480, 3)",96680672
+Img Segmentation,fcn_resnet101_ade,"(1, 480, 480, 3)",c67439ac
+Img Segmentation,deeplab_resnet50_ade,"(1, 480, 480, 3)",207387cb
+Img Segmentation,deeplab_resnet101_ade,"(1, 480, 480, 3)",dccb0589
+Img Segmentation,deeplab_resnest50_ade,"(1, 480, 480, 3)",3081a6ac
+Img Segmentation,deeplab_resnest101_ade,"(1, 480, 480, 3)",59566dba
+Img Segmentation,deeplab_resnest200_ade,"(1, 480, 480, 3)",7aa063e7
+Img Segmentation,deeplab_resnest269_ade,"(1, 480, 480, 3)",bbb8c8b6
+Img Segmentation,fcn_resnet101_coco,"(1, 480, 480, 3)",755e698f
+Img Segmentation,deeplab_resnet101_coco,"(1, 480, 480, 3)",9328f637
+Img Segmentation,fcn_resnet101_voc,"(1, 480, 480, 3)",9cbb42aa
+Img Segmentation,deeplab_resnet101_voc,"(1, 480, 480, 3)",21bafd97
+Img Segmentation,deeplab_resnet152_voc,"(1, 480, 480, 3)",12f81326
+Img Segmentation,deeplab_resnet50_citys,"(1, 480, 480, 3)",ce4e10aa
+Img Segmentation,deeplab_resnet101_citys,"(1, 480, 480, 3)",e21fa602
+Img Segmentation,danet_resnet50_citys,"(1, 480, 480, 3)",c4465ca0
+Img Segmentation,danet_resnet101_citys,"(1, 480, 480, 3)",8c08c2da
+Img Segmentation,deeplab_v3b_plus_wideresnet_citys,"(1, 480, 480, 3)",f54693e5
+Pose Estimation,simple_pose_resnet18_v1b,"(1, 256, 192, 3)",cbd4ac31
+Pose Estimation,simple_pose_resnet50_v1b,"(1, 256, 192, 3)",68c66555
+Pose Estimation,simple_pose_resnet50_v1d,"(1, 256, 192, 3)",4884421f
+Pose Estimation,simple_pose_resnet101_v1b,"(1, 256, 192, 3)",2cc48737
+Pose Estimation,simple_pose_resnet101_v1d,"(1, 256, 192, 3)",4adec78c
+Pose Estimation,simple_pose_resnet152_v1b,"(1, 256, 192, 3)",9f01bdfa
+Pose Estimation,simple_pose_resnet152_v1d,"(1, 256, 192, 3)",e6e7b30f
+Pose Estimation,mobile_pose_resnet18_v1b,"(1, 256, 192, 3)",328c85fa
+Pose Estimation,mobile_pose_resnet50_v1b,"(1, 256, 192, 3)",c5b7162d
+Pose Estimation,mobile_pose_mobilenet1.0,"(1, 256, 192, 3)",36c28b8f
+Pose Estimation,mobile_pose_mobilenetv2_1.0,"(1, 256, 192, 3)",2d772d7c
+Pose Estimation,mobile_pose_mobilenetv3_large,"(1, 256, 192, 3)",400859ed
+Pose Estimation,mobile_pose_mobilenetv3_small,"(1, 256, 192, 3)",f89956d2
+Action Recognition,inceptionv1_kinetics400,"(1, 224, 224, 3)",fca83578
+Action Recognition,inceptionv3_kinetics400,"(1, 299, 299, 3)",695477a5
+Action Recognition,resnet18_v1b_kinetics400,"(1, 224, 224, 3)",19f15e8a
+Action Recognition,resnet34_v1b_kinetics400,"(1, 224, 224, 3)",7cc163e8
+Action Recognition,resnet50_v1b_kinetics400,"(1, 224, 224, 3)",f6d5c96b
+Action Recognition,resnet101_v1b_kinetics400,"(1, 224, 224, 3)",14be53ac
+Action Recognition,resnet152_v1b_kinetics400,"(1, 224, 224, 3)",0b8e2264
+Action Recognition,inceptionv3_ucf101,"(1, 299, 299, 3)",d9cda2fd
+Action Recognition,resnet50_v1b_hmdb51,"(1, 224, 224, 3)",4d7488d8
+Action Recognition,resnet50_v1b_sthsthv2,"(1, 224, 224, 3)",c110eccc
+Action Recognition,vgg16_ucf101,"(1, 224, 224, 3)",b8e05551
+Action Recognition,c3d_kinetics400,"(1, 3, 16, 112, 112)",aa2b70ec
+Action Recognition,p3d_resnet50_kinetics400,"(1, 3, 16, 224, 224)",dc83236f
+Action Recognition,p3d_resnet101_kinetics400,"(1, 3, 16, 224, 224)",344f9182
+Action Recognition,r2plus1d_resnet18_kinetics400,"(1, 3, 32, 224, 224)",32209a4d
+Action Recognition,r2plus1d_resnet34_kinetics400,"(1, 3, 32, 224, 224)",a449d988
+Action Recognition,r2plus1d_resnet50_kinetics400,"(1, 3, 32, 224, 224)",652e9534
+Action Recognition,i3d_inceptionv1_kinetics400,"(1, 3, 32, 224, 224)",098c004a
+Action Recognition,i3d_inceptionv3_kinetics400,"(1, 3, 32, 224, 224)",899ed669
+Action Recognition,i3d_resnet50_v1_kinetics400,"(1, 3, 32, 224, 224)",ca6bf055
+Action Recognition,i3d_resnet101_v1_kinetics400,"(1, 3, 32, 224, 224)",3eb3d11a
+Action Recognition,i3d_nl5_resnet50_v1_kinetics400,"(1, 3, 32, 224, 224)",b89aff3d
+Action Recognition,i3d_nl10_resnet50_v1_kinetics400,"(1, 3, 32, 224, 224)",fce76386
+Action Recognition,i3d_nl5_resnet101_v1_kinetics400,"(1, 3, 32, 224, 224)",728c9a8b
+Action Recognition,i3d_nl10_resnet101_v1_kinetics400,"(1, 3, 32, 224, 224)",f38f5e3e
+Action Recognition,slowfast_4x16_resnet50_kinetics400,"(1, 3, 36, 224, 224)",ca4819cb
+Action Recognition,slowfast_8x8_resnet50_kinetics400,"(1, 3, 40, 224, 224)",7b04b4ea
+Action Recognition,slowfast_8x8_resnet101_kinetics400,"(1, 3, 40, 224, 224)",17ca6b8f
+Action Recognition,i3d_resnet50_v1_ucf101,"(1, 3, 32, 224, 224)",60cd50c9
+Action Recognition,i3d_resnet50_v1_hmdb51,"(1, 3, 32, 224, 224)",b5f7cc76
+Action Recognition,i3d_resnet50_v1_sthsthv2,"(1, 3, 32, 224, 224)",438c7960
