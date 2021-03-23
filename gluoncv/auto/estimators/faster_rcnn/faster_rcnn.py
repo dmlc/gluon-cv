@@ -5,6 +5,7 @@ import math
 import time
 import warnings
 
+import PIL
 import pandas as pd
 import numpy as np
 import mxnet as mx
@@ -301,6 +302,8 @@ class FasterRCNNEstimator(BaseEstimator):
         short_size = self.net.short[-1] if isinstance(self.net.short, (tuple, list)) else self.net.short
         if isinstance(x, str):
             x = load_test(x, short=short_size, max_size=1024)[0]
+        elif isinstance(x, PIL.Image):
+            return self._predict(np.array(x))
         elif isinstance(x, np.ndarray):
             if len(x.shape) != 3 or x.shape[-1] != 3:
                 raise ValueError('array input with shape (h, w, 3) is required for predict')

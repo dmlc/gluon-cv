@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 from ...utils import random as _random
 from ...utils.filesystem import temporary_filename
+from .conf import _BEST_CHECKPOINT_FILE
 
 logging.basicConfig(level=logging.INFO)
 
@@ -153,8 +154,9 @@ class BaseEstimator:
             assert val_data is not None, \
                 "Please provide `val_data` as we do not know how to split `train_data` of type: \
                 {}".format(type(train_data))
-            return self._fit(train_data, val_data, time_limit=time_limit) if not resume \
+            ret = self._fit(train_data, val_data, time_limit=time_limit) if not resume \
                 else self._resume_fit(train_data, val_data, time_limit=time_limit)
+            return self._reload_best(ret)
 
         os.makedirs(self._logdir, exist_ok=True)
         if val_data is None:
@@ -166,11 +168,13 @@ class BaseEstimator:
             val = train_data[~split_mask]
             self._logger.info('Randomly split train_data into train[%d]/validation[%d] splits.',
                               len(train), len(val))
-            return self._fit(train, val, time_limit=time_limit) if not resume else \
+            ret = self._fit(train, val, time_limit=time_limit) if not resume else \
                 self._resume_fit(train, val, time_limit=time_limit)
+            return self._reload_best(ret)
 
-        return self._fit(train_data, val_data, time_limit=time_limit) if not resume else \
+        ret = self._fit(train_data, val_data, time_limit=time_limit) if not resume else \
             self._resume_fit(train_data, val_data, time_limit=time_limit)
+        return self._reload_best(ret)
 
     def evaluate(self, val_data):
         """Evaluate estimator on validation data.
@@ -204,6 +208,19 @@ class BaseEstimator:
 
         """
         return self._predict_feature(x)
+
+    def _reload_best(self, return_value):
+        """Applying the best checkpoint before return"""
+        cp = return_value.get(_BEST_CHECKPOINT_FILE, '')
+        if not cp:
+            return
+        self._logger.info('Applying the state from the best checkpoint...')
+        try:
+            tmp = self.load(cp)
+            self.__dict__.update(tmp.__dict__)
+        except:
+            self._logger.warning(
+                'Unable to resume the state from the best checkpoint, using the latest state.')
 
     def _predict(self, x):
         raise NotImplementedError
@@ -282,17 +299,28 @@ class BaseEstimator:
         self._logger.info('Pickled to %s', filename)
 
     @classmethod
-    def load(cls, filename):
+    def load(cls, filename, ctx='auto'):
         """Load the state from disk copy.
 
         Parameters
         ----------
         filename : str
             The file name to load from.
+        ctx: str, default is 'auto'
+            The context for reloaded model.
+            'auto': use previously saved context type if still available, fallback
+            to cpu if no gpu detected.
+            Use `cpu` if no GPU available.
+            'cpu': use cpu for inference regardless.
+            'gpu': use as many gpus available as possible.
+            [0, 2, 4, ...]: if a list or tuple of integers are provided, the context
+            will be [gpu(0), gpu(2), gpu(4)...]
         """
         with open(filename, 'rb') as fid:
             obj = pickle.load(fid)
             obj._logger.info('Unpickled from %s', filename)
+            new_ctx = _suggest_load_context(obj.net, ctx, obj.ctx)
+            obj.reset_ctx(new_ctx)
             return obj
 
     def __getstate__(self):
@@ -347,3 +375,33 @@ class BaseEstimator:
         except ImportError:
             pass
         self._logger.setLevel(logging.INFO)
+
+def _suggest_load_context(model, mode, orig_ctx):
+    """Get the correct context given the mode"""
+    if not isinstance(orig_ctx, (list, tuple)):
+        orig_ctx = [orig_ctx]
+    try:
+        import mxnet as mx
+    except ImportError:
+        mx = None
+    try:
+        import torch
+    except ImportError:
+        torch = None
+    if mx is not None and isinstance(model, mx.gluon.Block):
+        if mode == 'auto':
+            if orig_ctx[0].device_type == 'gpu':
+                mode = 'gpu'
+            else:
+                mode = 'cpu'
+        if mode == 'cpu':
+            return [mx.cpu()]
+        if mode == 'gpu':
+            return [mx.gpu(i) for i in range(mx.context.num_gpus())]
+        if instance(mode, (list, tuple)):
+            if not all([isintance(i, int) for i in mode]):
+                raise ValueError('Requires integer gpu id, given {mode}'.format(mode))
+            return [mx.gpu(i) for i in mode if i in range(mx.context.num_gpus())]
+    if torch is not None and isinstance(model, torch.Module):
+        pass
+    return None

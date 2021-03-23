@@ -5,6 +5,7 @@ import math
 import time
 import warnings
 
+import PIL
 import pandas as pd
 import numpy as np
 import mxnet as mx
@@ -278,6 +279,8 @@ class SSDEstimator(BaseEstimator):
         short_size = int(self._cfg.ssd.data_shape)
         if isinstance(x, str):
             x = load_test(x, short=short_size, max_size=1024)[0]
+        elif isinstance(x, PIL.Image):
+            return self._predict(np.array(x))
         elif isinstance(x, np.ndarray):
             return self._predict(mx.nd.array(x))
         elif isinstance(x, mx.nd.NDArray):
