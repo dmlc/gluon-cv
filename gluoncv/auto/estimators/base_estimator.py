@@ -10,7 +10,6 @@ import numpy as np
 import pandas as pd
 from ...utils import random as _random
 from ...utils.filesystem import temporary_filename
-from .conf import _BEST_CHECKPOINT_FILE
 
 logging.basicConfig(level=logging.INFO)
 
@@ -174,7 +173,6 @@ class BaseEstimator:
 
         ret = self._fit(train_data, val_data, time_limit=time_limit) if not resume else \
             self._resume_fit(train_data, val_data, time_limit=time_limit)
-        print(ret)
         return self._reload_best(ret)
 
     def evaluate(self, val_data):
@@ -212,8 +210,7 @@ class BaseEstimator:
 
     def _reload_best(self, return_value):
         """Applying the best checkpoint before return"""
-        cp = return_value.get(_BEST_CHECKPOINT_FILE, '')
-        print(cp)
+        cp = return_value.get('checkpoint', '')
         if not cp:
             return return_value
         self._logger.info('Applying the state from the best checkpoint...')
@@ -283,7 +280,10 @@ class BaseEstimator:
             if isinstance(self.net, mx.gluon.Block):
                 for c in ctx_list:
                     assert isinstance(c, mx.Context)
-                self.net.reset_ctx(ctx_list)
+                if hasattr(self.net, 'reset_ctx'):
+                    self.net.reset_ctx(ctx_list)
+                else:
+                    self.net.collect_params().reset_ctx(ctx_list)
         except ImportError:
             pass
         if not done:
