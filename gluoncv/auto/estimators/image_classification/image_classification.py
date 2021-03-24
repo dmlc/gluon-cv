@@ -416,7 +416,7 @@ class ImageClassificationEstimator(BaseEstimator):
         _, top5 = acc_top5.get()
         return top1, top5
 
-    def _predict(self, x):
+    def _predict(self, x, ctx_id=0):
         resize = int(math.ceil(self.input_size / self._cfg.train.crop_ratio))
         if isinstance(x, str):
             x = transform_eval(mx.image.imread(x), resize_short=resize, crop_size=self.input_size)
@@ -425,21 +425,40 @@ class ImageClassificationEstimator(BaseEstimator):
         elif isinstance(x, np.ndarray):
             return self._predict(mx.nd.array(x))
         elif isinstance(x, mx.nd.NDArray):
-            if len(x.shape) != 3 or x.shape[-1] != 3:
-                raise ValueError('array input with shape (h, w, 3) is required for predict')
-            x = transform_eval(x, resize_short=resize, crop_size=self.input_size)
+            if len(x.shape) == 3 and x.shape[-1] == 3:
+                x = transform_eval(x, resize_short=resize, crop_size=self.input_size)
+            elif len(x.shape) == 4 and x.shape[1] == 3:
+                assert x.shape[2:] == self.input_size
+            else:
+                raise ValueError('array input with shape (h, w, 3) or (n, 3, h, w) is required for predict')
         elif isinstance(x, pd.DataFrame):
             assert 'image' in x.columns, "Expect column `image` for input images"
-            def _predict_merge(x):
-                y = self._predict(x)
-                y['image'] = x
-                return y
-            return pd.concat([_predict_merge(xx) for xx in x['image']]).reset_index(drop=True)
+            df = self._predict([xx for xx in x['image']])
+            return df.reset_index(drop=True)
         elif isinstance(x, (list, tuple)):
-            return pd.concat([self._predict(xx) for xx in x]).reset_index(drop=True)
+            assert isinstance(x[0], str), 'list/tuple of image paths required'
+            bs = self._cfg.valid.batch_size
+            self.net.hybridize()
+            results = []
+            topK = min(5, self.num_class)
+            def batches(samples, n):
+                for i in range(0, len(samples), n):
+                    yield samples[i:i+n]
+            for ib, batch in enumerate(batches(x)):
+                input = mx.nd.stack(*[
+                    transform_eval(xx, resize_short=resize, crop_size=self.input_size) for xx in batch])
+                input = input.as_in_context(self.ctx[ib%len(self.ctx)])
+                pred = self.net(input).asnumpy()
+                ind = nd.topk(pred, k=topK).astype('int').asnumpy()
+                probs = mx.nd.softmax(pred).asnumpy()
+                for ii in range(input.shape[0]):
+                    for k in range(topK):
+                        results.append({'class': self.classes[ind[ii, k]],
+                                        'score': probs[ind[ii, k]], 'id': ind[ii, k], 'image': batch[ii]})
+            return pd.DataFrame(results)
         else:
             raise ValueError('Input is not supported: {}'.format(type(x)))
-        x = x.as_in_context(self.ctx[0])
+        x = x.as_in_context(self.ctx[ctx_id])
         pred = self.net(x)
         topK = min(5, self.num_class)
         ind = nd.topk(pred, k=topK)[0].astype('int').asnumpy().flatten()
@@ -477,20 +496,31 @@ class ImageClassificationEstimator(BaseEstimator):
         elif isinstance(x, mx.nd.NDArray) and len(x.shape) == 4 and x.shape[1] == 3:
             x = x.as_in_context(self.ctx[ctx_id])
             feat_net = self._get_feature_net()
-            feat = feat_net(x)[0].asnumpy().flatten()
-            df = pd.DataFrame({'image_feature': [feat]})
+            feats = feat_net(x)
+            df = pd.DataFrame([{'image_feature': [feat.asnumpy().flatten()]} for feat in feats])
         elif isinstance(x, pd.DataFrame):
             assert 'image' in x.columns, "Expect column `image` for input images"
-            def _predict_merge(x):
-                y = self._predict_feature(x)
-                y['image'] = x
-                return y
-            return pd.concat([_predict_merge(xx) for xx in x['image']]).reset_index(drop=True)
+            df = self._predict_feature([xx for xx in x['image']])
+            df['image'] = x['image']
+            return df.reset_index(drop=True)
         elif isinstance(x, (list, tuple)):
-            return pd.concat([self._predict_feature(xx) for xx in x]).reset_index(drop=True)
+            bs = self._cfg.valid.batch_size
+            feat_net = self._get_feature_net()
+            feat_net.hybridize()
+            results = []
+            def batches(samples, n):
+                for i in range(0, len(samples), n):
+                    yield samples[i:i+n]
+            for ib, batch in enumerate(batches(x)):
+                input = mx.nd.stack(*[
+                    transform_eval(xx, resize_short=resize, crop_size=self.input_size) for xx in batch])
+                input = input.as_in_context(self.ctx[ib%len(self.ctx)])
+                feats = feat_net(input).asnumpy().split(input.shape[0])
+                results += [feat.flatten() for feat in feats]
+            return pd.DataFrame([{'image_feature': [res]} for res in results])
         else:
             raise ValueError('Input is not supported: {}'.format(type(x)))
-        x = x.as_in_context(self.ctx[0])
+        x = x.as_in_context(self.ctx[ctx_id])
         feat_net = self._get_feature_net()
         feat = feat_net(x)[0].asnumpy().flatten()
         df = pd.DataFrame({'image_feature': [feat]})

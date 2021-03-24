@@ -286,6 +286,7 @@ class BaseEstimator:
                     self.net.reset_ctx(ctx_list)
                 else:
                     self.net.collect_params().reset_ctx(ctx_list)
+                self.ctx = ctx_list
                 done = True
         except ImportError:
             pass
