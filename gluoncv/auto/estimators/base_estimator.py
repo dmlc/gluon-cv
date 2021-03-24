@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 from ...utils import random as _random
 from ...utils.filesystem import temporary_filename
+from .utils import _suggest_load_context
 
 logging.basicConfig(level=logging.INFO)
 
@@ -223,10 +224,10 @@ class BaseEstimator:
                 'Unable to resume the state from the best checkpoint, using the latest state.')
         return return_value
 
-    def _predict(self, x):
+    def _predict(self, x, **kwargs):
         raise NotImplementedError
 
-    def _predict_feature(self, x):
+    def _predict_feature(self, x, **kwargs):
         raise NotImplementedError
 
     def _fit(self, train_data, val_data, time_limit=math.inf):
@@ -380,33 +381,3 @@ class BaseEstimator:
         except ImportError:
             pass
         self._logger.setLevel(logging.INFO)
-
-def _suggest_load_context(model, mode, orig_ctx):
-    """Get the correct context given the mode"""
-    if not isinstance(orig_ctx, (list, tuple)):
-        orig_ctx = [orig_ctx]
-    try:
-        import mxnet as mx
-    except ImportError:
-        mx = None
-    try:
-        import torch
-    except ImportError:
-        torch = None
-    if mx is not None and isinstance(model, mx.gluon.Block):
-        if mode == 'auto':
-            if orig_ctx[0].device_type == 'gpu':
-                mode = 'gpu'
-            else:
-                mode = 'cpu'
-        if mode == 'cpu':
-            return [mx.cpu()]
-        if mode == 'gpu':
-            return [mx.gpu(i) for i in range(mx.context.num_gpus())]
-        if instance(mode, (list, tuple)):
-            if not all([isintance(i, int) for i in mode]):
-                raise ValueError('Requires integer gpu id, given {mode}'.format(mode))
-            return [mx.gpu(i) for i in mode if i in range(mx.context.num_gpus())]
-    if torch is not None and isinstance(model, torch.Module):
-        pass
-    return None

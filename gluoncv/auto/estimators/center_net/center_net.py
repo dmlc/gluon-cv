@@ -48,7 +48,7 @@ class CenterNetEstimator(BaseEstimator):
         super(CenterNetEstimator, self).__init__(config, logger, reporter=reporter, name=None)
         self.last_train = None
 
-    def _predict(self, x):
+    def _predict(self, x, ctx_id=0):
         short_size = min(self._cfg.center_net.data_shape)
         if isinstance(x, str):
             x = load_test(x, short=short_size, max_size=1024)[0]
@@ -62,17 +62,19 @@ class CenterNetEstimator(BaseEstimator):
             x = transform_test(x, short=short_size, max_size=1024)[0]
         elif isinstance(x, pd.DataFrame):
             assert 'image' in x.columns, "Expect column `image` for input images"
-            def _predict_merge(x):
-                y = self._predict(x)
+            def _predict_merge(x, ctx_id=0):
+                y = self._predict(x, ctx_id=ctx_id)
                 y['image'] = x
                 return y
-            return pd.concat([_predict_merge(xx) for xx in x['image']]).reset_index(drop=True)
+            return pd.concat([_predict_merge(xx, ctx_id=ii % len(self.ctx)) \
+                for ii, xx in enumerate(x['image'])]).reset_index(drop=True)
         elif isinstance(x, (list, tuple)):
-            return pd.concat([self._predict(xx) for xx in x]).reset_index(drop=True)
+            return pd.concat([self._predict(xx, ctx_id=ii % len(self.ctx)) \
+                for ii, xx in enumerate(x)]).reset_index(drop=True)
         else:
             raise ValueError('Input is not supported: {}'.format(type(x)))
         height, width = x.shape[2:4]
-        x = x.as_in_context(self.ctx[0])
+        x = x.as_in_context(self.ctx[ctx_id])
         ids, scores, bboxes = [xx[0].asnumpy() for xx in self.net(x)]
         bboxes[:, (0, 2)] /= width
         bboxes[:, (1, 3)] /= height

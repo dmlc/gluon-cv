@@ -466,14 +466,19 @@ class ImageClassificationEstimator(BaseEstimator):
             raise RuntimeError('Unable to modify the last fc layer in network, (output, fc) expected...')
         return self._feature_net
 
-    def _predict_feature(self, x):
+    def _predict_feature(self, x, ctx_id=0):
         resize = int(math.ceil(self.input_size / self._cfg.train.crop_ratio))
         if isinstance(x, str):
             x = transform_eval(mx.image.imread(x), resize_short=resize, crop_size=self.input_size)
         elif isinstance(x, Image.Image):
             x = np.array(x)
-        elif isinstance(x, mx.nd.NDArray):
+        elif isinstance(x, mx.nd.NDArray) and len(x.shape) == 3 and x.shape[-1] == 3:
             x = transform_eval(x, resize_short=resize, crop_size=self.input_size)
+        elif isinstance(x, mx.nd.NDArray) and len(x.shape) == 4 and x.shape[1] == 3:
+            x = x.as_in_context(self.ctx[ctx_id])
+            feat_net = self._get_feature_net()
+            feat = feat_net(x)[0].asnumpy().flatten()
+            df = pd.DataFrame({'image_feature': [feat]})
         elif isinstance(x, pd.DataFrame):
             assert 'image' in x.columns, "Expect column `image` for input images"
             def _predict_merge(x):
