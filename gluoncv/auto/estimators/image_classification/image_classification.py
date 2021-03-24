@@ -417,6 +417,7 @@ class ImageClassificationEstimator(BaseEstimator):
         return top1, top5
 
     def _predict_preprocess(self, x):
+        resize = int(math.ceil(self.input_size / self._cfg.train.crop_ratio))
         if isinstance(x, str):
             x = transform_eval(mx.image.imread(x), resize_short=resize, crop_size=self.input_size)
         elif isinstance(x, Image.Image):
@@ -436,7 +437,6 @@ class ImageClassificationEstimator(BaseEstimator):
         return x
 
     def _predict(self, x, ctx_id=0):
-        resize = int(math.ceil(self.input_size / self._cfg.train.crop_ratio))
         x = self._predict_preprocess(x)
         if isinstance(x, pd.DataFrame):
             assert 'image' in x.columns, "Expect column `image` for input images"
@@ -451,9 +451,7 @@ class ImageClassificationEstimator(BaseEstimator):
                 for i in range(0, len(samples), n):
                     yield samples[i:i+n]
             for ib, batch in enumerate(batches(x, bs)):
-                input = mx.nd.stack(*[
-                    transform_eval(self._predict_preprocess(xx), resize_short=resize,
-                                   crop_size=self.input_size) for xx in batch])
+                input = mx.nd.stack(*[self._predict_preprocess(xx) for xx in batch])
                 input = input.as_in_context(self.ctx[ib%len(self.ctx)])
                 pred = self.net(input).asnumpy()
                 ind = nd.topk(pred, k=topK).astype('int').asnumpy()
@@ -494,7 +492,6 @@ class ImageClassificationEstimator(BaseEstimator):
         return self._feature_net
 
     def _predict_feature(self, x, ctx_id=0):
-        resize = int(math.ceil(self.input_size / self._cfg.train.crop_ratio))
         x = self._predict_preprocess(x)
         if isinstance(x, pd.DataFrame):
             assert 'image' in x.columns, "Expect column `image` for input images"
@@ -511,8 +508,7 @@ class ImageClassificationEstimator(BaseEstimator):
                     yield samples[i:i+n]
             for ib, batch in enumerate(batches(x, bs)):
                 input = mx.nd.stack(*[
-                    transform_eval(self._predict_preprocess(xx), resize_short=resize,
-                                   crop_size=self.input_size) for xx in batch])
+                    input = mx.nd.stack(*[self._predict_preprocess(xx) for xx in batch])
                 input = input.as_in_context(self.ctx[ib%len(self.ctx)])
                 feats = feat_net(input).asnumpy().split(input.shape[0])
                 results += [feat.flatten() for feat in feats]
