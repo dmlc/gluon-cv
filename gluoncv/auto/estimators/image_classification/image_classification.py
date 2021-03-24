@@ -4,6 +4,7 @@ import time
 import os
 import math
 import copy
+import multiprocessing
 
 from PIL import Image
 import pandas as pd
@@ -508,11 +509,15 @@ class ImageClassificationEstimator(BaseEstimator):
             def batches(samples, n):
                 for i in range(0, len(samples), n):
                     yield samples[i:i+n]
-            for ib, batch in enumerate(batches(x, bs)):
+            def func(ib, batch):
                 input = mx.nd.concat(*[self._predict_preprocess(xx) for xx in batch], dim=0)
                 input = input.as_in_context(self.ctx[ib%len(self.ctx)])
                 feats = np.split(feat_net(input).asnumpy(), input.shape[0])
-                results += [feat.flatten() for feat in feats]
+                return [feat.flatten() for feat in feats]
+            pool = multiprocessing.ThreadPool(processes=len(self.ctx))
+            pool_res = pool.map(func, enumerate(batches(x, bs)))
+            for res in pool_res:
+                results += [feat.flatten() for feat in res]
             return pd.DataFrame([{'image_feature': res} for res in results])
         elif not isinstance(x, mx.nd.NDArray):
             raise ValueError('Input is not supported: {}'.format(type(x)))
