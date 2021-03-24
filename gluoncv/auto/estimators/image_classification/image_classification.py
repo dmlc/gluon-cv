@@ -451,7 +451,7 @@ class ImageClassificationEstimator(BaseEstimator):
                 for i in range(0, len(samples), n):
                     yield samples[i:i+n]
             for ib, batch in enumerate(batches(x, bs)):
-                input = mx.nd.stack(*[self._predict_preprocess(xx) for xx in batch])
+                input = mx.nd.concat(*[self._predict_preprocess(xx) for xx in batch])
                 input = input.as_in_context(self.ctx[ib%len(self.ctx)])
                 pred = self.net(input).asnumpy()
                 ind = nd.topk(pred, k=topK).astype('int').asnumpy()
@@ -507,7 +507,7 @@ class ImageClassificationEstimator(BaseEstimator):
                 for i in range(0, len(samples), n):
                     yield samples[i:i+n]
             for ib, batch in enumerate(batches(x, bs)):
-                input = mx.nd.stack(*[self._predict_preprocess(xx) for xx in batch])
+                input = mx.nd.concat(*[self._predict_preprocess(xx) for xx in batch])
                 input = input.as_in_context(self.ctx[ib%len(self.ctx)])
                 feats = feat_net(input).asnumpy().split(input.shape[0])
                 results += [feat.flatten() for feat in feats]
