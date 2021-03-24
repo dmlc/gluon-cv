@@ -429,7 +429,8 @@ class ImageClassificationEstimator(BaseEstimator):
             if len(x.shape) == 3 and x.shape[-1] == 3:
                 x = transform_eval(x, resize_short=resize, crop_size=self.input_size)
             elif len(x.shape) == 4 and x.shape[1] == 3:
-                assert x.shape[2:] == self.input_size, "Expected: {}, given {}".format(self.input_size, x.shape[2:])
+                expected = (self.input_size, self.input_size)
+                assert x.shape[2:] == expected, "Expected: {}, given {}".format(expected, x.shape[2:])
             elif x.shape[1] == 1:
                 # gray image to rgb
                 x = mx.nd.concat([x] * 3, dim=1)
