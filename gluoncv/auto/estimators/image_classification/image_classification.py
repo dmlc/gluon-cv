@@ -511,7 +511,7 @@ class ImageClassificationEstimator(BaseEstimator):
             for ib, batch in enumerate(batches(x, bs)):
                 input = mx.nd.concat(*[self._predict_preprocess(xx) for xx in batch], dim=0)
                 input = input.as_in_context(self.ctx[ib%len(self.ctx)])
-                feats = feat_net(input).asnumpy().split(input.shape[0])
+                feats = np.split(feat_net(input).asnumpy(), input.shape[0])
                 results += [feat.flatten() for feat in feats]
             return pd.DataFrame([{'image_feature': res} for res in results])
         elif not isinstance(x, mx.nd.NDArray):
