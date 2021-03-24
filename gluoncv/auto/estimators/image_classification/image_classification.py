@@ -437,7 +437,7 @@ class ImageClassificationEstimator(BaseEstimator):
 
     def _predict(self, x, ctx_id=0):
         resize = int(math.ceil(self.input_size / self._cfg.train.crop_ratio))
-        x = _predict_preprocess(x)
+        x = self._predict_preprocess(x)
         if isinstance(x, pd.DataFrame):
             assert 'image' in x.columns, "Expect column `image` for input images"
             df = self._predict([xx for xx in x['image']])
@@ -452,7 +452,7 @@ class ImageClassificationEstimator(BaseEstimator):
                     yield samples[i:i+n]
             for ib, batch in enumerate(batches(x, bs)):
                 input = mx.nd.stack(*[
-                    transform_eval(_predict_preprocess(xx), resize_short=resize,
+                    transform_eval(self._predict_preprocess(xx), resize_short=resize,
                                    crop_size=self.input_size) for xx in batch])
                 input = input.as_in_context(self.ctx[ib%len(self.ctx)])
                 pred = self.net(input).asnumpy()
@@ -495,7 +495,7 @@ class ImageClassificationEstimator(BaseEstimator):
 
     def _predict_feature(self, x, ctx_id=0):
         resize = int(math.ceil(self.input_size / self._cfg.train.crop_ratio))
-        x = _predict_preprocess(x)
+        x = self._predict_preprocess(x)
         if isinstance(x, pd.DataFrame):
             assert 'image' in x.columns, "Expect column `image` for input images"
             df = self._predict_feature([xx for xx in x['image']])
@@ -511,7 +511,8 @@ class ImageClassificationEstimator(BaseEstimator):
                     yield samples[i:i+n]
             for ib, batch in enumerate(batches(x, bs)):
                 input = mx.nd.stack(*[
-                    transform_eval(xx, resize_short=resize, crop_size=self.input_size) for xx in batch])
+                    transform_eval(self._predict_preprocess(xx), resize_short=resize,
+                                   crop_size=self.input_size) for xx in batch])
                 input = input.as_in_context(self.ctx[ib%len(self.ctx)])
                 feats = feat_net(input).asnumpy().split(input.shape[0])
                 results += [feat.flatten() for feat in feats]
