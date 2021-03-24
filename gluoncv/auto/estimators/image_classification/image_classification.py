@@ -416,27 +416,33 @@ class ImageClassificationEstimator(BaseEstimator):
         _, top5 = acc_top5.get()
         return top1, top5
 
-    def _predict(self, x, ctx_id=0):
-        resize = int(math.ceil(self.input_size / self._cfg.train.crop_ratio))
+    def _predict_preprocess(self, x):
         if isinstance(x, str):
             x = transform_eval(mx.image.imread(x), resize_short=resize, crop_size=self.input_size)
         elif isinstance(x, Image.Image):
-            return self._predict(np.array(x))
+            x = self._predict_preprocess(np.array(x))
         elif isinstance(x, np.ndarray):
-            return self._predict(mx.nd.array(x))
+            x = self._predict_preprocess(mx.nd.array(x))
         elif isinstance(x, mx.nd.NDArray):
             if len(x.shape) == 3 and x.shape[-1] == 3:
                 x = transform_eval(x, resize_short=resize, crop_size=self.input_size)
             elif len(x.shape) == 4 and x.shape[1] == 3:
                 assert x.shape[2:] == self.input_size
+            elif x.shape[1] == 1:
+                # gray image to rgb
+                x = mx.nd.concat([x] * 3, dim=1)
             else:
                 raise ValueError('array input with shape (h, w, 3) or (n, 3, h, w) is required for predict')
-        elif isinstance(x, pd.DataFrame):
+        return x
+
+    def _predict(self, x, ctx_id=0):
+        resize = int(math.ceil(self.input_size / self._cfg.train.crop_ratio))
+        x = _predict_preprocess(x)
+        if isinstance(x, pd.DataFrame):
             assert 'image' in x.columns, "Expect column `image` for input images"
             df = self._predict([xx for xx in x['image']])
             return df.reset_index(drop=True)
         elif isinstance(x, (list, tuple)):
-            assert isinstance(x[0], str), 'list/tuple of image paths required'
             bs = self._cfg.valid.batch_size
             self.net.hybridize()
             results = []
@@ -446,7 +452,8 @@ class ImageClassificationEstimator(BaseEstimator):
                     yield samples[i:i+n]
             for ib, batch in enumerate(batches(x, bs)):
                 input = mx.nd.stack(*[
-                    transform_eval(xx, resize_short=resize, crop_size=self.input_size) for xx in batch])
+                    transform_eval(_predict_preprocess(xx), resize_short=resize,
+                                   crop_size=self.input_size) for xx in batch])
                 input = input.as_in_context(self.ctx[ib%len(self.ctx)])
                 pred = self.net(input).asnumpy()
                 ind = nd.topk(pred, k=topK).astype('int').asnumpy()
@@ -458,6 +465,7 @@ class ImageClassificationEstimator(BaseEstimator):
             return pd.DataFrame(results)
         else:
             raise ValueError('Input is not supported: {}'.format(type(x)))
+        assert len(x.shape) == 4 and x.shape[1] == 3, "Expect input to be (n, 3, h, w), given {}".format(x.shape)
         x = x.as_in_context(self.ctx[ctx_id])
         pred = self.net(x)
         topK = min(5, self.num_class)
@@ -487,18 +495,8 @@ class ImageClassificationEstimator(BaseEstimator):
 
     def _predict_feature(self, x, ctx_id=0):
         resize = int(math.ceil(self.input_size / self._cfg.train.crop_ratio))
-        if isinstance(x, str):
-            x = transform_eval(mx.image.imread(x), resize_short=resize, crop_size=self.input_size)
-        elif isinstance(x, Image.Image):
-            x = np.array(x)
-        elif isinstance(x, mx.nd.NDArray) and len(x.shape) == 3 and x.shape[-1] == 3:
-            x = transform_eval(x, resize_short=resize, crop_size=self.input_size)
-        elif isinstance(x, mx.nd.NDArray) and len(x.shape) == 4 and x.shape[1] == 3:
-            x = x.as_in_context(self.ctx[ctx_id])
-            feat_net = self._get_feature_net()
-            feats = feat_net(x)
-            df = pd.DataFrame([{'image_feature': [feat.asnumpy().flatten()]} for feat in feats])
-        elif isinstance(x, pd.DataFrame):
+        x = _predict_preprocess(x)
+        if isinstance(x, pd.DataFrame):
             assert 'image' in x.columns, "Expect column `image` for input images"
             df = self._predict_feature([xx for xx in x['image']])
             df['image'] = x['image']
@@ -520,8 +518,12 @@ class ImageClassificationEstimator(BaseEstimator):
             return pd.DataFrame([{'image_feature': [res]} for res in results])
         else:
             raise ValueError('Input is not supported: {}'.format(type(x)))
+        assert len(x.shape) == 4 and x.shape[1] == 3, "Expect input to be (n, 3, h, w), given {}".format(x.shape)
         x = x.as_in_context(self.ctx[ctx_id])
         feat_net = self._get_feature_net()
-        feat = feat_net(x)[0].asnumpy().flatten()
-        df = pd.DataFrame({'image_feature': [feat]})
+        results = []
+        for ii in range(x.shape[0]):
+            feat = feat_net(x)[ii].asnumpy().flatten()
+            results.append({'image_feature': [feat]})
+        df = pd.DataFrame(results)
         return df
