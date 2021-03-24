@@ -444,7 +444,7 @@ class ImageClassificationEstimator(BaseEstimator):
             def batches(samples, n):
                 for i in range(0, len(samples), n):
                     yield samples[i:i+n]
-            for ib, batch in enumerate(batches(x)):
+            for ib, batch in enumerate(batches(x, bs)):
                 input = mx.nd.stack(*[
                     transform_eval(xx, resize_short=resize, crop_size=self.input_size) for xx in batch])
                 input = input.as_in_context(self.ctx[ib%len(self.ctx)])
@@ -511,7 +511,7 @@ class ImageClassificationEstimator(BaseEstimator):
             def batches(samples, n):
                 for i in range(0, len(samples), n):
                     yield samples[i:i+n]
-            for ib, batch in enumerate(batches(x)):
+            for ib, batch in enumerate(batches(x, bs)):
                 input = mx.nd.stack(*[
                     transform_eval(xx, resize_short=resize, crop_size=self.input_size) for xx in batch])
                 input = input.as_in_context(self.ctx[ib%len(self.ctx)])
