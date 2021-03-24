@@ -419,7 +419,8 @@ class ImageClassificationEstimator(BaseEstimator):
     def _predict_preprocess(self, x):
         resize = int(math.ceil(self.input_size / self._cfg.train.crop_ratio))
         if isinstance(x, str):
-            x = transform_eval(mx.image.imread(x), resize_short=resize, crop_size=self.input_size)
+            x = self._predict_preprocess(transform_eval(
+                mx.image.imread(x), resize_short=resize, crop_size=self.input_size))
         elif isinstance(x, Image.Image):
             x = self._predict_preprocess(np.array(x))
         elif isinstance(x, np.ndarray):
@@ -461,7 +462,7 @@ class ImageClassificationEstimator(BaseEstimator):
                         results.append({'class': self.classes[ind[ii, k]],
                                         'score': probs[ind[ii, k]], 'id': ind[ii, k], 'image': batch[ii]})
             return pd.DataFrame(results)
-        else:
+        elif not isinstance(x, mx.nd.NDArray):
             raise ValueError('Input is not supported: {}'.format(type(x)))
         assert len(x.shape) == 4 and x.shape[1] == 3, "Expect input to be (n, 3, h, w), given {}".format(x.shape)
         x = x.as_in_context(self.ctx[ctx_id])
@@ -512,7 +513,7 @@ class ImageClassificationEstimator(BaseEstimator):
                 feats = feat_net(input).asnumpy().split(input.shape[0])
                 results += [feat.flatten() for feat in feats]
             return pd.DataFrame([{'image_feature': [res]} for res in results])
-        else:
+        elif not isinstance(x, mx.nd.NDArray):
             raise ValueError('Input is not supported: {}'.format(type(x)))
         assert len(x.shape) == 4 and x.shape[1] == 3, "Expect input to be (n, 3, h, w), given {}".format(x.shape)
         x = x.as_in_context(self.ctx[ctx_id])
