@@ -453,15 +453,15 @@ class ImageClassificationEstimator(BaseEstimator):
                 for i in range(0, len(samples), n):
                     yield samples[i:i+n]
             for ib, batch in enumerate(batches(x, bs)):
-                input = mx.nd.concat(*[self._predict_preprocess(xx) for xx in batch])
+                input = mx.nd.concat(*[self._predict_preprocess(xx) for xx in batch], dim=0)
                 input = input.as_in_context(self.ctx[ib%len(self.ctx)])
-                pred = self.net(input).asnumpy()
-                ind = nd.topk(pred, k=topK).astype('int').asnumpy()
-                probs = mx.nd.softmax(pred).asnumpy()
+                pred = self.net(input)
                 for ii in range(input.shape[0]):
+                    ind = nd.topk(pred[ii], k=topK).astype('int').asnumpy().flatten()
+                    probs = mx.nd.softmax(pred[ii]).asnumpy().flatten()
                     for k in range(topK):
-                        results.append({'class': self.classes[ind[ii, k]],
-                                        'score': probs[ind[ii, k]], 'id': ind[ii, k], 'image': batch[ii]})
+                        results.append({'class': self.classes[ind[k]],
+                                        'score': probs[ind[k]], 'id': ind[k], 'image': batch[ii]})
             return pd.DataFrame(results)
         elif not isinstance(x, mx.nd.NDArray):
             raise ValueError('Input is not supported: {}'.format(type(x)))
@@ -509,11 +509,11 @@ class ImageClassificationEstimator(BaseEstimator):
                 for i in range(0, len(samples), n):
                     yield samples[i:i+n]
             for ib, batch in enumerate(batches(x, bs)):
-                input = mx.nd.concat(*[self._predict_preprocess(xx) for xx in batch])
+                input = mx.nd.concat(*[self._predict_preprocess(xx) for xx in batch], dim=0)
                 input = input.as_in_context(self.ctx[ib%len(self.ctx)])
                 feats = feat_net(input).asnumpy().split(input.shape[0])
                 results += [feat.flatten() for feat in feats]
-            return pd.DataFrame([{'image_feature': [res]} for res in results])
+            return pd.DataFrame([{'image_feature': res} for res in results])
         elif not isinstance(x, mx.nd.NDArray):
             raise ValueError('Input is not supported: {}'.format(type(x)))
         assert len(x.shape) == 4 and x.shape[1] == 3, "Expect input to be (n, 3, h, w), given {}".format(x.shape)
@@ -522,6 +522,6 @@ class ImageClassificationEstimator(BaseEstimator):
         results = []
         for ii in range(x.shape[0]):
             feat = feat_net(x)[ii].asnumpy().flatten()
-            results.append({'image_feature': [feat]})
+            results.append({'image_feature': feat})
         df = pd.DataFrame(results)
         return df

@@ -25,7 +25,7 @@ def _suggest_load_context(model, mode, orig_ctx):
         if mode == 'gpu':
             return [mx.gpu(i) for i in range(mx.context.num_gpus())]
         if isinstance(mode, (list, tuple)):
-            if not all([isintance(i, int) for i in mode]):
+            if not all([isinstance(i, int) for i in mode]):
                 raise ValueError('Requires integer gpu id, given {mode}'.format(mode))
             return [mx.gpu(i) for i in mode if i in range(mx.context.num_gpus())]
     if torch is not None and isinstance(model, torch.Module):
@@ -34,4 +34,3 @@ def _suggest_load_context(model, mode, orig_ctx):
 
 def _mx_parallel_batch_predict(predict_fn, data, ctx_list):
     """apply data parallel and batch inference optimization for predict"""
-    
