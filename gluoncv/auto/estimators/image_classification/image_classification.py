@@ -516,7 +516,7 @@ class ImageClassificationEstimator(BaseEstimator):
                 for p in feats:
                     for ii in range(p.shape[0]):
                         feat = p[ii].asnumpy()
-                        results.append({'image_feature': feat, 'image': x[idx])
+                        results.append({'image_feature': feat, 'image': x[idx]})
                         idx += 1
             return pd.DataFrame([{'image_feature': res} for res in results])
         elif not isinstance(x, mx.nd.NDArray):
