@@ -22,7 +22,6 @@ fi
 
 if [ -z "$TRAIN_DATA_DIR" ]; then
   export TRAIN_DATA_DIR=~/.mxnet/datasets/imagenet
-  export TRAIN_DATA_DIR=/data/imagenet/train-480-val-256-recordio
 fi
 
 pip install --extra-index-url https://developer.download.nvidia.com/compute/redist nvidia-dali-cuda100
