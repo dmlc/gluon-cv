@@ -509,16 +509,16 @@ class ImageClassificationEstimator(BaseEstimator):
             results = []
             loader = mx.gluon.data.DataLoader(
                 ImageListDataset(x, self._predict_preprocess), batch_size=bs, last_batch='keep')
-            idx = 0
             for batch in loader:
                 batch = mx.gluon.utils.split_and_load(batch, ctx_list=self.ctx, even_split=False)
                 feats = [feat_net(input) for input in batch]
                 for p in feats:
                     for ii in range(p.shape[0]):
                         feat = p[ii].asnumpy().flatten()
-                        results.append({'image_feature': feat, 'image': x[idx]})
-                        idx += 1
-            return pd.DataFrame([{'image_feature': res} for res in results])
+                        results.append({'image_feature': feat})
+            df = pd.DataFrame(results)
+            df['image'] = x
+            return df
         elif not isinstance(x, mx.nd.NDArray):
             raise ValueError('Input is not supported: {}'.format(type(x)))
         assert len(x.shape) == 4 and x.shape[1] == 3, "Expect input to be (n, 3, h, w), given {}".format(x.shape)
