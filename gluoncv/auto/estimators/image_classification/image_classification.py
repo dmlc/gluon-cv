@@ -499,8 +499,9 @@ class ImageClassificationEstimator(BaseEstimator):
         if isinstance(x, pd.DataFrame):
             assert 'image' in x.columns, "Expect column `image` for input images"
             df = self._predict_feature(tuple(x['image']))
+            df = df.set_index(x.index)
             df['image'] = x['image']
-            return df.reset_index(drop=True)
+            return df
         elif isinstance(x, (list, tuple)):
             assert isinstance(x[0], str), "expect image paths in list/tuple input"
             bs = self._cfg.valid.batch_size
