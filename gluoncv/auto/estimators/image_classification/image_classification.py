@@ -1,5 +1,5 @@
 """Classification Estimator"""
-# pylint: disable=unused-variable,bad-whitespace, missing-function-docstring,logging-format-interpolation
+# pylint: disable=unused-variable,bad-whitespace,missing-function-docstring,logging-format-interpolation,arguments-differ
 import time
 import os
 import math
@@ -442,7 +442,7 @@ class ImageClassificationEstimator(BaseEstimator):
         x = self._predict_preprocess(x)
         if isinstance(x, pd.DataFrame):
             assert 'image' in x.columns, "Expect column `image` for input images"
-            df = self._predict([xx for xx in x['image']])
+            df = self._predict(tuple(x['image']))
             return df.reset_index(drop=True)
         elif isinstance(x, (list, tuple)):
             bs = self._cfg.valid.batch_size
@@ -498,7 +498,7 @@ class ImageClassificationEstimator(BaseEstimator):
         x = self._predict_preprocess(x)
         if isinstance(x, pd.DataFrame):
             assert 'image' in x.columns, "Expect column `image` for input images"
-            df = self._predict_feature([xx for xx in x['image']])
+            df = self._predict_feature(tuple(x['image']))
             df['image'] = x['image']
             return df.reset_index(drop=True)
         elif isinstance(x, (list, tuple)):
@@ -532,6 +532,7 @@ class ImageClassificationEstimator(BaseEstimator):
         return df
 
 class ImageListDataset(mx.gluon.data.Dataset):
+    """An internal image list dataset for batch predict"""
     def __init__(self, imlist, fn):
         self._imlist = imlist
         self._fn = fn

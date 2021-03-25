@@ -1,5 +1,5 @@
 """SSD Estimator."""
-# pylint: disable=logging-format-interpolation,abstract-method
+# pylint: disable=logging-format-interpolation,abstract-method,arguments-differ
 import os
 import math
 import time
