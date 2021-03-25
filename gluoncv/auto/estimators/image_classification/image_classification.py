@@ -4,7 +4,6 @@ import time
 import os
 import math
 import copy
-import multiprocessing
 
 from PIL import Image
 import pandas as pd
@@ -450,19 +449,20 @@ class ImageClassificationEstimator(BaseEstimator):
             self.net.hybridize()
             results = []
             topK = min(5, self.num_class)
-            def batches(samples, n):
-                for i in range(0, len(samples), n):
-                    yield samples[i:i+n]
-            for ib, batch in enumerate(batches(x, bs)):
-                input = mx.nd.concat(*[self._predict_preprocess(xx) for xx in batch], dim=0)
-                input = input.as_in_context(self.ctx[ib%len(self.ctx)])
-                pred = self.net(input)
-                for ii in range(input.shape[0]):
-                    ind = nd.topk(pred[ii], k=topK).astype('int').asnumpy().flatten()
-                    probs = mx.nd.softmax(pred[ii]).asnumpy().flatten()
-                    for k in range(topK):
-                        results.append({'class': self.classes[ind[k]],
-                                        'score': probs[ind[k]], 'id': ind[k], 'image': batch[ii]})
+            loader = mx.gluon.data.DataLoader(
+                ImageListDataset(x, self._predict_preprocess), batch_size=bs, last_batch='keep')
+            idx = 0
+            for batch in loader:
+                batch = mx.gluon.utils.split_and_load(batch, ctx_list=self.ctx, even_split=False)
+                pred = [self.net(input) for input in batch]
+                for p in pred:
+                    for ii in range(p.shape[0]):
+                        ind = nd.topk(p[ii], k=topK).astype('int').asnumpy().flatten()
+                        probs = mx.nd.softmax(p[ii]).asnumpy().flatten()
+                        for k in range(topK):
+                            results.append({'class': self.classes[ind[k]],
+                                            'score': probs[ind[k]], 'id': ind[k], 'image': x[idx]})
+                        idx += 1
             return pd.DataFrame(results)
         elif not isinstance(x, mx.nd.NDArray):
             raise ValueError('Input is not supported: {}'.format(type(x)))
@@ -502,23 +502,22 @@ class ImageClassificationEstimator(BaseEstimator):
             df['image'] = x['image']
             return df.reset_index(drop=True)
         elif isinstance(x, (list, tuple)):
+            assert isinstance(x[0], str), "expect image paths in list/tuple input"
             bs = self._cfg.valid.batch_size
             feat_net = self._get_feature_net()
             feat_net.hybridize()
             results = []
-            def batches(samples, n):
-                for i in range(0, len(samples), n):
-                    yield samples[i:i+n]
-            def func(x):
-                ib, batch = x
-                input = mx.nd.concat(*[self._predict_preprocess(xx) for xx in batch], dim=0)
-                input = input.as_in_context(self.ctx[ib%len(self.ctx)])
-                feats = np.split(feat_net(input).asnumpy(), input.shape[0])
-                return [feat.flatten() for feat in feats]
-            pool = multiprocessing.pool.ThreadPool(processes=len(self.ctx))
-            pool_res = pool.map(func, enumerate(batches(x, bs)))
-            for res in pool_res:
-                results += [feat.flatten() for feat in res]
+            loader = mx.gluon.data.DataLoader(
+                ImageListDataset(x, self._predict_preprocess), batch_size=bs, last_batch='keep')
+            idx = 0
+            for batch in loader:
+                batch = mx.gluon.utils.split_and_load(batch, ctx_list=self.ctx, even_split=False)
+                feats = [feat_net(input) for input in batch]
+                for p in feats:
+                    for ii in range(p.shape[0]):
+                        feat = p[ii].asnumpy()
+                        results.append({'image_feature': feat, 'image': x[idx])
+                        idx += 1
             return pd.DataFrame([{'image_feature': res} for res in results])
         elif not isinstance(x, mx.nd.NDArray):
             raise ValueError('Input is not supported: {}'.format(type(x)))
@@ -531,3 +530,15 @@ class ImageClassificationEstimator(BaseEstimator):
             results.append({'image_feature': feat})
         df = pd.DataFrame(results)
         return df
+
+class ImageListDataset(mx.gluon.data.Dataset):
+    def __init__(self, imlist, fn):
+        self._imlist = imlist
+        self._fn = fn
+
+    def __getitem__(self, idx):
+        img = self._fn(self._imlist[idx])[0]
+        return img
+
+    def __len__(self):
+        return len(self._imlist)
