@@ -514,7 +514,7 @@ class ImageClassificationEstimator(BaseEstimator):
                 input = input.as_in_context(self.ctx[ib%len(self.ctx)])
                 feats = np.split(feat_net(input).asnumpy(), input.shape[0])
                 return [feat.flatten() for feat in feats]
-            pool = multiprocessing.ThreadPool(processes=len(self.ctx))
+            pool = multiprocessing.pool.ThreadPool(processes=len(self.ctx))
             pool_res = pool.map(func, enumerate(batches(x, bs)))
             for res in pool_res:
                 results += [feat.flatten() for feat in res]
