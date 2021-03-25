@@ -509,7 +509,8 @@ class ImageClassificationEstimator(BaseEstimator):
             def batches(samples, n):
                 for i in range(0, len(samples), n):
                     yield samples[i:i+n]
-            def func(ib, batch):
+            def func(x):
+                ib, batch = x
                 input = mx.nd.concat(*[self._predict_preprocess(xx) for xx in batch], dim=0)
                 input = input.as_in_context(self.ctx[ib%len(self.ctx)])
                 feats = np.split(feat_net(input).asnumpy(), input.shape[0])
