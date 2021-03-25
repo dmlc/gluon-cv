@@ -515,7 +515,7 @@ class ImageClassificationEstimator(BaseEstimator):
                 feats = [feat_net(input) for input in batch]
                 for p in feats:
                     for ii in range(p.shape[0]):
-                        feat = p[ii].asnumpy()
+                        feat = p[ii].asnumpy().flatten()
                         results.append({'image_feature': feat, 'image': x[idx]})
                         idx += 1
             return pd.DataFrame([{'image_feature': res} for res in results])
