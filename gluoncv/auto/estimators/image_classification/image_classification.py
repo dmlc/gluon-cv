@@ -1,10 +1,11 @@
 """Classification Estimator"""
-# pylint: disable=unused-variable,bad-whitespace, missing-function-docstring,logging-format-interpolation
+# pylint: disable=unused-variable,bad-whitespace,missing-function-docstring,logging-format-interpolation,arguments-differ
 import time
 import os
 import math
 import copy
 
+from PIL import Image
 import pandas as pd
 import numpy as np
 import mxnet as mx
@@ -415,28 +416,58 @@ class ImageClassificationEstimator(BaseEstimator):
         _, top5 = acc_top5.get()
         return top1, top5
 
-    def _predict(self, x):
+    def _predict_preprocess(self, x):
         resize = int(math.ceil(self.input_size / self._cfg.train.crop_ratio))
         if isinstance(x, str):
-            x = transform_eval(mx.image.imread(x), resize_short=resize, crop_size=self.input_size)
+            x = self._predict_preprocess(transform_eval(
+                mx.image.imread(x), resize_short=resize, crop_size=self.input_size))
+        elif isinstance(x, Image.Image):
+            x = self._predict_preprocess(np.array(x))
         elif isinstance(x, np.ndarray):
-            return self._predict(mx.nd.array(x))
+            x = self._predict_preprocess(mx.nd.array(x))
         elif isinstance(x, mx.nd.NDArray):
-            if len(x.shape) != 3 or x.shape[-1] != 3:
-                raise ValueError('array input with shape (h, w, 3) is required for predict')
-            x = transform_eval(x, resize_short=resize, crop_size=self.input_size)
-        elif isinstance(x, pd.DataFrame):
+            if len(x.shape) == 3 and x.shape[-1] == 3:
+                x = transform_eval(x, resize_short=resize, crop_size=self.input_size)
+            elif len(x.shape) == 4 and x.shape[1] == 3:
+                expected = (self.input_size, self.input_size)
+                assert x.shape[2:] == expected, "Expected: {}, given {}".format(expected, x.shape[2:])
+            elif x.shape[1] == 1:
+                # gray image to rgb
+                x = mx.nd.concat([x] * 3, dim=1)
+            else:
+                raise ValueError('array input with shape (h, w, 3) or (n, 3, h, w) is required for predict')
+        return x
+
+    def _predict(self, x, ctx_id=0):
+        x = self._predict_preprocess(x)
+        if isinstance(x, pd.DataFrame):
             assert 'image' in x.columns, "Expect column `image` for input images"
-            def _predict_merge(x):
-                y = self._predict(x)
-                y['image'] = x
-                return y
-            return pd.concat([_predict_merge(xx) for xx in x['image']]).reset_index(drop=True)
+            df = self._predict(tuple(x['image']))
+            return df.reset_index(drop=True)
         elif isinstance(x, (list, tuple)):
-            return pd.concat([self._predict(xx) for xx in x]).reset_index(drop=True)
-        else:
+            bs = self._cfg.valid.batch_size
+            self.net.hybridize()
+            results = []
+            topK = min(5, self.num_class)
+            loader = mx.gluon.data.DataLoader(
+                ImageListDataset(x, self._predict_preprocess), batch_size=bs, last_batch='keep')
+            idx = 0
+            for batch in loader:
+                batch = mx.gluon.utils.split_and_load(batch, ctx_list=self.ctx, even_split=False)
+                pred = [self.net(input) for input in batch]
+                for p in pred:
+                    for ii in range(p.shape[0]):
+                        ind = nd.topk(p[ii], k=topK).astype('int').asnumpy().flatten()
+                        probs = mx.nd.softmax(p[ii]).asnumpy().flatten()
+                        for k in range(topK):
+                            results.append({'class': self.classes[ind[k]],
+                                            'score': probs[ind[k]], 'id': ind[k], 'image': x[idx]})
+                        idx += 1
+            return pd.DataFrame(results)
+        elif not isinstance(x, mx.nd.NDArray):
             raise ValueError('Input is not supported: {}'.format(type(x)))
-        x = x.as_in_context(self.ctx[0])
+        assert len(x.shape) == 4 and x.shape[1] == 3, "Expect input to be (n, 3, h, w), given {}".format(x.shape)
+        x = x.as_in_context(self.ctx[ctx_id])
         pred = self.net(x)
         topK = min(5, self.num_class)
         ind = nd.topk(pred, k=topK)[0].astype('int').asnumpy().flatten()
@@ -463,25 +494,52 @@ class ImageClassificationEstimator(BaseEstimator):
             raise RuntimeError('Unable to modify the last fc layer in network, (output, fc) expected...')
         return self._feature_net
 
-    def _predict_feature(self, x):
-        resize = int(math.ceil(self.input_size / self._cfg.train.crop_ratio))
-        if isinstance(x, str):
-            x = transform_eval(mx.image.imread(x), resize_short=resize, crop_size=self.input_size)
-        elif isinstance(x, mx.nd.NDArray):
-            x = transform_eval(x, resize_short=resize, crop_size=self.input_size)
-        elif isinstance(x, pd.DataFrame):
+    def _predict_feature(self, x, ctx_id=0):
+        x = self._predict_preprocess(x)
+        if isinstance(x, pd.DataFrame):
             assert 'image' in x.columns, "Expect column `image` for input images"
-            def _predict_merge(x):
-                y = self._predict_feature(x)
-                y['image'] = x
-                return y
-            return pd.concat([_predict_merge(xx) for xx in x['image']]).reset_index(drop=True)
+            df = self._predict_feature(tuple(x['image']))
+            df['image'] = x['image']
+            return df.reset_index(drop=True)
         elif isinstance(x, (list, tuple)):
-            return pd.concat([self._predict_feature(xx) for xx in x]).reset_index(drop=True)
-        else:
+            assert isinstance(x[0], str), "expect image paths in list/tuple input"
+            bs = self._cfg.valid.batch_size
+            feat_net = self._get_feature_net()
+            feat_net.hybridize()
+            results = []
+            loader = mx.gluon.data.DataLoader(
+                ImageListDataset(x, self._predict_preprocess), batch_size=bs, last_batch='keep')
+            for batch in loader:
+                batch = mx.gluon.utils.split_and_load(batch, ctx_list=self.ctx, even_split=False)
+                feats = [feat_net(input) for input in batch]
+                for p in feats:
+                    for ii in range(p.shape[0]):
+                        feat = p[ii].asnumpy().flatten()
+                        results.append({'image_feature': feat})
+            df = pd.DataFrame(results)
+            df['image'] = x
+            return df
+        elif not isinstance(x, mx.nd.NDArray):
             raise ValueError('Input is not supported: {}'.format(type(x)))
-        x = x.as_in_context(self.ctx[0])
+        assert len(x.shape) == 4 and x.shape[1] == 3, "Expect input to be (n, 3, h, w), given {}".format(x.shape)
+        x = x.as_in_context(self.ctx[ctx_id])
         feat_net = self._get_feature_net()
-        feat = feat_net(x)[0].asnumpy().flatten()
-        df = pd.DataFrame({'image_feature': [feat]})
+        results = []
+        for ii in range(x.shape[0]):
+            feat = feat_net(x)[ii].asnumpy().flatten()
+            results.append({'image_feature': feat})
+        df = pd.DataFrame(results)
         return df
+
+class ImageListDataset(mx.gluon.data.Dataset):
+    """An internal image list dataset for batch predict"""
+    def __init__(self, imlist, fn):
+        self._imlist = imlist
+        self._fn = fn
+
+    def __getitem__(self, idx):
+        img = self._fn(self._imlist[idx])[0]
+        return img
+
+    def __len__(self):
+        return len(self._imlist)
