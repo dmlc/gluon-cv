@@ -23,6 +23,7 @@ from .utils import get_data_loader, get_data_rec, smooth
 from .default import ImageClassificationCfg
 from ...data.dataset import ImageClassificationDataset
 from ..conf import _BEST_CHECKPOINT_FILE
+from ..utils import EarlyStopperOnPlateau
 
 __all__ = ['ImageClassificationEstimator']
 
@@ -134,6 +135,11 @@ class ImageClassificationEstimator(BaseEstimator):
                 self.teacher.hybridize(static_alloc=True, static_shape=True)
 
         self._logger.info('Start training from [Epoch %d]', max(self._cfg.train.start_epoch, self.epoch))
+        early_stopper = EarlyStopperOnPlateau(
+            patience=self._cfg.train.early_stop_patience,
+            min_delta=self._cfg.train.early_stop_min_delta,
+            baseline_value=self._cfg.train.early_stop_baseline,
+            max_value=self._cfg.train.early_stop_max_value)
         train_metric_score = -1
         cp_name = ''
         self._time_elapsed += time.time() - start_tic
@@ -141,6 +147,10 @@ class ImageClassificationEstimator(BaseEstimator):
             epoch = self.epoch
             if self._best_acc >= 1.0:
                 self._logger.info('[Epoch {}] Early stopping as acc is reaching 1.0'.format(epoch))
+                break
+            should_stop, stop_message = early_stopper.get_early_stop_advice()
+            if should_stop:
+                self._logger.info('[Epoch {}] '.format(epoch) + stop_message)
                 break
             tic = time.time()
             last_tic = time.time()
@@ -217,6 +227,7 @@ class ImageClassificationEstimator(BaseEstimator):
             throughput = int(self.batch_size * i /(time.time() - tic))
 
             top1_val, top5_val = self._evaluate(val_data)
+            early_stopper.update(top1_val)
 
             self._logger.info('[Epoch %d] training: %s=%f', epoch, train_metric_name, train_metric_score)
             self._logger.info('[Epoch %d] speed: %d samples/sec\ttime cost: %f', epoch, throughput, time.time()-tic)

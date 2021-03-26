@@ -1,6 +1,53 @@
 """Utils for deep learning framework related functions"""
+import numpy as np
 
-__all__ = ['_suggest_load_context']
+__all__ = ['EarlyStopperOnPlateau', '_suggest_load_context']
+
+
+class EarlyStopperOnPlateau:
+    def __init__(self, patience=10, metric_fn=None,
+                 min_delta=1e-4, baseline_value=None, max_value=np.Inf):
+        self.patience = patience if patience > 0 else np.Inf
+        self.metric_fn = metric_fn
+        self.min_delta = np.abs(min_delta)
+        self.baseline_value = baseline_value
+        self.max_value = max_value
+        self.reset()
+
+    def reset(self):
+        self.last_epoch = 0
+        self.wait = 0
+        self._should_stop = False
+        self._message = ''
+        if self.baseline_value is not None:
+            self.best = self.baseline_value
+        else:
+            self.best = -np.Inf
+
+    def update(self, metric_value, epoch=None):
+        if np.isreal(epoch):
+            self.last_epoch = epoch
+        if not np.isreal(metric_value):
+            return
+        if self.metric_fn is not None:
+            metric_value = self.metric_fn(metric_value)
+
+        if metric_value > self.max_value:
+            self._should_stop = True
+            self._message = 'EarlyStop given {} vs. max {}'.format(metric_value, self.max_value)
+        else:
+            if metric_value - self.min_delta > self.best:
+                self.best = metric_value
+                self.wait = 0
+            else:
+                self.wait += 1
+                if self.wait >= self.patience:
+                    self._should_stop = True
+                    self._message = 'EarlyStop after {} epochs no better than {}'.format(self.patience, self.best)
+
+    def get_early_stop_advice(self):
+        return self._should_stop, self._message
+
 
 def _suggest_load_context(model, mode, orig_ctx):
     """Get the correct context given the mode"""

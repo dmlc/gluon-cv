@@ -53,6 +53,10 @@ class TrainCfg:
     start_epoch : int = 0
     transfer_lr_mult : float = 0.01  # reduce the backbone lr_mult to avoid quickly destroying the features
     output_lr_mult : float = 0.1  # the learning rate multiplier for last fc layer if trained with transfer learning
+    early_stop_patience : int = -1  # epochs with no improvement after which train is early stopped, negative: disabled
+    early_stop_min_delta : float = 0.001  # ignore changes less than min_delta for metrics
+    early_stop_baseline : float = 0  # the baseline value for metric, training won't stop if not reaching baseline
+    early_stop_max_value : float = 1  # early stop if reaching max value instantly
 
 @dataclass
 class ValidCfg:
