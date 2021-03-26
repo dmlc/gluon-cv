@@ -55,8 +55,8 @@ class TrainCfg:
     output_lr_mult : float = 0.1  # the learning rate multiplier for last fc layer if trained with transfer learning
     early_stop_patience : int = -1  # epochs with no improvement after which train is early stopped, negative: disabled
     early_stop_min_delta : float = 0.001  # ignore changes less than min_delta for metrics
-    early_stop_baseline : float = 0  # the baseline value for metric, training won't stop if not reaching baseline
-    early_stop_max_value : float = 1  # early stop if reaching max value instantly
+    early_stop_baseline : Union[float, int] = 0.0  # the baseline value for metric, training won't stop if not reaching baseline
+    early_stop_max_value : Union[float, int] = 1.0  # early stop if reaching max value instantly
 
 @dataclass
 class ValidCfg:
