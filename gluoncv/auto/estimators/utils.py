@@ -5,6 +5,25 @@ __all__ = ['EarlyStopperOnPlateau', '_suggest_load_context']
 
 
 class EarlyStopperOnPlateau:
+    """Early stopping on plateau helper.
+
+    Parameters
+    ----------
+    patience : int, default is -1
+        How many epochs with no improvement after which train will be early stopped.
+        Negative patience means infinite petience.
+    metric_fn : function, default is None
+        The function to apply to metric value if any. For example, you can use
+        the `metric_fn` to cast loss to negative values where lower loss is better.
+        `min_delta`, `baseline_value` and `max_value` are all based on output of `metric_fn`.
+    min_delta : float, default is 1e-4
+        Early stopper ignores changes less than `min_delta` for metrics to ignore tiny fluctuates.
+    baseline_value : float, default is 0.0
+        The baseline metric value to be considered.
+    max_value : float, default is 1.0
+        Instantly early stop if reaching max value.
+
+    """
     def __init__(self, patience=10, metric_fn=None,
                  min_delta=1e-4, baseline_value=None, max_value=np.Inf):
         self.patience = patience if patience > 0 else np.Inf
@@ -15,6 +34,7 @@ class EarlyStopperOnPlateau:
         self.reset()
 
     def reset(self):
+        """reset the early stopper"""
         self.last_epoch = 0
         self.wait = 0
         self._should_stop = False
@@ -25,6 +45,16 @@ class EarlyStopperOnPlateau:
             self.best = -np.Inf
 
     def update(self, metric_value, epoch=None):
+        """Update with end of epoch metric.
+
+        Parameters
+        ----------
+        metric_value : float
+            The end of epoch metric.
+        epoch : int, optional
+            The real epoch in case the update function is not called in every epoch.
+
+        """
         if _is_real_number(epoch):
             if _is_real_number(self.last_epoch):
                 diff_epoch = epoch - self.last_epoch
@@ -52,9 +82,20 @@ class EarlyStopperOnPlateau:
                     self._message = 'EarlyStop after {} epochs: no better than {}'.format(self.patience, self.best)
 
     def get_early_stop_advice(self):
+        """Get the early stop advice.
+
+        Returns
+        -------
+        (bool, str)
+            should_stop : bool
+                Whether the stopper suggest OnPlateau pattern is active.
+            message : str
+                The detailed message why early stop is suggested, if `should_stop` is True.
+        """
         return self._should_stop, self._message
 
 def _is_real_number(x):
+    """Check if x is a real number"""
     return isinstance(x, (int, float, complex)) and not isinstance(x, bool)
 
 def _suggest_load_context(model, mode, orig_ctx):

@@ -1,5 +1,5 @@
 """YOLO Estimator."""
-# pylint: disable=logging-format-interpolation,abstract-method,arguments-differ
+# pylint: disable=logging-format-interpolation,abstract-method,arguments-differ,logging-not-lazy
 import os
 import math
 import time
