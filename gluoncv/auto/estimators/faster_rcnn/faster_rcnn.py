@@ -24,6 +24,7 @@ from ..base_estimator import BaseEstimator, set_default
 from .utils import _get_lr_at_iter, _get_dataloader, _split_and_load
 from ...data.dataset import ObjectDetectionDataset
 from ..conf import _BEST_CHECKPOINT_FILE
+from ..utils import EarlyStopperOnPlateau
 
 try:
     import horovod.mxnet as hvd
@@ -127,6 +128,11 @@ class FasterRCNNEstimator(BaseEstimator):
         self.net.collect_params().reset_ctx(self.ctx)
         self.net.target_generator.collect_params().reset_ctx(self.ctx)
 
+        early_stopper = EarlyStopperOnPlateau(
+            patience=self._cfg.train.early_stop_patience,
+            min_delta=self._cfg.train.early_stop_min_delta,
+            baseline_value=self._cfg.train.early_stop_baseline,
+            max_value=self._cfg.train.early_stop_max_value)
         mean_ap = [-1]
         cp_name = ''
         self._time_elapsed += time.time() - start_tic
@@ -136,6 +142,10 @@ class FasterRCNNEstimator(BaseEstimator):
             last_tic = time.time()
             if self._best_map >= 1.0:
                 self._logger.info('[Epoch %d] Early stopping as mAP is reaching 1.0', epoch)
+                break
+            should_stop, stop_message = early_stopper.get_early_stop_advice()
+            if should_stop:
+                self._logger.info('[Epoch {}] '.format(epoch) + stop_message)
                 break
             rcnn_task = ForwardBackwardTask(self.net, self.trainer, rpn_cls_loss, rpn_box_loss,
                                             rcnn_cls_loss, rcnn_box_loss, mix_ratio=1.0,
@@ -231,8 +241,9 @@ class FasterRCNNEstimator(BaseEstimator):
                                           self.epoch, current_map, self._best_map, cp_name)
                         self.save(cp_name)
                         self._best_map = current_map
-                if self._reporter:
-                    self._reporter(epoch=epoch, map_reward=current_map)
+                    if self._reporter:
+                        self._reporter(epoch=epoch, map_reward=current_map)
+                    early_stopper.update(current_map, epoch=epoch)
             self._time_elapsed += time.time() - post_tic
         # map on train data
         tic = time.time()
