@@ -25,15 +25,15 @@ class EarlyStopperOnPlateau:
             self.best = -np.Inf
 
     def update(self, metric_value, epoch=None):
-        if np.isreal(epoch):
-            if np.isreal(self.last_epoch):
+        if _is_real_number(epoch):
+            if _is_real_number(self.last_epoch):
                 diff_epoch = epoch - self.last_epoch
             else:
                 diff_epoch = 1
             self.last_epoch = epoch
         else:
             diff_epoch = 1
-        if not np.isreal(metric_value):
+        if not _is_real_number(metric_value):
             return
         if self.metric_fn is not None:
             metric_value = self.metric_fn(metric_value)
@@ -54,6 +54,8 @@ class EarlyStopperOnPlateau:
     def get_early_stop_advice(self):
         return self._should_stop, self._message
 
+def _is_real_number(x):
+    return isinstance(x, (int, float, complex)) and not isinstance(x, bool)
 
 def _suggest_load_context(model, mode, orig_ctx):
     """Get the correct context given the mode"""
