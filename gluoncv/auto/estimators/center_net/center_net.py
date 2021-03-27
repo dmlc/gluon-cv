@@ -26,6 +26,7 @@ from ....utils.metrics import VOCMApMetric, VOC07MApMetric
 from .default import CenterNetCfg
 from ...data.dataset import ObjectDetectionDataset
 from ..conf import _BEST_CHECKPOINT_FILE
+from ..utils import EarlyStopperOnPlateau
 
 __all__ = ['CenterNetEstimator']
 
@@ -142,6 +143,11 @@ class CenterNetEstimator(BaseEstimator):
         center_reg_metric = mx.metric.Loss('CenterRegL1')
 
         self._logger.info('Start training from [Epoch %d]', max(self._cfg.train.start_epoch, self.epoch))
+        early_stopper = EarlyStopperOnPlateau(
+            patience=self._cfg.train.early_stop_patience,
+            min_delta=self._cfg.train.early_stop_min_delta,
+            baseline_value=self._cfg.train.early_stop_baseline,
+            max_value=self._cfg.train.early_stop_max_value)
         mean_ap = [-1]
         cp_name = ''
         self._time_elapsed += time.time() - start_tic
@@ -151,6 +157,10 @@ class CenterNetEstimator(BaseEstimator):
             last_tic = time.time()
             if self._best_map >= 1.0:
                 self._logger.info('[Epoch %d] Early stopping as mAP is reaching 1.0', epoch)
+                break
+            should_stop, stop_message = early_stopper.get_early_stop_advice()
+            if should_stop:
+                self._logger.info('[Epoch {}] '.format(epoch) + stop_message)
                 break
             wh_metric.reset()
             center_reg_metric.reset()
@@ -225,6 +235,7 @@ class CenterNetEstimator(BaseEstimator):
                     self._best_map = current_map
                 if self._reporter:
                     self._reporter(epoch=epoch, map_reward=current_map)
+                early_stopper.update(current_map, epoch=epoch)
             self._time_elapsed += time.time() - post_tic
         # map on train data
         tic = time.time()

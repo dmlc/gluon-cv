@@ -26,6 +26,7 @@ from ..base_estimator import BaseEstimator, set_default
 from .utils import _get_dataloader
 from ...data.dataset import ObjectDetectionDataset
 from ..conf import _BEST_CHECKPOINT_FILE
+from ..utils import EarlyStopperOnPlateau
 
 try:
     import horovod.mxnet as hvd
@@ -123,6 +124,11 @@ class YOLOv3Estimator(BaseEstimator):
         cls_metrics = mx.metric.Loss('ClassLoss')
         trainer = self.trainer
         self._logger.info('Start training from [Epoch %d]', max(self._cfg.train.start_epoch, self.epoch))
+        early_stopper = EarlyStopperOnPlateau(
+            patience=self._cfg.train.early_stop_patience,
+            min_delta=self._cfg.train.early_stop_min_delta,
+            baseline_value=self._cfg.train.early_stop_baseline,
+            max_value=self._cfg.train.early_stop_max_value)
         mean_ap = [-1]
         cp_name = ''
         self._time_elapsed += time.time() - start_tic
@@ -130,6 +136,10 @@ class YOLOv3Estimator(BaseEstimator):
             epoch = self.epoch
             if self._best_map >= 1.0:
                 self._logger.info('[Epoch {}] Early stopping as mAP is reaching 1.0'.format(epoch))
+                break
+            should_stop, stop_message = early_stopper.get_early_stop_advice()
+            if should_stop:
+                self._logger.info('[Epoch {}] '.format(epoch) + stop_message)
                 break
             tic = time.time()
             last_tic = time.time()
@@ -216,8 +226,9 @@ class YOLOv3Estimator(BaseEstimator):
                                           self.epoch, current_map, self._best_map, cp_name)
                         self.save(cp_name)
                         self._best_map = current_map
-                if self._reporter:
-                    self._reporter(epoch=epoch, map_reward=current_map)
+                    if self._reporter:
+                        self._reporter(epoch=epoch, map_reward=current_map)
+                    early_stopper.update(current_map, epoch=epoch)
             self._time_elapsed += time.time() - post_tic
 
         # map on train data

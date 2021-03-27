@@ -26,7 +26,13 @@ class EarlyStopperOnPlateau:
 
     def update(self, metric_value, epoch=None):
         if np.isreal(epoch):
+            if np.isreal(self.last_epoch):
+                diff_epoch = epoch - self.last_epoch
+            else:
+                diff_epoch = 1
             self.last_epoch = epoch
+        else:
+            diff_epoch = 1
         if not np.isreal(metric_value):
             return
         if self.metric_fn is not None:
@@ -40,10 +46,10 @@ class EarlyStopperOnPlateau:
                 self.best = metric_value
                 self.wait = 0
             else:
-                self.wait += 1
+                self.wait += diff_epoch
                 if self.wait >= self.patience:
                     self._should_stop = True
-                    self._message = 'EarlyStop after {} epochs no better than {}'.format(self.patience, self.best)
+                    self._message = 'EarlyStop after {} epochs: no better than {}'.format(self.patience, self.best)
 
     def get_early_stop_advice(self):
         return self._should_stop, self._message

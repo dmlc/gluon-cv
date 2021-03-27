@@ -302,7 +302,7 @@ class BaseEstimator:
         """
         with open(filename, 'wb') as fid:
             pickle.dump(self, fid)
-        self._logger.info('Pickled to %s', filename)
+        self._logger.debug('Pickled to %s', filename)
 
     @classmethod
     def load(cls, filename, ctx='auto'):
@@ -324,7 +324,7 @@ class BaseEstimator:
         """
         with open(filename, 'rb') as fid:
             obj = pickle.load(fid)
-            obj._logger.info('Unpickled from %s', filename)
+            obj._logger.debug('Unpickled from %s', filename)
             new_ctx = _suggest_load_context(obj.net, ctx, obj.ctx)
             obj.reset_ctx(new_ctx)
             return obj
