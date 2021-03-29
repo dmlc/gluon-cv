@@ -24,7 +24,9 @@ if [ -z "$TRAIN_DATA_DIR" ]; then
   export TRAIN_DATA_DIR=~/.mxnet/datasets/imagenet
 fi
 
-pip install --extra-index-url https://developer.download.nvidia.com/compute/redist nvidia-dali-cuda100
+if [ -z "$DALI_VERSION" ]; then
+  export DALI_VERSION=nvidia-dali-cuda100
+fi
 
 python train_imagenet.py --model $MODEL --data-backend $DATA_BACKEND --num-gpus $NUM_GPUS \
       --num-epochs $NUM_EPOCHS --num-training-samples $NUM_TRAINING_SAMPLES --use-rec \

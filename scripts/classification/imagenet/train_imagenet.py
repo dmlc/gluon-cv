@@ -14,6 +14,9 @@ from gluoncv.utils import makedirs, LRSequential, LRScheduler
 
 import dali
 
+dali_ver = 'DALI_VERSION'
+dali_version = os.environ.get(dali_ver) if dali_ver in os.environ else 'nvidia-dali-cuda100'
+
 # CLI
 def parse_args():
     def float_list(x):
@@ -137,6 +140,12 @@ def main():
     logger.setLevel(logging.INFO)
     logger.addHandler(filehandler)
     logger.addHandler(streamhandler)
+
+    if opt.data_backend == 'dali-gpu' and opt.num_gpus == 0:
+        stream = os.popen('nvidia-smi -L | wc -l')
+        opt.num_gpus = int(stream.read())
+        logger.info("When '--data-backend' is equal to 'dali-gpu', then `--num-gpus` should NOT be 0\n" \
+                    "For now '--num-gpus' will be set to the number of GPUs installed: %d" % opt.num_gpus)
 
     logger.info(opt)
 
@@ -293,12 +302,27 @@ def main():
         return train_data, val_data, batch_fn
 
     def get_data_loader(args):
+        if args.data_backend == 'mxnet':
+            return get_data_rec if args.use_rec else get_data_rec_transfomed
+
+        # Check if DALI is installed:
+        if args.data_backend[0:5] == 'dali-':
+            stream = os.popen("pip list | grep dali")
+            output = stream.read()
+            if output == '':
+                # DALI is not installed
+                logger.info('DALI is not installed\nTrying to install DALI version \'%s\'' % dali_version)
+                ret = os.system('pip install --extra-index-url https://developer.download.nvidia.com/compute/redist ' + dali_version)
+                if ret != 0:
+                    logger.info('Cannot install DALI version \'%s\'.\nPerhaps, the latest DALI version should be used.\n' \
+                                'Please, see documentation on ' \
+                                'https://docs.nvidia.com/deeplearning/dali/user-guide/docs/installation.html\n' \
+                                'and set the environment variable %s to the appropriate version ID' % (dali_version, dali_ver))
+                    raise RuntimeError('DALI is not installed')
         if args.data_backend == 'dali-gpu':
             return (lambda *args, **kwargs: dali.get_rec_iter(*args, **kwargs, batch_fn=batch_func, dali_cpu=False))
         if args.data_backend == 'dali-cpu':
             return (lambda *args, **kwargs: dali.get_rec_iter(*args, **kwargs, batch_fn=batch_func, dali_cpu=True))
-        if args.data_backend == 'mxnet':
-            return get_data_rec if args.use_rec else get_data_rec_transfomed
         raise ValueError('Wrong data backend')
 
 
