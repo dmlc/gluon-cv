@@ -47,7 +47,6 @@ RUN pip3 install --no-cache --upgrade \
     attrs
 # Prepare gluoncv
 WORKDIR /
-RUN pip3 install --upgrade pip
 RUN pip3 install  --no-cache --upgrade \
     wheel \
     cmake \
