@@ -32,6 +32,7 @@ def test_image_classification_estimator():
     res = est.fit(IMAGE_CLASS_DATASET)
     assert res.get('valid_acc', 0) > 0
     test_result = est.predict(IMAGE_CLASS_TEST)
+    test_result = est.predict(IMAGE_CLASS_TEST, with_proba=True)
     est.predict(IMAGE_CLASS_TEST.iloc[0]['image'])
     evaluate_result = est.evaluate(IMAGE_CLASS_TEST)
     feature = est.predict_feature(IMAGE_CLASS_TEST)
