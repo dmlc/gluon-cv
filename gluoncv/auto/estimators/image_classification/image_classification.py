@@ -549,7 +549,7 @@ class ImageClassificationEstimator(BaseEstimator):
         x = self._predict_preprocess(x)
         if isinstance(x, pd.DataFrame):
             assert 'image' in x.columns, "Expect column `image` for input images"
-            df = self._predict(tuple(x['image']))
+            df = self._predict_proba(tuple(x['image']))
             return df.reset_index(drop=True)
         elif isinstance(x, (list, tuple)):
             bs = self._cfg.valid.batch_size
