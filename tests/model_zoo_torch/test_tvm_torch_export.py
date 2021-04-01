@@ -1,7 +1,7 @@
 import tvm
 from tvm import relay
 from tvm.contrib.download import download_testdata
-from tvm.contrib import graph_runtime
+from tvm.contrib import graph_executor
 
 from PIL import Image
 import numpy as np
@@ -31,7 +31,7 @@ def _test_tvm_export(model, img, target="llvm"):
       lib = relay.build(mod, target=target, target_host=target_host, params=params)
 
   dtype = "float32"
-  m = graph_runtime.GraphModule(lib["default"](ctx))
+  m = graph_executor.GraphModule(lib["default"](ctx))
   # Set inputs
   m.set_input(input_name, tvm.nd.array(img.astype(dtype)))
   # Execute
