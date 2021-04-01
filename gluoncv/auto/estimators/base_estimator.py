@@ -187,7 +187,7 @@ class BaseEstimator:
         """
         return self._evaluate(val_data)
 
-    def predict(self, x):
+    def predict(self, x, **kwargs):
         """Predict using this estimator.
 
         Parameters
@@ -196,7 +196,7 @@ class BaseEstimator:
             The input, can be str(filepath), pd.DataFrame with 'image' column, or raw ndarray input.
 
         """
-        return self._predict(x)
+        return self._predict(x, **kwargs)
 
     def predict_feature(self, x):
         """Predict intermediate features using this estimator.
