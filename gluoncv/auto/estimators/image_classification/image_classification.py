@@ -449,7 +449,9 @@ class ImageClassificationEstimator(BaseEstimator):
                 raise ValueError('array input with shape (h, w, 3) or (n, 3, h, w) is required for predict')
         return x
 
-    def _predict(self, x, ctx_id=0):
+    def _predict(self, x, ctx_id=0, with_proba=False):
+        if with_proba:
+            return self._predict_proba(x, ctx_id=ctx_id)
         x = self._predict_preprocess(x)
         if isinstance(x, pd.DataFrame):
             assert 'image' in x.columns, "Expect column `image` for input images"
@@ -541,6 +543,38 @@ class ImageClassificationEstimator(BaseEstimator):
             feat = feat_net(x)[ii].asnumpy().flatten()
             results.append({'image_feature': feat})
         df = pd.DataFrame(results)
+        return df
+
+    def _predict_proba(self, x, ctx_id=0):
+        x = self._predict_preprocess(x)
+        if isinstance(x, pd.DataFrame):
+            assert 'image' in x.columns, "Expect column `image` for input images"
+            df = self._predict_proba(tuple(x['image']))
+            return df.reset_index(drop=True)
+        elif isinstance(x, (list, tuple)):
+            bs = self._cfg.valid.batch_size
+            self.net.hybridize()
+            results = []
+            loader = mx.gluon.data.DataLoader(
+                ImageListDataset(x, self._predict_preprocess), batch_size=bs, last_batch='keep')
+            idx = 0
+            for batch in loader:
+                batch = mx.gluon.utils.split_and_load(batch, ctx_list=self.ctx, even_split=False)
+                pred = [self.net(input) for input in batch]
+                for p in pred:
+                    probs = mx.nd.softmax(p, axis=-1)
+                    for ii in range(p.shape[0]):
+                        prob = probs[ii]
+                        results.append({'image_proba': prob.asnumpy().flatten().tolist(), 'image': x[idx]})
+                        idx += 1
+            return pd.DataFrame(results)
+        elif not isinstance(x, mx.nd.NDArray):
+            raise ValueError('Input is not supported: {}'.format(type(x)))
+        assert len(x.shape) == 4 and x.shape[1] == 3, "Expect input to be (n, 3, h, w), given {}".format(x.shape)
+        x = x.as_in_context(self.ctx[ctx_id])
+        pred = self.net(x)
+        probs = mx.nd.softmax(pred)[0].asnumpy().flatten().tolist()
+        df = pd.DataFrame([{'image_proba': probs}])
         return df
 
 class ImageListDataset(mx.gluon.data.Dataset):
