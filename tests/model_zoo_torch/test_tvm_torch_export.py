@@ -1,6 +1,5 @@
 import tvm
 from tvm import relay
-from tvm.contrib.download import download_testdata
 from tvm.contrib import graph_executor
 
 from PIL import Image
@@ -40,6 +39,7 @@ def _test_tvm_export(model, img, target="llvm"):
   tvm_output = m.get_output(0)
   
 def test_model_zoo_tvm_export():
+  from tvm.contrib.download import download_testdata
   img_url = "https://github.com/dmlc/mxnet.js/blob/main/data/cat.png?raw=true"
   img_path = download_testdata(img_url, "cat.png", module="data")
   img = Image.open(img_path).resize((224, 224))
