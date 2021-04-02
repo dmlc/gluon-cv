@@ -1,16 +1,13 @@
 # adapted from https://github.com/facebookresearch/detectron2/blob/master/detectron2/data/detection_utils.py
-# -*- coding: utf-8 -*-
-# Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
-
 """
 Common data processing utilities that are used in a
 typical object detection data pipeline.
 """
 import logging
 import numpy as np
-import torch
-from fvcore.common.file_io import PathManager
 from PIL import Image
+
+import torch
 
 from ..structures import (
     BitMasks,
@@ -19,12 +16,11 @@ from ..structures import (
     Instances,
     Keypoints,
     PolygonMasks,
-    RotatedBoxes,
     polygons_to_bitmask,
 )
 
-from . import transforms as T
-from .catalog import MetadataCatalog
+from .. import transforms as T
+from ..registry.catalog import MetadataCatalog
 from ....utils.filesystem import import_try_install
 
 __all__ = [
@@ -34,7 +30,7 @@ __all__ = [
     "transform_proposals",
     "transform_instance_annotations",
     "annotations_to_instances",
-    "annotations_to_instances_rotated",
+    # "annotations_to_instances_rotated",
     "build_augmentation",
     "build_transform_gen",
     "create_keypoint_hflip_indices",
@@ -174,7 +170,7 @@ def read_image(file_name, format=None):
         image (np.ndarray): an HWC image in the given format, which is 0-255, uint8 for
             supported image modes in PIL or "BGR"; float (0-1 for Y) for YUV-BT.601.
     """
-    with PathManager.open(file_name, "rb") as f:
+    with open(file_name, "rb") as f:
         image = Image.open(f)
 
         # work around this bug: https://github.com/python-pillow/Pillow/issues/3973
@@ -424,33 +420,33 @@ def annotations_to_instances(annos, image_size, mask_format="polygon"):
     return target
 
 
-def annotations_to_instances_rotated(annos, image_size):
-    """
-    Create an :class:`Instances` object used by the models,
-    from instance annotations in the dataset dict.
-    Compared to `annotations_to_instances`, this function is for rotated boxes only
+# def annotations_to_instances_rotated(annos, image_size):
+#     """
+#     Create an :class:`Instances` object used by the models,
+#     from instance annotations in the dataset dict.
+#     Compared to `annotations_to_instances`, this function is for rotated boxes only
 
-    Args:
-        annos (list[dict]): a list of instance annotations in one image, each
-            element for one instance.
-        image_size (tuple): height, width
+#     Args:
+#         annos (list[dict]): a list of instance annotations in one image, each
+#             element for one instance.
+#         image_size (tuple): height, width
 
-    Returns:
-        Instances:
-            Containing fields "gt_boxes", "gt_classes",
-            if they can be obtained from `annos`.
-            This is the format that builtin models expect.
-    """
-    boxes = [obj["bbox"] for obj in annos]
-    target = Instances(image_size)
-    boxes = target.gt_boxes = RotatedBoxes(boxes)
-    boxes.clip(image_size)
+#     Returns:
+#         Instances:
+#             Containing fields "gt_boxes", "gt_classes",
+#             if they can be obtained from `annos`.
+#             This is the format that builtin models expect.
+#     """
+#     boxes = [obj["bbox"] for obj in annos]
+#     target = Instances(image_size)
+#     boxes = target.gt_boxes = RotatedBoxes(boxes)
+#     boxes.clip(image_size)
 
-    classes = [obj["category_id"] for obj in annos]
-    classes = torch.tensor(classes, dtype=torch.int64)
-    target.gt_classes = classes
+#     classes = [obj["category_id"] for obj in annos]
+#     classes = torch.tensor(classes, dtype=torch.int64)
+#     target.gt_classes = classes
 
-    return target
+#     return target
 
 
 def filter_empty_instances(instances, by_box=True, by_mask=True, box_threshold=1e-5):

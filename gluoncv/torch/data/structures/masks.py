@@ -2,11 +2,10 @@
 import copy
 import itertools
 import numpy as np
-from typing import Any, Iterator, List, Union
-import pycocotools.mask as mask_util
-import torch
 
-from detectron2.layers.roi_align import ROIAlign
+from typing import Any, Iterator, List, Union
+import torch
+import torchvision
 
 from .boxes import Boxes
 
@@ -27,6 +26,7 @@ def polygons_to_bitmask(polygons: List[np.ndarray], height: int, width: int) -> 
         ndarray: a bool mask of shape (height, width)
     """
     try_import_pycocotools()
+    import pycocotools.mask as mask_util
     assert len(polygons) > 0, "COCOAPI does not support empty polygons"
     rles = mask_util.frPyObjects(polygons, height, width)
     rle = mask_util.merge(rles)
@@ -193,7 +193,7 @@ class BitMasks:
         bit_masks = self.tensor.to(dtype=torch.float32)
         rois = rois.to(device=device)
         output = (
-            ROIAlign((mask_size, mask_size), 1.0, 0, aligned=True)
+            torchvision.ops.ROIAlign((mask_size, mask_size), 1.0, 0, aligned=True)
             .forward(bit_masks[:, None, :, :], rois)
             .squeeze(1)
         )

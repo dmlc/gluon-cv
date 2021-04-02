@@ -3,13 +3,11 @@ import itertools
 import logging
 import numpy as np
 
-from detectron2.data.catalog import DatasetCatalog, MetadataCatalog
-from detectron2.data.build import load_proposals_into_dataset, filter_images_with_few_keypoints, filter_images_with_only_crowd_annotations, \
-    print_instances_class_histogram, build_batch_data_loader
-from detectron2.data.detection_utils import check_metadata_consistency
-from detectron2.data.common import DatasetFromList, MapDataset
-from detectron2.data.dataset_mapper import DatasetMapper
-from detectron2.data.samplers import RepeatFactorTrainingSampler, TrainingSampler
+from ..registry.catalog import DatasetCatalog, MetadataCatalog
+from ..detection.detection_dataset import load_proposals_into_dataset, filter_images_with_few_keypoints, filter_images_with_only_crowd_annotations
+from ..detection.detection_dataset import print_instances_class_histogram, build_batch_data_loader
+from ..detection.detection_utils import check_metadata_consistency
+from ..detection.detection_dataset import DatasetFromList, MapDataset, DatasetMapper
 
 def compute_pseudo_bbox_with_keypoint_annotation(dataset_dicts):
     """
@@ -38,7 +36,7 @@ def compute_pseudo_bbox_with_keypoint_annotation(dataset_dicts):
     )
     return dataset_dicts
 
-def get_detection_dataset_dicts(
+def get_pose_dataset_dicts(
     dataset_names, filter_empty=True, min_keypoints=0, compute_pseudo_bbox=True, proposal_files=None
 ):
     """
@@ -88,7 +86,7 @@ def get_detection_dataset_dicts(
     return dataset_dicts
 
 
-def build_detection_train_loader(cfg, mapper=None):
+def build_pose_train_loader(cfg, mapper=None):
     """
     A data loader is created by the following steps:
 
@@ -145,5 +143,47 @@ def build_detection_train_loader(cfg, mapper=None):
         num_workers=cfg.DATALOADER.NUM_WORKERS,
     )
 
-def build_pose_dataloader():
-    pass
+def build_pose_test_loader(cfg, dataset_name, mapper=None):
+    """
+    Similar to `build_detection_train_loader`.
+    But this function uses the given `dataset_name` argument (instead of the names in cfg),
+    and uses batch size 1.
+
+    Args:
+        cfg: a detectron2 CfgNode
+        dataset_name (str): a name of the dataset that's available in the DatasetCatalog
+        mapper (callable): a callable which takes a sample (dict) from dataset
+           and returns the format to be consumed by the model.
+           By default it will be `DatasetMapper.from_config(cfg, False)`.
+
+    Returns:
+        DataLoader: a torch DataLoader, that loads the given detection
+        dataset, with test-time transformation and batching.
+    """
+    dataset_dicts = get_detection_dataset_dicts(
+        [dataset_name],
+        filter_empty=False,
+        proposal_files=[
+            cfg.DATASETS.PROPOSAL_FILES_TEST[list(cfg.DATASETS.TEST).index(dataset_name)]
+        ]
+        if cfg.MODEL.LOAD_PROPOSALS
+        else None,
+    )
+
+    dataset = DatasetFromList(dataset_dicts)
+    if mapper is None:
+        mapper = DatasetMapper.from_config(cfg, False)
+    dataset = MapDataset(dataset, mapper)
+
+    sampler = InferenceSampler(len(dataset))
+    # Always use 1 image per worker during inference since this is the
+    # standard when reporting inference time in papers.
+    batch_sampler = torch.utils.data.sampler.BatchSampler(sampler, 1, drop_last=False)
+
+    data_loader = torch.utils.data.DataLoader(
+        dataset,
+        num_workers=cfg.DATALOADER.NUM_WORKERS,
+        batch_sampler=batch_sampler,
+        collate_fn=trivial_batch_collator,
+    )
+    return data_loader
