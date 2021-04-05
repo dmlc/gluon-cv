@@ -45,6 +45,7 @@ RUN pip3 install --no-cache --upgrade \
     numpy \
     decorator \
     attrs
+
 # Prepare gluoncv
 WORKDIR /
 RUN pip3 install  --no-cache --upgrade \
