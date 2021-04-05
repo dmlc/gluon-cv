@@ -121,6 +121,22 @@ _C.CONFIG.DATA.NEW_HEIGHT = 256
 _C.CONFIG.DATA.NEW_WIDTH = 340
 _C.CONFIG.DATA.NUM_WORKERS = 0
 
+# -----------------------------------------------------------------------------
+# Detection Loader
+# -----------------------------------------------------------------------------
+_C.CONFIG.DATA.DETECTION.CONFIG.DATA.DETECTION = CN()
+# If True, each batch should contain only images for which the aspect ratio
+# is compatible. This groups portrait images together, and landscape images
+# are not batched with portrait images.
+_C.CONFIG.DATA.DETECTION.ASPECT_RATIO_GROUPING = True
+# Options: TrainingSampler, RepeatFactorTrainingSampler
+_C.CONFIG.DATA.DETECTION.SAMPLER_TRAIN = "TrainingSampler"
+# Repeat threshold for RepeatFactorTrainingSampler
+_C.CONFIG.DATA.DETECTION.REPEAT_THRESHOLD = 0.0
+# Tf True, when working on datasets that have instance annotations, the
+# training dataloader will filter out images without associated annotations
+_C.CONFIG.DATA.DETECTION.FILTER_EMPTY_ANNOTATIONS = True
+
 _C.CONFIG.MODEL = CN(new_allowed=True)
 # Model architecture. You can find available models in the model zoo.
 _C.CONFIG.MODEL.NAME = ''

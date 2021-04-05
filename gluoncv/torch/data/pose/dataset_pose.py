@@ -109,11 +109,11 @@ def build_pose_train_loader(cfg, mapper=None):
     """
     dataset_dicts = get_detection_dataset_dicts(
         cfg.CONFIG.DATASETS.TRAIN,
-        filter_empty=cfg.CONFIG.DATALOADER.FILTER_EMPTY_ANNOTATIONS,
+        filter_empty=cfg.CONFIG.DATA.DETECTION.FILTER_EMPTY_ANNOTATIONS,
         min_keypoints=cfg.CONFIG.MODEL.ROI_KEYPOINT_HEAD.MIN_KEYPOINTS_PER_IMAGE
         if cfg.CONFIG.MODEL.KEYPOINT_ON
         else 0,
-        compute_pseudo_bbox=cfg.CONFIG.DATALOADER.COMPUTE_PSEUDO_BBOX,
+        compute_pseudo_bbox=cfg.CONFIG.DATA.DETECTION.COMPUTE_PSEUDO_BBOX,
         proposal_files=cfg.CONFIG.DATASETS.PROPOSAL_FILES_TRAIN if cfg.CONFIG.MODEL.LOAD_PROPOSALS else None,
     )
     dataset = DatasetFromList(dataset_dicts, copy=False)
@@ -122,7 +122,7 @@ def build_pose_train_loader(cfg, mapper=None):
         mapper = DatasetMapperWithBasis(cfg, True)
     dataset = MapDataset(dataset, mapper)
 
-    sampler_name = cfg.CONFIG.DATALOADER.SAMPLER_TRAIN
+    sampler_name = cfg.CONFIG.DATA.DETECTION.SAMPLER_TRAIN
     logger = logging.getLogger(__name__)
     logger.info("Using training sampler {}".format(sampler_name))
     # TODO avoid if-else?
@@ -130,7 +130,7 @@ def build_pose_train_loader(cfg, mapper=None):
         sampler = TrainingSampler(len(dataset))
     elif sampler_name == "RepeatFactorTrainingSampler":
         repeat_factors = RepeatFactorTrainingSampler.repeat_factors_from_category_frequency(
-            dataset_dicts, cfg.CONFIG.DATALOADER.REPEAT_THRESHOLD
+            dataset_dicts, cfg.CONFIG.DATA.DETECTION.REPEAT_THRESHOLD
         )
         sampler = RepeatFactorTrainingSampler(repeat_factors)
     else:
@@ -139,8 +139,8 @@ def build_pose_train_loader(cfg, mapper=None):
         dataset,
         sampler,
         cfg.CONFIG.SOLVER.IMS_PER_BATCH,
-        aspect_ratio_grouping=cfg.CONFIG.DATALOADER.ASPECT_RATIO_GROUPING,
-        num_workers=cfg.CONFIG.DATALOADER.NUM_WORKERS,
+        aspect_ratio_grouping=cfg.CONFIG.DATA.DETECTION.ASPECT_RATIO_GROUPING,
+        num_workers=cfg.CONFIG.CONFIG.DATA.NUM_WORKERS,
     )
 
 def build_pose_test_loader(cfg, dataset_name, mapper=None):
@@ -182,7 +182,7 @@ def build_pose_test_loader(cfg, dataset_name, mapper=None):
 
     data_loader = torch.utils.data.DataLoader(
         dataset,
-        num_workers=cfg.CONFIG.DATALOADER.NUM_WORKERS,
+        num_workers=cfg.CONFIG.CONFIG.DATA.NUM_WORKERS,
         batch_sampler=batch_sampler,
         collate_fn=trivial_batch_collator,
     )

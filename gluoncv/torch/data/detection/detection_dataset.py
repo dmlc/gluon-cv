@@ -306,7 +306,7 @@ def build_detection_train_loader(cfg, mapper=None):
     """
     dataset_dicts = get_detection_dataset_dicts(
         cfg.DATASETS.TRAIN,
-        filter_empty=cfg.DATALOADER.FILTER_EMPTY_ANNOTATIONS,
+        filter_empty=cfg.CONFIG.DATA.DETECTION.FILTER_EMPTY_ANNOTATIONS,
         min_keypoints=cfg.MODEL.ROI_KEYPOINT_HEAD.MIN_KEYPOINTS_PER_IMAGE
         if cfg.MODEL.KEYPOINT_ON
         else 0,
@@ -318,7 +318,7 @@ def build_detection_train_loader(cfg, mapper=None):
         mapper = DatasetMapper.from_config(cfg, True)
     dataset = MapDataset(dataset, mapper)
 
-    sampler_name = cfg.DATALOADER.SAMPLER_TRAIN
+    sampler_name = cfg.CONFIG.DATA.DETECTION.SAMPLER_TRAIN
     logger = logging.getLogger(__name__)
     logger.info("Using training sampler {}".format(sampler_name))
     # TODO avoid if-else?
@@ -326,7 +326,7 @@ def build_detection_train_loader(cfg, mapper=None):
         sampler = TrainingSampler(len(dataset))
     elif sampler_name == "RepeatFactorTrainingSampler":
         repeat_factors = RepeatFactorTrainingSampler.repeat_factors_from_category_frequency(
-            dataset_dicts, cfg.DATALOADER.REPEAT_THRESHOLD
+            dataset_dicts, cfg.CONFIG.DATA.DETECTION.REPEAT_THRESHOLD
         )
         sampler = RepeatFactorTrainingSampler(repeat_factors)
     else:
@@ -335,8 +335,8 @@ def build_detection_train_loader(cfg, mapper=None):
         dataset,
         sampler,
         cfg.SOLVER.IMS_PER_BATCH,
-        aspect_ratio_grouping=cfg.DATALOADER.ASPECT_RATIO_GROUPING,
-        num_workers=cfg.DATALOADER.NUM_WORKERS,
+        aspect_ratio_grouping=cfg.CONFIG.DATA.DETECTION.ASPECT_RATIO_GROUPING,
+        num_workers=cfg.CONFIG.DATA.NUM_WORKERS,
     )
 
 
@@ -379,7 +379,7 @@ def build_detection_test_loader(cfg, dataset_name, mapper=None):
 
     data_loader = torch.utils.data.DataLoader(
         dataset,
-        num_workers=cfg.DATALOADER.NUM_WORKERS,
+        num_workers=cfg.CONFIG.DATA.NUM_WORKERS,
         batch_sampler=batch_sampler,
         collate_fn=trivial_batch_collator,
     )
