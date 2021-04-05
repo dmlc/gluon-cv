@@ -4,7 +4,7 @@ import logging
 import numpy as np
 
 from ..registry.catalog import DatasetCatalog, MetadataCatalog
-from ..detection.detection_dataset import load_proposals_into_dataset, filter_images_with_few_keypoints, filter_images_with_only_crowd_annotations
+from ..detection.detection_dataset import load_proposals_into_dataset, filter_images_with_few_keypoints, filter_images_with_only_crowd_annotations, get_detection_dataset_dicts
 from ..detection.detection_dataset import print_instances_class_histogram, build_batch_data_loader
 from ..detection.detection_utils import check_metadata_consistency, read_image, filter_empty_instances, check_image_size
 from ..detection.detection_dataset import DatasetFromList, MapDataset, DatasetMapper
@@ -108,13 +108,13 @@ def build_pose_train_loader(cfg, mapper=None):
         an infinite iterator of training data
     """
     dataset_dicts = get_detection_dataset_dicts(
-        cfg.DATASETS.TRAIN,
-        filter_empty=cfg.DATALOADER.FILTER_EMPTY_ANNOTATIONS,
-        min_keypoints=cfg.MODEL.ROI_KEYPOINT_HEAD.MIN_KEYPOINTS_PER_IMAGE
-        if cfg.MODEL.KEYPOINT_ON
+        cfg.CONFIG.DATASETS.TRAIN,
+        filter_empty=cfg.CONFIG.DATALOADER.FILTER_EMPTY_ANNOTATIONS,
+        min_keypoints=cfg.CONFIG.MODEL.ROI_KEYPOINT_HEAD.MIN_KEYPOINTS_PER_IMAGE
+        if cfg.CONFIG.MODEL.KEYPOINT_ON
         else 0,
-        compute_pseudo_bbox=cfg.DATALOADER.COMPUTE_PSEUDO_BBOX,
-        proposal_files=cfg.DATASETS.PROPOSAL_FILES_TRAIN if cfg.MODEL.LOAD_PROPOSALS else None,
+        compute_pseudo_bbox=cfg.CONFIG.DATALOADER.COMPUTE_PSEUDO_BBOX,
+        proposal_files=cfg.CONFIG.DATASETS.PROPOSAL_FILES_TRAIN if cfg.CONFIG.MODEL.LOAD_PROPOSALS else None,
     )
     dataset = DatasetFromList(dataset_dicts, copy=False)
 
@@ -122,7 +122,7 @@ def build_pose_train_loader(cfg, mapper=None):
         mapper = DatasetMapperWithBasis(cfg, True)
     dataset = MapDataset(dataset, mapper)
 
-    sampler_name = cfg.DATALOADER.SAMPLER_TRAIN
+    sampler_name = cfg.CONFIG.DATALOADER.SAMPLER_TRAIN
     logger = logging.getLogger(__name__)
     logger.info("Using training sampler {}".format(sampler_name))
     # TODO avoid if-else?
@@ -130,7 +130,7 @@ def build_pose_train_loader(cfg, mapper=None):
         sampler = TrainingSampler(len(dataset))
     elif sampler_name == "RepeatFactorTrainingSampler":
         repeat_factors = RepeatFactorTrainingSampler.repeat_factors_from_category_frequency(
-            dataset_dicts, cfg.DATALOADER.REPEAT_THRESHOLD
+            dataset_dicts, cfg.CONFIG.DATALOADER.REPEAT_THRESHOLD
         )
         sampler = RepeatFactorTrainingSampler(repeat_factors)
     else:
@@ -138,9 +138,9 @@ def build_pose_train_loader(cfg, mapper=None):
     return build_batch_data_loader(
         dataset,
         sampler,
-        cfg.SOLVER.IMS_PER_BATCH,
-        aspect_ratio_grouping=cfg.DATALOADER.ASPECT_RATIO_GROUPING,
-        num_workers=cfg.DATALOADER.NUM_WORKERS,
+        cfg.CONFIG.SOLVER.IMS_PER_BATCH,
+        aspect_ratio_grouping=cfg.CONFIG.DATALOADER.ASPECT_RATIO_GROUPING,
+        num_workers=cfg.CONFIG.DATALOADER.NUM_WORKERS,
     )
 
 def build_pose_test_loader(cfg, dataset_name, mapper=None):
@@ -164,9 +164,9 @@ def build_pose_test_loader(cfg, dataset_name, mapper=None):
         [dataset_name],
         filter_empty=False,
         proposal_files=[
-            cfg.DATASETS.PROPOSAL_FILES_TEST[list(cfg.DATASETS.TEST).index(dataset_name)]
+            cfg.CONFIG.DATASETS.PROPOSAL_FILES_TEST[list(cfg.CONFIG.DATASETS.TEST).index(dataset_name)]
         ]
-        if cfg.MODEL.LOAD_PROPOSALS
+        if cfg.CONFIG.MODEL.LOAD_PROPOSALS
         else None,
     )
 
@@ -182,7 +182,7 @@ def build_pose_test_loader(cfg, dataset_name, mapper=None):
 
     data_loader = torch.utils.data.DataLoader(
         dataset,
-        num_workers=cfg.DATALOADER.NUM_WORKERS,
+        num_workers=cfg.CONFIG.DATALOADER.NUM_WORKERS,
         batch_sampler=batch_sampler,
         collate_fn=trivial_batch_collator,
     )
@@ -202,12 +202,12 @@ class DatasetMapperWithBasis(DatasetMapper):
         )
         self.augmentation = build_augmentation(cfg, is_train)
 
-        if cfg.INPUT.CROP.ENABLED and is_train:
+        if cfg.CONFIG.INPUT.CROP.ENABLED and is_train:
             self.augmentation.append(
                 RandomCropWithInstance(
-                    cfg.INPUT.CROP.TYPE,
-                    cfg.INPUT.CROP.SIZE,
-                    cfg.INPUT.CROP.CROP_INSTANCE,
+                    cfg.CONFIG.INPUT.CROP.TYPE,
+                    cfg.CONFIG.INPUT.CROP.SIZE,
+                    cfg.CONFIG.INPUT.CROP.CROP_INSTANCE,
                 ),
             )
             logging.getLogger(__name__).info(
@@ -215,8 +215,8 @@ class DatasetMapperWithBasis(DatasetMapper):
             )
 
         # fmt: off
-        self.basis_loss_on       = cfg.MODEL.BASIS_MODULE.LOSS_ON
-        self.ann_set             = cfg.MODEL.BASIS_MODULE.ANN_SET
+        self.basis_loss_on       = cfg.CONFIG.MODEL.BASIS_MODULE.LOSS_ON
+        self.ann_set             = cfg.CONFIG.MODEL.BASIS_MODULE.ANN_SET
         # fmt: on
 
     def __call__(self, dataset_dict):
