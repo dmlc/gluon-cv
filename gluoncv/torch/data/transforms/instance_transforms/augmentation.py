@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 # adapted from https://github.com/facebookresearch/detectron2/blob/master/detectron2/data/transforms/augmentation.py
-
+import sys
 import inspect
 import numpy as np
 import pprint
 from abc import ABCMeta, abstractmethod
 from typing import List, Optional, Tuple, Union
+from PIL import Image
+
 from .transform import (
     Transform,
     TransformList,

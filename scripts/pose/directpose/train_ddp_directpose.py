@@ -8,13 +8,14 @@ import torch.optim
 from tensorboardX import SummaryWriter
 
 from gluoncv.torch.model_zoo import get_model
-from gluoncv.torch.data.pose import build_pose_dataloader
+from gluoncv.torch.model_zoo.pose import resnet_lpf_fpn_directpose
+from gluoncv.torch.data.pose import build_pose_train_loader, build_pose_test_loader
 from gluoncv.torch.utils.model_utils import deploy_model, load_model, save_model
-from gluoncv.torch.utils.task_utils import train_pose, validation_pose
+from gluoncv.torch.utils.task_utils import train_directpose, validate_directpose, build_pose_optimizer
 from gluoncv.torch.engine.config import get_cfg_defaults
 from gluoncv.torch.engine.launch import spawn_workers
 from gluoncv.torch.utils.utils import build_log_dir
-from gluoncv.torch.utils.lr_policy import GradualWarmupScheduler
+from gluoncv.torch.utils.lr_policy import build_lr_scheduler
 
 
 def main_worker(cfg):
@@ -27,56 +28,32 @@ def main_worker(cfg):
     cfg.freeze()
 
     # create model
-    model = get_model(cfg)
+    # model = get_model(cfg)
+    model = resnet_lpf_fpn_directpose(cfg)
     model = deploy_model(model, cfg)
 
     # create dataset and dataloader
-    train_loader, val_loader, train_sampler, val_sampler, mg_sampler = build_dataloader(cfg)
+    # train_loader, val_loader, train_sampler, val_sampler, mg_sampler = build_pose_train_loader(cfg)
+    train_loader = build_pose_train_loader(cfg)
+    val_loader = build_pose_test_loader(cfg)
+    optimizer = build_pose_optimizer(cfg)
+    scheduler = build_lr_scheduler(cfg, optimizer)
 
-    optimizer = torch.optim.SGD(model.parameters(),
-                                lr=cfg.CONFIG.TRAIN.LR,
-                                momentum=cfg.CONFIG.TRAIN.MOMENTUM,
-                                weight_decay=cfg.CONFIG.TRAIN.W_DECAY)
-
-    if cfg.CONFIG.MODEL.LOAD:
-        model, _ = load_model(model, optimizer, cfg, load_fc=True)
-
-    if cfg.CONFIG.TRAIN.LR_POLICY == 'Step':
-        scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer,
-                                                         milestones=cfg.CONFIG.TRAIN.LR_MILESTONE,
-                                                         gamma=cfg.CONFIG.TRAIN.STEP)
-    elif cfg.CONFIG.TRAIN.LR_POLICY == 'Cosine':
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer,
-                                                               T_max=cfg.CONFIG.TRAIN.EPOCH_NUM - cfg.CONFIG.TRAIN.WARMUP_EPOCHS,
-                                                               eta_min=0,
-                                                               last_epoch=cfg.CONFIG.TRAIN.RESUME_EPOCH)
-    else:
-        print('Learning rate schedule %s is not supported yet. Please use Step or Cosine.')
-
-    if cfg.CONFIG.TRAIN.USE_WARMUP:
-        scheduler_warmup = GradualWarmupScheduler(optimizer,
-                                                  multiplier=(cfg.CONFIG.TRAIN.WARMUP_END_LR / cfg.CONFIG.TRAIN.LR),
-                                                  total_epoch=cfg.CONFIG.TRAIN.WARMUP_EPOCHS,
-                                                  after_scheduler=scheduler)
-    criterion = nn.CrossEntropyLoss().cuda()
+    # if cfg.CONFIG.MODEL.LOAD:
+    #     model, _ = load_model(model, optimizer, cfg, load_fc=True)
+    # criterion = nn.CrossEntropyLoss().cuda()
 
     base_iter = 0
     for epoch in range(cfg.CONFIG.TRAIN.EPOCH_NUM):
-        if cfg.DDP_CONFIG.DISTRIBUTED:
-            train_sampler.set_epoch(epoch)
 
-        base_iter = train_classification(base_iter, model, train_loader, epoch, criterion, optimizer, cfg, writer=writer)
-        if cfg.CONFIG.TRAIN.USE_WARMUP:
-            scheduler_warmup.step()
-        else:
-            scheduler.step()
+        base_iter = train_directpose(base_iter, model, train_loader, epoch, optimizer, cfg, writer=writer)
 
-        if epoch % cfg.CONFIG.VAL.FREQ == 0 or epoch == cfg.CONFIG.TRAIN.EPOCH_NUM - 1:
-            validation_classification(model, val_loader, epoch, criterion, cfg, writer)
+        # if epoch % cfg.CONFIG.VAL.FREQ == 0 or epoch == cfg.CONFIG.TRAIN.EPOCH_NUM - 1:
+        #     validation_classification(model, val_loader, epoch, criterion, cfg, writer)
 
-        if epoch % cfg.CONFIG.LOG.SAVE_FREQ == 0:
-            if cfg.DDP_CONFIG.GPU_WORLD_RANK == 0 or cfg.DDP_CONFIG.DISTRIBUTED == False:
-                save_model(model, optimizer, epoch, cfg)
+        # if epoch % cfg.CONFIG.LOG.SAVE_FREQ == 0:
+        #     if cfg.DDP_CONFIG.GPU_WORLD_RANK == 0 or cfg.DDP_CONFIG.DISTRIBUTED == False:
+        #         save_model(model, optimizer, epoch, cfg)
     if writer is not None:
         writer.close()
 
@@ -88,4 +65,5 @@ if __name__ == '__main__':
 
     cfg = get_cfg_defaults()
     cfg.merge_from_file(args.config_file)
+    cfg.CONFIG.MODEL.DIRECTPOSE.ENABLE_HM_BRANCH = True  # enable HM_BRANCH in training
     spawn_workers(main_worker, cfg)

@@ -7,11 +7,12 @@ import dill
 import pickle
 from pprint import pformat
 from typing import List, Optional, Union
-import torch.utils.data
+import torch.utils.data as data
 
 from ..structures import BoxMode
 from ...utils.comm import get_world_size
 from ...utils.random import seed_all_rng
+from ..transforms import instance_transforms as T
 
 from ..registry.catalog import DatasetCatalog, MetadataCatalog
 from .detection_utils import check_metadata_consistency

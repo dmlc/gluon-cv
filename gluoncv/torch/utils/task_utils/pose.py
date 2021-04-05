@@ -1,45 +1,67 @@
 """Pose utils"""
+import time
 
+import numpy as np
+import torch
 
-def train_pose(base_iter,
+from .. import comm
+
+def _detect_anomaly(losses, loss_dict, iteration):
+    if not torch.isfinite(losses).all():
+        raise FloatingPointError(
+            "Loss became infinite or NaN at iteration={}!\nloss_dict = {}".format(
+                iteration, loss_dict
+            )
+        )
+
+def train_directpose(base_iter,
                model,
                dataloader,
                epoch,
-               criterion,
                optimizer,
                cfg,
                writer=None):
-    "training pipeline for pose"
-    batch_time = AverageMeter()
-    data_time = AverageMeter()
-    losses = AverageMeter()
-    top1 = AverageMeter()
-    top5 = AverageMeter()
+    "training pipeline for directpose"
 
     model.train()
-    end = time.time()
+    end = time.perf_counter()
     for step, data in enumerate(dataloader):
         base_iter = base_iter + 1
+        data_time.update(time.perf_counter() - end)
 
-        train_batch = data[0].cuda()
-        train_label = data[1].cuda()
-        data_time.update(time.time() - end)
+        loss_dict = model(data)
+        losses = sum(loss_dict.values())
+        _detect_anomaly(losses, loss_dict, base_iter)
 
-        outputs = model(train_batch)
-        loss = criterion(outputs, train_label)
-        prec1, prec5 = accuracy(outputs.data, train_label, topk=(1, 5))
+        metrics_dict = loss_dict
+        metrics_dict["data_time"] = data_time
 
         optimizer.zero_grad()
-        loss.backward()
+        losses.backward()
         optimizer.step()
 
-        losses.update(loss.item(), train_label.size(0))
-        top1.update(prec1.item(), train_label.size(0))
-        top5.update(prec5.item(), train_label.size(0))
-
-        batch_time.update(time.time() - end)
-        end = time.time()
+        batch_time.update(time.perf_counter() - end)
+        end = time.perf_counter()
+        metrics_dict["batch_time"] = batch_time
         if step % cfg.CONFIG.LOG.DISPLAY_FREQ == 0 and cfg.DDP_CONFIG.GPU_WORLD_RANK == 0:
+            metrics_dict = {
+                k: v.detach().cpu().item() if isinstance(v, torch.Tensor) else float(v)
+                for k, v in metrics_dict.items()
+            }
+            all_metrics_dict = comm.gather(metrics_dict)
+            if "data_time" in all_metrics_dict[0]:
+                # data_time among workers can have high variance. The actual latency
+                # caused by data_time is the maximum among workers.
+                data_time = np.max([x.pop("data_time") for x in all_metrics_dict])
+            if "batch_time" in all_metrics_dict[0]:
+                # batch_time among workers can have high variance. The actual latency
+                # caused by batch_time is the maximum among workers.
+                batch_time = np.max([x.pop("batch_time") for x in all_metrics_dict])
+            # average the rest metrics
+            metrics_dict = {
+                k: np.mean([x[k] for x in all_metrics_dict]) for k in all_metrics_dict[0].keys()
+            }
+            total_losses_reduced = sum(loss for loss in metrics_dict.values())
             print('-------------------------------------------------------')
             for param in optimizer.param_groups:
                 lr = param['lr']
@@ -50,19 +72,77 @@ def train_pose(base_iter,
             print_string = 'data_time: {data_time:.3f}, batch time: {batch_time:.3f}'.format(
                 data_time=data_time.val, batch_time=batch_time.val)
             print(print_string)
-            print_string = 'loss: {loss:.5f}'.format(loss=losses.avg)
-            print(print_string)
-            print_string = 'Top-1 accuracy: {top1_acc:.2f}%, Top-5 accuracy: {top5_acc:.2f}%'.format(
-                top1_acc=top1.avg, top5_acc=top5.avg)
+            print_string = 'loss: {loss:.5f}'.format(loss=total_losses_reduced)
             print(print_string)
             iteration = base_iter
-            writer.add_scalar('train_loss_iteration', losses.avg, iteration)
-            writer.add_scalar('train_top1_acc_iteration', top1.avg, iteration)
-            writer.add_scalar('train_top5_acc_iteration', top5.avg, iteration)
-            writer.add_scalar('train_batch_size_iteration',
-                              train_label.size(0), iteration)
+            writer.add_scalar('total_loss', total_losses_reduced, iteration)
             writer.add_scalar('learning_rate', lr, iteration)
+            if len(metrics_dict) > 1:
+                for km, kv in metrics_dict.items():
+                    writer.add_scalar(km, kv, iteration)
+                    print(f'{km}: {kv:.2f}')
     return base_iter
 
-def validate_pose():
+def validate_directpose():
     pass
+
+def build_pose_optimizer(cfg, model) -> torch.optim.Optimizer:
+    """
+    Build an optimizer from config.
+    """
+    norm_module_types = (
+        torch.nn.BatchNorm1d,
+        torch.nn.BatchNorm2d,
+        torch.nn.BatchNorm3d,
+        torch.nn.SyncBatchNorm,
+        # NaiveSyncBatchNorm inherits from BatchNorm2d
+        torch.nn.GroupNorm,
+        torch.nn.InstanceNorm1d,
+        torch.nn.InstanceNorm2d,
+        torch.nn.InstanceNorm3d,
+        torch.nn.LayerNorm,
+        torch.nn.LocalResponseNorm,
+    )
+    params: List[Dict[str, Any]] = []
+    memo: Set[torch.nn.parameter.Parameter] = set()
+    override: Set[torch.nn.parameter.Parameter] = set()
+
+    # for key, value in model.named_parameters():
+    #     if not value.requires_grad:
+    #         continue
+    #     if key.startswith("proposal_generator.directpose_head"):
+    #         if not key.endswith("scale"):
+    #             print("apply SOLVER.KPS_GRAD_MULT to {}".format(key))
+    #             override.add(value)
+    #         else:
+    #             print("do not apply SOLVER.KPS_GRAD_MULT to {}".format(key))
+
+    for module in model.modules():
+        for key, value in module.named_parameters(recurse=False):
+            if not value.requires_grad:
+                continue
+            # Avoid duplicating parameters
+            if value in memo:
+                continue
+            memo.add(value)
+            lr = cfg.SOLVER.BASE_LR
+            weight_decay = cfg.SOLVER.WEIGHT_DECAY
+            if isinstance(module, norm_module_types):
+                weight_decay = cfg.SOLVER.WEIGHT_DECAY_NORM
+            elif key == "bias":
+                # NOTE: unlike Detectron v1, we now default BIAS_LR_FACTOR to 1.0
+                # and WEIGHT_DECAY_BIAS to WEIGHT_DECAY so that bias optimizer
+                # hyperparameters are by default exactly the same as for regular
+                # weights.
+                lr = cfg.SOLVER.BASE_LR * cfg.SOLVER.BIAS_LR_FACTOR
+                weight_decay = cfg.SOLVER.WEIGHT_DECAY_BIAS
+            if value in override:
+                lr *= cfg.SOLVER.KPS_GRAD_MULT
+
+            params += [{"params": [value], "lr": lr, "weight_decay": weight_decay}]
+
+    optimizer = torch.optim.SGD(
+        params, cfg.SOLVER.BASE_LR, momentum=cfg.SOLVER.MOMENTUM, nesterov=cfg.SOLVER.NESTEROV
+    )
+    optimizer = maybe_add_gradient_clipping(cfg, optimizer)
+    return optimizer

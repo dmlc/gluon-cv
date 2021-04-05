@@ -11,7 +11,7 @@ from PIL import Image
 import torch
 import torch.nn.functional as F
 
-from .transform_util import to_float_tensor, to_numpy
+from .transform_utils import to_float_tensor, to_numpy
 
 try:
     import cv2  # noqa
