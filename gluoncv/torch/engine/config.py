@@ -124,7 +124,7 @@ _C.CONFIG.DATA.NUM_WORKERS = 0
 # -----------------------------------------------------------------------------
 # Detection Loader
 # -----------------------------------------------------------------------------
-_C.CONFIG.DATA.DETECTION.CONFIG.DATA.DETECTION = CN()
+_C.CONFIG.DATA.DETECTION = CN(new_allowed=True)
 # If True, each batch should contain only images for which the aspect ratio
 # is compatible. This groups portrait images together, and landscape images
 # are not batched with portrait images.
