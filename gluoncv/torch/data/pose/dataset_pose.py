@@ -6,7 +6,7 @@ import numpy as np
 from ..registry.catalog import DatasetCatalog, MetadataCatalog
 from ..detection.detection_dataset import load_proposals_into_dataset, filter_images_with_few_keypoints, filter_images_with_only_crowd_annotations, get_detection_dataset_dicts
 from ..detection.detection_dataset import print_instances_class_histogram, build_batch_data_loader
-from ..detection.detection_utils import check_metadata_consistency, read_image, filter_empty_instances, check_image_size
+from ..detection.detection_utils import check_metadata_consistency, read_image, filter_empty_instances, check_image_size, build_augmentation
 from ..detection.detection_dataset import DatasetFromList, MapDataset, DatasetMapper
 
 def compute_pseudo_bbox_with_keypoint_annotation(dataset_dicts):
@@ -194,20 +194,20 @@ class DatasetMapperWithBasis(DatasetMapper):
     """
 
     def __init__(self, cfg, is_train=True):
-        super().__init__(DatasetMapper.from_config(cfg, is_train))
-
+        super().__init__(**DatasetMapper.from_config(cfg, is_train))
+        logger = logging.getLogger(__name__)
         # Rebuild augmentations
         logger.info(
             "Rebuilding the augmentations. The previous augmentations will be overridden."
         )
         self.augmentation = build_augmentation(cfg, is_train)
 
-        if cfg.CONFIG.INPUT.CROP.ENABLED and is_train:
+        if cfg.CONFIG.DATA.CROP.ENABLED and is_train:
             self.augmentation.append(
                 RandomCropWithInstance(
-                    cfg.CONFIG.INPUT.CROP.TYPE,
-                    cfg.CONFIG.INPUT.CROP.SIZE,
-                    cfg.CONFIG.INPUT.CROP.CROP_INSTANCE,
+                    cfg.CONFIG.DATA.CROP.TYPE,
+                    cfg.CONFIG.DATA.CROP.SIZE,
+                    cfg.CONFIG.DATA.CROP.CROP_INSTANCE,
                 ),
             )
             logging.getLogger(__name__).info(

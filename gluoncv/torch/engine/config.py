@@ -196,6 +196,7 @@ _C.CONFIG.DATA.CROP.TYPE = "relative_range"
 # Size of crop in range (0, 1] if CROP.TYPE is "relative" or "relative_range" and in number of
 # pixels if CROP.TYPE is "absolute"
 _C.CONFIG.DATA.CROP.SIZE = [0.9, 0.9]
+_C.CONFIG.DATA.CROP.CROP_INSTANCE = True
 
 # ------------------------------------------------------------------------------
 # Model
