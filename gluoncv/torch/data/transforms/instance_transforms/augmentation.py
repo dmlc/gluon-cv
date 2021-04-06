@@ -22,6 +22,29 @@ from .transform import (
     RotationTransform
 )
 
+
+__all__ = [
+    "Augmentation",
+    "TransformGen",
+    "apply_transform_gens",
+    "AugInput",
+    "StandardAugInput",
+    "apply_augmentations",
+    "RandomApply",
+    "RandomBrightness",
+    "RandomContrast",
+    "RandomCrop",
+    "RandomExtent",
+    "RandomFlip",
+    "RandomSaturation",
+    "RandomLighting",
+    "RandomRotation",
+    "Resize",
+    "ResizeShortestEdge",
+    "RandomCropWithInstance",
+    "PadAugmentation",
+]
+
 """
 Overview of the augmentation system:
 
@@ -61,28 +84,6 @@ To extend the system, one can do:
 3. To add new augmentation policies that need new data types or data structures, in addition to
    implementing new `Augmentation`, a new `AugInput` is needed as well.
 """
-
-
-__all__ = [
-    "Augmentation",
-    "TransformGen",
-    "apply_transform_gens",
-    "AugInput",
-    "StandardAugInput",
-    "apply_augmentations",
-    "RandomApply",
-    "RandomBrightness",
-    "RandomContrast",
-    "RandomCrop",
-    "RandomExtent",
-    "RandomFlip",
-    "RandomSaturation",
-    "RandomLighting",
-    "RandomRotation",
-    "Resize",
-    "ResizeShortestEdge",
-]
-
 
 def _check_img_dtype(img):
     assert isinstance(img, np.ndarray), "[Augmentation] Needs an numpy array, but got a {}!".format(
@@ -738,3 +739,64 @@ class RandomLighting(Augmentation):
         return BlendTransform(
             src_image=self.eigen_vecs.dot(weights * self.eigen_vals), src_weight=1.0, dst_weight=1.0
         )
+
+
+class RandomCropWithInstance(RandomCrop):
+    """ Instance-aware cropping.
+    """
+
+    def __init__(self, crop_type, crop_size, crop_instance=True):
+        """
+        Args:
+            crop_instance (bool): if False, extend cropping boxes to avoid cropping instances
+        """
+        super().__init__(crop_type, crop_size)
+        self.crop_instance = crop_instance
+        self.input_args = ("image", "boxes")
+
+    def get_transform(self, img, boxes):
+        image_size = img.shape[:2]
+        crop_size = self.get_crop_size(image_size)
+        return gen_crop_transform_with_instance(
+            crop_size, image_size, boxes, crop_box=self.crop_instance
+        )
+
+
+class PadAugmentation(Augmentation):
+    def __init__(self, crop_size):
+        """
+        Args:
+            crop_instance (bool): if False, extend cropping boxes to avoid cropping instances
+        """
+        super().__init__()
+        self.crop_size = crop_size
+
+    def get_crop_size(self, image_size):
+        h, w = image_size
+        return (min(self.crop_size[0], h), min(self.crop_size[1], w))
+
+    def get_transform(self, img):
+        image_size = img.shape[:2]
+        image_size = self.get_crop_size(image_size)
+        return _PadTransform(image_size[0], image_size[1], self.crop_size[1], self.crop_size[0])
+
+
+class _PadTransform(Transform):
+    def __init__(self, h: int, w: int, crop_h: int, crop_w: int):
+        super().__init__()
+        self._set_attributes(locals())
+
+    def apply_image(self, img: np.ndarray) -> np.ndarray:
+
+        h, w = img.shape[:2]
+        assert (
+                self.h == h and self.w == w
+        ), "Input size mismatch h w {}:{} -> {}:{}".format(self.h, self.w, h, w)
+
+        padding = ((0, self.crop_h - h), (0, self.crop_w - w), (0, 0))
+        img = np.pad(img, pad_width=padding)
+
+        return img
+
+    def apply_coords(self, coords: np.ndarray) -> np.ndarray:
+        return coords
