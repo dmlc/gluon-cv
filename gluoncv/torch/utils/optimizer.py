@@ -2,6 +2,7 @@
 optimizer RADAM
 """
 import math
+from enum import Enum
 
 import torch
 from torch.optim.optimizer import Optimizer
