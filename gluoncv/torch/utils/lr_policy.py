@@ -147,30 +147,31 @@ def build_lr_scheduler(cfg, optimizer):
     """
     Build a LR scheduler from config.
     """
-    name = cfg.CONFIG.SOLVER.LR_SCHEDULER_NAME
+    name = cfg.CONFIG.TRAIN.ITER_LR_SCHEDULER_NAME
     if name == "WarmupMultiStepLR":
         return WarmupMultiStepLR(
             optimizer,
-            cfg.CONFIG.SOLVER.STEPS,
-            cfg.CONFIG.SOLVER.GAMMA,
-            warmup_factor=cfg.CONFIG.SOLVER.WARMUP_FACTOR,
-            warmup_iters=cfg.CONFIG.SOLVER.WARMUP_ITERS,
-            warmup_method=cfg.CONFIG.SOLVER.WARMUP_METHOD,
+            cfg.CONFIG.TRAIN.ITER_LR_STEPS,
+            cfg.CONFIG.TRAIN.STEP,
+            warmup_factor=cfg.CONFIG.TRAIN.ITER_BASED_WARMUP_FACTOR,
+            warmup_iters=cfg.CONFIG.TRAIN.ITER_BASED_WARMUP_ITERS,
+            warmup_method=cfg.CONFIG.TRAIN.ITER_BASED_WARMUP_METHOD,
         )
     elif name == "WarmupCosineLR":
         return WarmupCosineLR(
             optimizer,
-            cfg.CONFIG.SOLVER.MAX_ITER,
-            warmup_factor=cfg.CONFIG.SOLVER.WARMUP_FACTOR,
-            warmup_iters=cfg.CONFIG.SOLVER.WARMUP_ITERS,
-            warmup_method=cfg.CONFIG.SOLVER.WARMUP_METHOD,
+            cfg.CONFIG.TRAIN.ITER_NUM,
+            warmup_factor=cfg.CONFIG.TRAIN.ITER_BASED_WARMUP_FACTOR,
+            warmup_iters=cfg.CONFIG.TRAIN.ITER_BASED_WARMUP_ITERS,
+            warmup_method=cfg.CONFIG.TRAIN.ITER_BASED_WARMUP_METHOD,
         )
     elif name == 'WarmupLinearLR':
-        return WarmupLinearLR(optimizer=optimizer,
-                          max_iter=cfg.CONFIG.SOLVER.MAX_ITER,
-                          warmup_factor=cfg.CONFIG.SOLVER.WARMUP_FACTOR,
-                          warmup_iters=cfg.CONFIG.SOLVER.WARMUP_ITERS,
-                          warmup_method=cfg.CONFIG.SOLVER.WARMUP_METHOD,
-                          )
+        return WarmupLinearLR(
+            optimizer=optimizer,
+            max_iter=cfg.CONFIG.TRAIN.ITER_NUM,
+            warmup_factor=cfg.CONFIG.TRAIN.ITER_BASED_WARMUP_FACTOR,
+            warmup_iters=cfg.CONFIG.TRAIN.ITER_BASED_WARMUP_ITERS,
+            warmup_method=cfg.CONFIG.TRAIN.ITER_BASED_WARMUP_METHOD,
+        )
     else:
         raise ValueError("Unknown LR scheduler: {}".format(name))

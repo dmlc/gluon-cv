@@ -51,6 +51,8 @@ _C.CONFIG.TRAIN.ADAM_BETA2 = 0.98
 _C.CONFIG.TRAIN.ADAM_EPS = 1.5e-09
 # L2 regularization.
 _C.CONFIG.TRAIN.W_DECAY = 1e-4
+# The weight decay that's applied to parameters of normalization layers
+_C.CONFIG.TRAIN.W_DECAY_NORM = 0.0
 # Learning rate policy
 _C.CONFIG.TRAIN.LR_POLICY: 'Cosine'
 # Steps for multistep learning rate policy
@@ -59,8 +61,20 @@ _C.CONFIG.TRAIN.LR_MILESTONE = [40, 80]
 _C.CONFIG.TRAIN.STEP = 0.1
 # Use warm up scheduler or not.
 _C.CONFIG.TRAIN.USE_WARMUP: False
-# Gradually warm up the SOLVER.BASE_LR over this number of epochs.
+# Gradually warm up the TRAIN.LR over this number of epochs.
 _C.CONFIG.TRAIN.WARMUP_EPOCHS: 34
+# The LR scheduler name for the iteration based warm up, can be (WarmupMultiStepLR, WarmupCosineLR, WarmupLinearLR)
+_C.CONFIG.TRAIN.ITER_LR_SCHEDULER_NAME = "WarmupMultiStepLR"
+# Maximal number of epochs.
+_C.CONFIG.TRAIN.ITER_NUM = 40000
+# The iteration based number to decrease learning rate by SETP, it's similar but different from the epoch based LR_MILESTONE
+_C.CONFIG.TRAIN.ITER_LR_STEPS = (30000,)
+# Warm up reductio factor for iter based method
+_C.CONFIG.TRAIN.ITER_BASED_WARMUP_FACTOR = 1.0 / 1000
+# The maximum iterations for the warm up period
+_C.CONFIG.TRAIN.ITER_BASED_WARMUP_ITERS = 1000
+# The strategy for iteration based warm up
+_C.CONFIG.TRAIN.ITER_BASED_WARMUP_METHOD = "linear"
 # The start learning rate of the warm up.
 _C.CONFIG.TRAIN.WARMUP_START_LR: 0.01
 # The end learning rate of the warm up.

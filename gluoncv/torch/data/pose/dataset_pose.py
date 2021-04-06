@@ -108,7 +108,7 @@ def build_pose_train_loader(cfg, mapper=None):
         an infinite iterator of training data
     """
     dataset_dicts = get_pose_dataset_dicts(
-        cfg.CONFIG.DATASETS.TRAIN,
+        cfg.CONFIG.DATA.DATASET.TRAIN,
         filter_empty=cfg.CONFIG.DATA.DETECTION.FILTER_EMPTY_ANNOTATIONS,
         min_keypoints=cfg.CONFIG.MODEL.ROI_KEYPOINT_HEAD.MIN_KEYPOINTS_PER_IMAGE
         if cfg.CONFIG.DATA.KEYPOINT_ON
@@ -138,7 +138,7 @@ def build_pose_train_loader(cfg, mapper=None):
     return build_batch_data_loader(
         dataset,
         sampler,
-        cfg.CONFIG.SOLVER.IMS_PER_BATCH,
+        cfg.CONFIG.TRAIN.BATCH_SIZE,
         aspect_ratio_grouping=cfg.CONFIG.DATA.DETECTION.ASPECT_RATIO_GROUPING,
         num_workers=cfg.CONFIG.CONFIG.DATA.NUM_WORKERS,
     )
@@ -164,7 +164,7 @@ def build_pose_test_loader(cfg, dataset_name, mapper=None):
         [dataset_name],
         filter_empty=False,
         proposal_files=[
-            cfg.CONFIG.DATASETS.PROPOSAL_FILES_TEST[list(cfg.CONFIG.DATASETS.TEST).index(dataset_name)]
+            cfg.CONFIG.DATA.DATASET.PROPOSAL_FILES_TEST[list(cfg.CONFIG.DATA.DATASET.TEST).index(dataset_name)]
         ]
         if cfg.CONFIG.DATA.LOAD_PROPOSALS
         else None,

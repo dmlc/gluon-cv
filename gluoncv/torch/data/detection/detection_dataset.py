@@ -334,7 +334,7 @@ def build_detection_train_loader(cfg, mapper=None):
     return build_batch_data_loader(
         dataset,
         sampler,
-        cfg.SOLVER.IMS_PER_BATCH,
+        cfg.CONFIG.TRAIN.BATCH_SIZE,
         aspect_ratio_grouping=cfg.CONFIG.DATA.DETECTION.ASPECT_RATIO_GROUPING,
         num_workers=cfg.CONFIG.DATA.NUM_WORKERS,
     )
