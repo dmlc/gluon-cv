@@ -8,6 +8,8 @@ from ..detection.detection_dataset import load_proposals_into_dataset, filter_im
 from ..detection.detection_dataset import print_instances_class_histogram, build_batch_data_loader
 from ..detection.detection_utils import check_metadata_consistency, read_image, filter_empty_instances, check_image_size, build_augmentation
 from ..detection.detection_dataset import DatasetFromList, MapDataset, DatasetMapper
+from ..detection.samplers import RepeatFactorTrainingSampler, TrainingSampler
+from ..transforms.instance_transforms import RandomCropWithInstance
 
 def compute_pseudo_bbox_with_keypoint_annotation(dataset_dicts):
     """
@@ -140,7 +142,7 @@ def build_pose_train_loader(cfg, mapper=None):
         sampler,
         cfg.CONFIG.TRAIN.BATCH_SIZE,
         aspect_ratio_grouping=cfg.CONFIG.DATA.DETECTION.ASPECT_RATIO_GROUPING,
-        num_workers=cfg.CONFIG.CONFIG.DATA.NUM_WORKERS,
+        num_workers=cfg.CONFIG.DATA.NUM_WORKERS,
     )
 
 def build_pose_test_loader(cfg, dataset_name, mapper=None):
@@ -182,7 +184,7 @@ def build_pose_test_loader(cfg, dataset_name, mapper=None):
 
     data_loader = torch.utils.data.DataLoader(
         dataset,
-        num_workers=cfg.CONFIG.CONFIG.DATA.NUM_WORKERS,
+        num_workers=cfg.CONFIG.DATA.NUM_WORKERS,
         batch_sampler=batch_sampler,
         collate_fn=trivial_batch_collator,
     )
@@ -215,8 +217,9 @@ class DatasetMapperWithBasis(DatasetMapper):
             )
 
         # fmt: off
-        self.basis_loss_on       = cfg.CONFIG.MODEL.BASIS_MODULE.LOSS_ON
-        self.ann_set             = cfg.CONFIG.MODEL.BASIS_MODULE.ANN_SET
+        # TODO(zhreshold): remove this?
+        self.basis_loss_on       = False  # cfg.CONFIG.MODEL.BASIS_MODULE.LOSS_ON
+        self.ann_set             = "coco"  # cfg.CONFIG.MODEL.BASIS_MODULE.ANN_SET
         # fmt: on
 
     def __call__(self, dataset_dict):

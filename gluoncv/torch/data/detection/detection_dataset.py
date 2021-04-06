@@ -1,5 +1,6 @@
 # adapted from https://github.com/facebookresearch/detectron2/blob/master/detectron2/data/build.py
 import itertools
+import random
 import logging
 import numpy as np
 import operator
