@@ -184,7 +184,7 @@ _C.CONFIG.DATA.DETECTION.MAX_SIZE_TRAIN = 1333
 _C.CONFIG.DATA.DETECTION.MIN_SIZE_TEST = 800
 _C.CONFIG.DATA.DETECTION.MAX_SIZE_TEST = 1333
 # `True` if cropping is used for data augmentation during training
-_C.CONFIG.DATA.DETECTION.CROP = CN({"ENABLED": False}, new_allowed=True)
+_C.CONFIG.DATA.CROP = CN({"ENABLED": False}, new_allowed=True)
 # Cropping type:
 # - "relative" crop (H * CROP.SIZE[0], W * CROP.SIZE[1]) part of an input of size (H, W)
 # - "relative_range" uniformly sample relative crop size from between [CROP.SIZE[0], [CROP.SIZE[1]].

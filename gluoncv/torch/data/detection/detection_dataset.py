@@ -309,7 +309,7 @@ def build_detection_train_loader(cfg, mapper=None):
         cfg.CONFIG.DATA.DATASET.TRAIN,
         filter_empty=cfg.CONFIG.DATA.DETECTION.FILTER_EMPTY_ANNOTATIONS,
         min_keypoints=cfg.CONFIG.MODEL.ROI_KEYPOINT_HEAD.MIN_KEYPOINTS_PER_IMAGE
-        if cfg.DATA.KEYPOINT_ON
+        if cfg.CONFIG.DATA.KEYPOINT_ON
         else 0,
         proposal_files=cfg.CONFIG.DATA.DATASET.PROPOSAL_FILES_TRAIN if cfg.CONFIG.DATA.LOAD_PROPOSALS else None,
     )
@@ -362,9 +362,9 @@ def build_detection_test_loader(cfg, dataset_name, mapper=None):
         [dataset_name],
         filter_empty=False,
         proposal_files=[
-            cfg.DATASETS.PROPOSAL_FILES_TEST[list(cfg.DATASETS.TEST).index(dataset_name)]
+            cfg.CONFIG.DATA.DATASET.PROPOSAL_FILES_TEST[list(cfg.CONFIG.DATA.DATASET.PROPOSAL_FILES_TEST).index(dataset_name)]
         ]
-        if cfg.DATA.LOAD_PROPOSALS
+        if cfg.CONFIG.DATA.LOAD_PROPOSALS
         else None,
     )
 
@@ -603,9 +603,9 @@ class DatasetMapper:
     @classmethod
     def from_config(cls, cfg, is_train: bool = True):
         augs = utils.build_augmentation(cfg, is_train)
-        if cfg.CONFIG.DATA.DETECTION.CROP.ENABLED and is_train:
+        if cfg.CONFIG.DATA.CROP.ENABLED and is_train:
             augs.insert(0, T.RandomCrop(cfg.CONFIG.DATA.CROP.TYPE, cfg.CONFIG.DATA.CROP.SIZE))
-            recompute_boxes = cfg.DATA.MASK_ON
+            recompute_boxes = cfg.CONFIG.DATA.MASK_ON
         else:
             recompute_boxes = False
 
@@ -613,19 +613,19 @@ class DatasetMapper:
             "is_train": is_train,
             "augmentations": augs,
             "image_format": "RGB",
-            "use_instance_mask": cfg.DATA.MASK_ON,
+            "use_instance_mask": cfg.CONFIG.DATA.MASK_ON,
             "instance_mask_format": cfg.CONFIG.DATA.MASK_FORMAT,
-            "use_keypoint": cfg.DATA.KEYPOINT_ON,
+            "use_keypoint": cfg.CONFIG.DATA.KEYPOINT_ON,
             "recompute_boxes": recompute_boxes,
         }
-        if cfg.DATA.KEYPOINT_ON:
-            ret["keypoint_hflip_indices"] = utils.create_keypoint_hflip_indices(cfg.DATASETS.TRAIN)
+        if cfg.CONFIG.DATA.KEYPOINT_ON:
+            ret["keypoint_hflip_indices"] = utils.create_keypoint_hflip_indices(cfg.CONFIG.DATA.DATASET.TRAIN)
 
-        if cfg.DATA.LOAD_PROPOSALS:
+        if cfg.CONFIG.DATA.LOAD_PROPOSALS:
             ret["precomputed_proposal_topk"] = (
-                cfg.DATASETS.PRECOMPUTED_PROPOSAL_TOPK_TRAIN
+                cfg.CONFIG.DATA.DATASET.PRECOMPUTED_PROPOSAL_TOPK_TRAIN
                 if is_train
-                else cfg.DATASETS.PRECOMPUTED_PROPOSAL_TOPK_TEST
+                else cfg.CONFIG.DATA.DATASET.PRECOMPUTED_PROPOSAL_TOPK_TEST
             )
         return ret
 

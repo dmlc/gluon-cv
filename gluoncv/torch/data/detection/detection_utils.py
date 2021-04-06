@@ -20,7 +20,7 @@ from ..structures import (
     polygons_to_bitmask,
 )
 
-from .. import transforms as T
+from ..transforms import instance_transforms as T
 from ..registry.catalog import MetadataCatalog
 
 __all__ = [
