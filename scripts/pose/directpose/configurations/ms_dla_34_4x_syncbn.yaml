@@ -13,6 +13,9 @@ DDP_CONFIG:
 CONFIG:
   DATA:
     KEYPOINT_ON: True
+    DATASET:
+      TRAIN: ("keypoints_coco_2017_train",)
+      TEST: ("keypoints_coco_2017_val",)
   MODEL:
     PROPOSAL_GENERATOR:
       NAME: "DIRECTPOSE"
@@ -25,9 +28,6 @@ CONFIG:
       SIZES_OF_INTEREST: [64, 128, 256, 512]
       FPN_STRIDES: [8, 16, 32, 64, 128]
       IN_FEATURES: ['p3', 'p4', 'p5', 'p6', 'p7']
-  DATASETS:
-    TRAIN: ("keypoints_coco_2017_train",)
-    TEST: ("keypoints_coco_2017_val",)
   SOLVER:
     IMS_PER_BATCH: 16
     BASE_LR: 0.01  # Note that RetinaNet uses a different default learning rate

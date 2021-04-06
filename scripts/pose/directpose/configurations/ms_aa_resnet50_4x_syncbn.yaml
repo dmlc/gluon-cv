@@ -25,6 +25,9 @@ CONFIG:
     DETECTION:
       COMPUTE_PSEUDO_BBOX: True
     KEYPOINT_ON: True
+    DATASET:
+      TRAIN: ("keypoints_coco_2017_train",)
+      TEST: ("keypoints_coco_2017_val",)
   MODEL:
     BACKBONE:
       NAME: "build_directpose_resnet_fpn_backbone"
@@ -55,9 +58,6 @@ CONFIG:
       CLOSEKPT_NMS: False
       CENTER_BRANCH: 'kpt'
       USE_SCALE: False
-  DATASETS:
-    TRAIN: ("keypoints_coco_2017_train",)
-    TEST: ("keypoints_coco_2017_val",)
   SOLVER:
     IMS_PER_BATCH: 32
     STEPS: (60000, 80000)

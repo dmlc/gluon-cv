@@ -125,6 +125,15 @@ _C.CONFIG.DATA.LOAD_PROPOSALS = False
 _C.CONFIG.DATA.MASK_ON = False
 _C.CONFIG.DATA.KEYPOINT_ON = False
 
+
+# ----------------------------------------------------------------------------
+# Registered dataset in registry(torch.data.registry.DatasetCatalog)
+# ----------------------------------------------------------------------------
+_C.CONFIG.DATA.DATASET = CN(new_allowed=True)
+_C.CONFIG.DATA.DATASET.TRAIN = ()
+_C.CONFIG.DATA.DATASET.TEST = ()
+
+
 # -----------------------------------------------------------------------------
 # Detection Loader
 # -----------------------------------------------------------------------------

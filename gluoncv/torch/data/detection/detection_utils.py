@@ -3,6 +3,7 @@
 Common data processing utilities that are used in a
 typical object detection data pipeline.
 """
+import os
 import logging
 import numpy as np
 from PIL import Image
