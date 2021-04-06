@@ -120,6 +120,10 @@ _C.CONFIG.DATA.NEW_HEIGHT = 256
 # Pre-defined width for resizing input video frames.
 _C.CONFIG.DATA.NEW_WIDTH = 340
 _C.CONFIG.DATA.NUM_WORKERS = 0
+# Switch for loading optional data
+_C.CONFIG.DATA.LOAD_PROPOSALS = False
+_C.CONFIG.DATA.MASK_ON = False
+_C.CONFIG.DATA.KEYPOINT_ON = False
 
 # -----------------------------------------------------------------------------
 # Detection Loader
@@ -202,7 +206,6 @@ _C.CONFIG.MODEL.FPN.FUSE_TYPE = "sum"
 # ---------------------------------------------------------------------------- #
 # Keypoint Head
 # ---------------------------------------------------------------------------- #
-_C.CONFIG.MODEL.KEYPOINT_ON = False
 _C.CONFIG.MODEL.ROI_KEYPOINT_HEAD = CN()
 _C.CONFIG.MODEL.ROI_KEYPOINT_HEAD.NUM_KEYPOINTS = 17  # 17 is the number of keypoints in COCO.
 # Images with too few (or no) keypoints are excluded from training.

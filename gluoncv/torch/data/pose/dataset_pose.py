@@ -111,7 +111,7 @@ def build_pose_train_loader(cfg, mapper=None):
         cfg.CONFIG.DATASETS.TRAIN,
         filter_empty=cfg.CONFIG.DATA.DETECTION.FILTER_EMPTY_ANNOTATIONS,
         min_keypoints=cfg.CONFIG.MODEL.ROI_KEYPOINT_HEAD.MIN_KEYPOINTS_PER_IMAGE
-        if cfg.CONFIG.MODEL.KEYPOINT_ON
+        if cfg.CONFIG.DATA.KEYPOINT_ON
         else 0,
         compute_pseudo_bbox=cfg.CONFIG.DATA.DETECTION.COMPUTE_PSEUDO_BBOX,
         proposal_files=cfg.CONFIG.DATASETS.PROPOSAL_FILES_TRAIN if cfg.CONFIG.MODEL.LOAD_PROPOSALS else None,
@@ -166,7 +166,7 @@ def build_pose_test_loader(cfg, dataset_name, mapper=None):
         proposal_files=[
             cfg.CONFIG.DATASETS.PROPOSAL_FILES_TEST[list(cfg.CONFIG.DATASETS.TEST).index(dataset_name)]
         ]
-        if cfg.CONFIG.MODEL.LOAD_PROPOSALS
+        if cfg.CONFIG.DATA.LOAD_PROPOSALS
         else None,
     )
 

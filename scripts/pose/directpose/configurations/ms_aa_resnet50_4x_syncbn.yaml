@@ -24,6 +24,7 @@ CONFIG:
   DATA:
     DETECTION:
       COMPUTE_PSEUDO_BBOX: True
+    KEYPOINT_ON: True
   MODEL:
     BACKBONE:
       NAME: "build_directpose_resnet_fpn_backbone"
@@ -36,7 +37,6 @@ CONFIG:
       NORM: "SyncBN"
     FPN:
       IN_FEATURES: ["res3", "res4", "res5"]
-    KEYPOINT_ON: True
     DIRECTPOSE:
       TOP_LEVELS: 2
       SIZES_OF_INTEREST: [64, 128, 256, 512]

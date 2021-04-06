@@ -308,9 +308,9 @@ def build_detection_train_loader(cfg, mapper=None):
         cfg.DATASETS.TRAIN,
         filter_empty=cfg.CONFIG.DATA.DETECTION.FILTER_EMPTY_ANNOTATIONS,
         min_keypoints=cfg.MODEL.ROI_KEYPOINT_HEAD.MIN_KEYPOINTS_PER_IMAGE
-        if cfg.MODEL.KEYPOINT_ON
+        if cfg.DATA.KEYPOINT_ON
         else 0,
-        proposal_files=cfg.DATASETS.PROPOSAL_FILES_TRAIN if cfg.MODEL.LOAD_PROPOSALS else None,
+        proposal_files=cfg.DATASETS.PROPOSAL_FILES_TRAIN if cfg.DATA.LOAD_PROPOSALS else None,
     )
     dataset = DatasetFromList(dataset_dicts, copy=False)
 
@@ -363,7 +363,7 @@ def build_detection_test_loader(cfg, dataset_name, mapper=None):
         proposal_files=[
             cfg.DATASETS.PROPOSAL_FILES_TEST[list(cfg.DATASETS.TEST).index(dataset_name)]
         ]
-        if cfg.MODEL.LOAD_PROPOSALS
+        if cfg.DATA.LOAD_PROPOSALS
         else None,
     )
 
@@ -604,7 +604,7 @@ class DatasetMapper:
         augs = utils.build_augmentation(cfg, is_train)
         if cfg.INPUT.CROP.ENABLED and is_train:
             augs.insert(0, T.RandomCrop(cfg.INPUT.CROP.TYPE, cfg.INPUT.CROP.SIZE))
-            recompute_boxes = cfg.MODEL.MASK_ON
+            recompute_boxes = cfg.DATA.MASK_ON
         else:
             recompute_boxes = False
 
@@ -612,15 +612,15 @@ class DatasetMapper:
             "is_train": is_train,
             "augmentations": augs,
             "image_format": cfg.INPUT.FORMAT,
-            "use_instance_mask": cfg.MODEL.MASK_ON,
+            "use_instance_mask": cfg.DATA.MASK_ON,
             "instance_mask_format": cfg.INPUT.MASK_FORMAT,
-            "use_keypoint": cfg.MODEL.KEYPOINT_ON,
+            "use_keypoint": cfg.DATA.KEYPOINT_ON,
             "recompute_boxes": recompute_boxes,
         }
-        if cfg.MODEL.KEYPOINT_ON:
+        if cfg.DATA.KEYPOINT_ON:
             ret["keypoint_hflip_indices"] = utils.create_keypoint_hflip_indices(cfg.DATASETS.TRAIN)
 
-        if cfg.MODEL.LOAD_PROPOSALS:
+        if cfg.DATA.LOAD_PROPOSALS:
             ret["precomputed_proposal_topk"] = (
                 cfg.DATASETS.PRECOMPUTED_PROPOSAL_TOPK_TRAIN
                 if is_train
