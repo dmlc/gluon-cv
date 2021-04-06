@@ -32,7 +32,7 @@ __all__ = [
     "annotations_to_instances",
     # "annotations_to_instances_rotated",
     "build_augmentation",
-    "build_transform_gen",
+    "build_augmentation_v2",
     "create_keypoint_hflip_indices",
     "filter_empty_instances",
     "read_image",
@@ -410,6 +410,10 @@ def transform_instance_annotations(
         )
         annotation["keypoints"] = keypoints
 
+    if "beziers" in annotation:
+        beziers = transform_beziers_annotations(annotation["beziers"], transforms)
+        annotation["beziers"] = beziers
+
     return annotation
 
 
@@ -518,6 +522,15 @@ def annotations_to_instances(annos, image_size, mask_format="polygon"):
     if len(annos) and "keypoints" in annos[0]:
         kpts = [obj.get("keypoints", []) for obj in annos]
         target.gt_keypoints = Keypoints(kpts)
+
+    # add attributes
+    if len(annos) and "beziers" in annos[0]:
+        beziers = [obj.get("beziers", []) for obj in annos]
+        instance.beziers = torch.as_tensor(beziers, dtype=torch.float32)
+
+    if len(annos) and "rec" in annos[0]:
+        text = [obj.get("rec", []) for obj in annos]
+        instance.text = torch.as_tensor(text, dtype=torch.int32)
 
     return target
 
@@ -661,6 +674,26 @@ def check_metadata_consistency(key, dataset_names):
             )
             raise ValueError("Datasets have different metadata '{}'!".format(key))
 
+def transform_beziers_annotations(beziers, transforms):
+    """
+    Transform keypoint annotations of an image.
+
+    Args:
+        beziers (list[float]): Nx16 float in Detectron2 Dataset format.
+        transforms (TransformList):
+    """
+    # (N*2,) -> (N, 2)
+    beziers = np.asarray(beziers, dtype="float64").reshape(-1, 2)
+    beziers = transforms.apply_coords(beziers).reshape(-1)
+
+    # This assumes that HorizFlipTransform is the only one that does flip
+    do_hflip = (
+        sum(isinstance(t, T.HFlipTransform) for t in transforms.transforms) % 2 == 1
+    )
+    if do_hflip:
+        raise ValueError("Flipping text data is not supported (also disencouraged).")
+
+    return beziers
 
 def build_augmentation(cfg, is_train):
     """
@@ -689,8 +722,40 @@ def build_augmentation(cfg, is_train):
         augmentation.append(T.RandomFlip())
     return augmentation
 
+def build_augmentation_v2(cfg, is_train):
+    """
+    With option to don't use hflip
 
-build_transform_gen = build_augmentation
-"""
-Alias for backward-compatibility.
-"""
+    Returns:
+        list[Augmentation]
+    """
+    if is_train:
+        if cfg.INPUT.MIN_SIZE_RANGE_TRAIN[0] == -1:
+            min_size = cfg.INPUT.MIN_SIZE_TRAIN
+        else:
+            assert len(cfg.INPUT.MIN_SIZE_RANGE_TRAIN) == 2, \
+                "MIN_SIZE_RANGE_TRAIN must have two elements (lower bound, upper bound)"
+            min_size = range(
+                cfg.INPUT.MIN_SIZE_RANGE_TRAIN[0],
+                cfg.INPUT.MIN_SIZE_RANGE_TRAIN[1] + 1
+            )
+        max_size = cfg.INPUT.MAX_SIZE_TRAIN
+        sample_style = cfg.INPUT.MIN_SIZE_TRAIN_SAMPLING
+    else:
+        min_size = cfg.INPUT.MIN_SIZE_TEST
+        max_size = cfg.INPUT.MAX_SIZE_TEST
+        sample_style = "choice"
+    if sample_style == "range":
+        assert (
+            len(min_size) == 2
+        ), "more than 2 ({}) min_size(s) are provided for ranges".format(len(min_size))
+
+    logger = logging.getLogger(__name__)
+
+    augmentation = []
+    augmentation.append(T.ResizeShortestEdge(min_size, max_size, sample_style))
+    if is_train:
+        if cfg.INPUT.HFLIP_TRAIN:
+            augmentation.append(T.RandomFlip())
+        logger.info("Augmentations used in training: " + str(augmentation))
+    return augmentation
