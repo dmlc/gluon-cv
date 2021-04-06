@@ -194,7 +194,7 @@ class DatasetMapperWithBasis(DatasetMapper):
     """
 
     def __init__(self, cfg, is_train=True):
-        super().__init__(cfg, is_train)
+        super().__init__(DatasetMapper.from_config(cfg, is_train))
 
         # Rebuild augmentations
         logger.info(
