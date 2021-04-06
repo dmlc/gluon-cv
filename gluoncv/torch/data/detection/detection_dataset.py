@@ -305,12 +305,12 @@ def build_detection_train_loader(cfg, mapper=None):
         an infinite iterator of training data
     """
     dataset_dicts = get_detection_dataset_dicts(
-        cfg.DATASETS.TRAIN,
+        cfg.CONFIG.DATA.DATASET.TRAIN,
         filter_empty=cfg.CONFIG.DATA.DETECTION.FILTER_EMPTY_ANNOTATIONS,
-        min_keypoints=cfg.MODEL.ROI_KEYPOINT_HEAD.MIN_KEYPOINTS_PER_IMAGE
+        min_keypoints=cfg.CONFIG.MODEL.ROI_KEYPOINT_HEAD.MIN_KEYPOINTS_PER_IMAGE
         if cfg.DATA.KEYPOINT_ON
         else 0,
-        proposal_files=cfg.DATASETS.PROPOSAL_FILES_TRAIN if cfg.DATA.LOAD_PROPOSALS else None,
+        proposal_files=cfg.CONFIG.DATA.DATASET.PROPOSAL_FILES_TRAIN if cfg.CONFIG.DATA.LOAD_PROPOSALS else None,
     )
     dataset = DatasetFromList(dataset_dicts, copy=False)
 

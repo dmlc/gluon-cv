@@ -114,7 +114,7 @@ def build_pose_train_loader(cfg, mapper=None):
         if cfg.CONFIG.DATA.KEYPOINT_ON
         else 0,
         compute_pseudo_bbox=cfg.CONFIG.DATA.DETECTION.COMPUTE_PSEUDO_BBOX,
-        proposal_files=cfg.CONFIG.DATASETS.PROPOSAL_FILES_TRAIN if cfg.CONFIG.DATA.LOAD_PROPOSALS else None,
+        proposal_files=cfg.CONFIG.DATA.DATASET.PROPOSAL_FILES_TRAIN if cfg.CONFIG.DATA.LOAD_PROPOSALS else None,
     )
     dataset = DatasetFromList(dataset_dicts, copy=False)
 

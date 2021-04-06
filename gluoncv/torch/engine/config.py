@@ -130,8 +130,21 @@ _C.CONFIG.DATA.KEYPOINT_ON = False
 # Registered dataset in registry(torch.data.registry.DatasetCatalog)
 # ----------------------------------------------------------------------------
 _C.CONFIG.DATA.DATASET = CN(new_allowed=True)
+# List of the dataset names for training. Must be registered in DatasetCatalog
 _C.CONFIG.DATA.DATASET.TRAIN = ()
+# List of the pre-computed proposal files for training, which must be consistent
+# with datasets listed in DATASETS.TRAIN.
+_C.CONFIG.DATA.DATASET.PROPOSAL_FILES_TRAIN = ()
+# Number of top scoring precomputed proposals to keep for training
+_C.CONFIG.DATA.DATASET.PRECOMPUTED_PROPOSAL_TOPK_TRAIN = 2000
+# List of the dataset names for testing. Must be registered in DatasetCatalog
 _C.CONFIG.DATA.DATASET.TEST = ()
+# List of the pre-computed proposal files for test, which must be consistent
+# with datasets listed in DATASETS.TEST.
+_C.CONFIG.DATA.DATASET.PROPOSAL_FILES_TEST = ()
+# Number of top scoring precomputed proposals to keep for test
+_C.CONFIG.DATA.DATASET.PRECOMPUTED_PROPOSAL_TOPK_TEST = 1000
+_C.CONFIG.DATA.LOAD_PROPOSALS = False
 
 
 # -----------------------------------------------------------------------------

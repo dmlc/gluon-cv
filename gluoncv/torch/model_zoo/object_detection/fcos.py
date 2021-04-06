@@ -61,9 +61,9 @@ class FCOS(nn.Module):
     """
     def __init__(self, cfg, input_shape: Dict[str, ShapeSpec]):
         super().__init__()
-        self.in_features = cfg.MODEL.FCOS.IN_FEATURES
-        self.fpn_strides = cfg.MODEL.FCOS.FPN_STRIDES
-        self.yield_proposal = cfg.MODEL.FCOS.YIELD_PROPOSAL
+        self.in_features = cfg.CONFIG.MODEL.FCOS.IN_FEATURES
+        self.fpn_strides = cfg.CONFIG.MODEL.FCOS.FPN_STRIDES
+        self.yield_proposal = cfg.CONFIG.MODEL.FCOS.YIELD_PROPOSAL
 
         self.fcos_head = FCOSHead(cfg, [input_shape[f] for f in self.in_features])
         self.in_channels_to_top_module = self.fcos_head.in_channels_to_top_module
@@ -142,15 +142,15 @@ class FCOSHead(nn.Module):
         """
         super().__init__()
         # TODO: Implement the sigmoid version first.
-        self.num_classes = cfg.MODEL.FCOS.NUM_CLASSES
-        self.fpn_strides = cfg.MODEL.FCOS.FPN_STRIDES
-        head_configs = {"cls": (cfg.MODEL.FCOS.NUM_CLS_CONVS,
-                                cfg.MODEL.FCOS.USE_DEFORMABLE),
-                        "bbox": (cfg.MODEL.FCOS.NUM_BOX_CONVS,
-                                 cfg.MODEL.FCOS.USE_DEFORMABLE),
-                        "share": (cfg.MODEL.FCOS.NUM_SHARE_CONVS,
+        self.num_classes = cfg.CONFIG.MODEL.FCOS.NUM_CLASSES
+        self.fpn_strides = cfg.CONFIG.MODEL.FCOS.FPN_STRIDES
+        head_configs = {"cls": (cfg.CONFIG.MODEL.FCOS.NUM_CLS_CONVS,
+                                cfg.CONFIG.MODEL.FCOS.USE_DEFORMABLE),
+                        "bbox": (cfg.CONFIG.MODEL.FCOS.NUM_BOX_CONVS,
+                                 cfg.CONFIG.MODEL.FCOS.USE_DEFORMABLE),
+                        "share": (cfg.CONFIG.MODEL.FCOS.NUM_SHARE_CONVS,
                                   False)}
-        norm = None if cfg.MODEL.FCOS.NORM == "none" else cfg.MODEL.FCOS.NORM
+        norm = None if cfg.CONFIG.MODEL.FCOS.NORM == "none" else cfg.CONFIG.MODEL.FCOS.NORM
         self.num_levels = len(input_shape)
 
         in_channels = [s.channels for s in input_shape]
@@ -202,7 +202,7 @@ class FCOSHead(nn.Module):
             stride=1, padding=1
         )
 
-        if cfg.MODEL.FCOS.USE_SCALE:
+        if cfg.CONFIG.MODEL.FCOS.USE_SCALE:
             self.scales = nn.ModuleList([Scale(init_value=1.0) for _ in range(self.num_levels)])
         else:
             self.scales = None
@@ -218,7 +218,7 @@ class FCOSHead(nn.Module):
                     torch.nn.init.constant_(l.bias, 0)
 
         # initialize the bias for focal loss
-        prior_prob = cfg.MODEL.FCOS.PRIOR_PROB
+        prior_prob = cfg.CONFIG.MODEL.FCOS.PRIOR_PROB
         bias_value = -math.log((1 - prior_prob) / prior_prob)
         torch.nn.init.constant_(self.cls_logits.bias, bias_value)
 
@@ -283,28 +283,28 @@ class FCOSOutputs(nn.Module):
     def __init__(self, cfg):
         super(FCOSOutputs, self).__init__()
 
-        self.focal_loss_alpha = cfg.MODEL.FCOS.LOSS_ALPHA
-        self.focal_loss_gamma = cfg.MODEL.FCOS.LOSS_GAMMA
-        self.center_sample = cfg.MODEL.FCOS.CENTER_SAMPLE
-        self.radius = cfg.MODEL.FCOS.POS_RADIUS
-        self.pre_nms_thresh_train = cfg.MODEL.FCOS.INFERENCE_TH_TRAIN
-        self.pre_nms_topk_train = cfg.MODEL.FCOS.PRE_NMS_TOPK_TRAIN
-        self.post_nms_topk_train = cfg.MODEL.FCOS.POST_NMS_TOPK_TRAIN
-        self.loc_loss_func = IOULoss(cfg.MODEL.FCOS.LOC_LOSS_TYPE)
+        self.focal_loss_alpha = cfg.CONFIG.MODEL.FCOS.LOSS_ALPHA
+        self.focal_loss_gamma = cfg.CONFIG.MODEL.FCOS.LOSS_GAMMA
+        self.center_sample = cfg.CONFIG.MODEL.FCOS.CENTER_SAMPLE
+        self.radius = cfg.CONFIG.MODEL.FCOS.POS_RADIUS
+        self.pre_nms_thresh_train = cfg.CONFIG.MODEL.FCOS.INFERENCE_TH_TRAIN
+        self.pre_nms_topk_train = cfg.CONFIG.MODEL.FCOS.PRE_NMS_TOPK_TRAIN
+        self.post_nms_topk_train = cfg.CONFIG.MODEL.FCOS.POST_NMS_TOPK_TRAIN
+        self.loc_loss_func = IOULoss(cfg.CONFIG.MODEL.FCOS.LOC_LOSS_TYPE)
 
-        self.pre_nms_thresh_test = cfg.MODEL.FCOS.INFERENCE_TH_TEST
-        self.pre_nms_topk_test = cfg.MODEL.FCOS.PRE_NMS_TOPK_TEST
-        self.post_nms_topk_test = cfg.MODEL.FCOS.POST_NMS_TOPK_TEST
-        self.nms_thresh = cfg.MODEL.FCOS.NMS_TH
-        self.thresh_with_ctr = cfg.MODEL.FCOS.THRESH_WITH_CTR
+        self.pre_nms_thresh_test = cfg.CONFIG.MODEL.FCOS.INFERENCE_TH_TEST
+        self.pre_nms_topk_test = cfg.CONFIG.MODEL.FCOS.PRE_NMS_TOPK_TEST
+        self.post_nms_topk_test = cfg.CONFIG.MODEL.FCOS.POST_NMS_TOPK_TEST
+        self.nms_thresh = cfg.CONFIG.MODEL.FCOS.NMS_TH
+        self.thresh_with_ctr = cfg.CONFIG.MODEL.FCOS.THRESH_WITH_CTR
 
-        self.num_classes = cfg.MODEL.FCOS.NUM_CLASSES
-        self.strides = cfg.MODEL.FCOS.FPN_STRIDES
+        self.num_classes = cfg.CONFIG.MODEL.FCOS.NUM_CLASSES
+        self.strides = cfg.CONFIG.MODEL.FCOS.FPN_STRIDES
 
         # generate sizes of interest
         soi = []
         prev_size = -1
-        for s in cfg.MODEL.FCOS.SIZES_OF_INTEREST:
+        for s in cfg.CONFIG.MODEL.FCOS.SIZES_OF_INTEREST:
             soi.append([prev_size, s])
             prev_size = s
         soi.append([prev_size, INF])
