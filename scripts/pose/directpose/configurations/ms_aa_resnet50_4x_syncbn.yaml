@@ -21,6 +21,9 @@ CONFIG:
       ENABLED: True
       TYPE: "absolute"
       SIZE: [800, 800]
+  DATA:
+    DETECTION:
+      COMPUTE_PSEUDO_BBOX: True
   MODEL:
     BACKBONE:
       NAME: "build_directpose_resnet_fpn_backbone"

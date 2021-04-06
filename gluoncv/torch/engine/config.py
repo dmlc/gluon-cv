@@ -206,7 +206,7 @@ _C.CONFIG.MODEL.KEYPOINT_ON = False
 _C.CONFIG.MODEL.ROI_KEYPOINT_HEAD = CN()
 _C.CONFIG.MODEL.ROI_KEYPOINT_HEAD.NUM_KEYPOINTS = 17  # 17 is the number of keypoints in COCO.
 # Images with too few (or no) keypoints are excluded from training.
-_C.MODEL.ROI_KEYPOINT_HEAD.MIN_KEYPOINTS_PER_IMAGE = 1
+_C.CONFIG.MODEL.ROI_KEYPOINT_HEAD.MIN_KEYPOINTS_PER_IMAGE = 1
 
 # ---------------------------------------------------------------------------- #
 # DIRECTPOSE Head
