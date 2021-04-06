@@ -671,12 +671,12 @@ def build_augmentation(cfg, is_train):
         list[Augmentation]
     """
     if is_train:
-        min_size = cfg.INPUT.MIN_SIZE_TRAIN
-        max_size = cfg.INPUT.MAX_SIZE_TRAIN
-        sample_style = cfg.INPUT.MIN_SIZE_TRAIN_SAMPLING
+        min_size = cfg.CONFIG.DATA.DETECTION.MIN_SIZE_TRAIN
+        max_size = cfg.CONFIG.DATA.DETECTION.MAX_SIZE_TRAIN
+        sample_style = cfg.CONFIG.DATA.DETECTION.MIN_SIZE_TRAIN_SAMPLING
     else:
-        min_size = cfg.INPUT.MIN_SIZE_TEST
-        max_size = cfg.INPUT.MAX_SIZE_TEST
+        min_size = cfg.CONFIG.DATA.DETECTION.MIN_SIZE_TEST
+        max_size = cfg.CONFIG.DATA.DETECTION.MAX_SIZE_TEST
         sample_style = "choice"
     if sample_style == "range":
         assert len(min_size) == 2, "more than 2 ({}) min_size(s) are provided for ranges".format(

@@ -11,20 +11,19 @@ DDP_CONFIG:
   DISTRIBUTED: True
 
 CONFIG:
-  INPUT:
-    MIN_SIZE_RANGE_TRAIN: (480, 1600)
-    MIN_SIZE_TRAIN: (800,)
-    MAX_SIZE_TRAIN: 2666
-    MAX_SIZE_TEST: 1333
-    MIN_SIZE_TEST: 800
+  DATA:
+    DETECTION:
+      COMPUTE_PSEUDO_BBOX: True
+      MIN_SIZE_RANGE_TRAIN: (480, 1600)
+      MIN_SIZE_TRAIN: (800,)
+      MAX_SIZE_TRAIN: 2666
+      MAX_SIZE_TEST: 1333
+      MIN_SIZE_TEST: 800
+    KEYPOINT_ON: True
     CROP:
       ENABLED: True
       TYPE: "absolute"
       SIZE: [800, 800]
-  DATA:
-    DETECTION:
-      COMPUTE_PSEUDO_BBOX: True
-    KEYPOINT_ON: True
     DATASET:
       TRAIN: ("keypoints_coco_2017_train",)
       TEST: ("keypoints_coco_2017_val",)

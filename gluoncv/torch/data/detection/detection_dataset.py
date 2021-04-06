@@ -16,6 +16,7 @@ from ..transforms import instance_transforms as T
 
 from ..registry.catalog import DatasetCatalog, MetadataCatalog
 from .detection_utils import check_metadata_consistency
+from . import detection_utils as utils
 from .samplers import InferenceSampler, RepeatFactorTrainingSampler, TrainingSampler
 
 """
@@ -602,8 +603,8 @@ class DatasetMapper:
     @classmethod
     def from_config(cls, cfg, is_train: bool = True):
         augs = utils.build_augmentation(cfg, is_train)
-        if cfg.INPUT.CROP.ENABLED and is_train:
-            augs.insert(0, T.RandomCrop(cfg.INPUT.CROP.TYPE, cfg.INPUT.CROP.SIZE))
+        if cfg.CONFIG.DATA.DETECTION.CROP.ENABLED and is_train:
+            augs.insert(0, T.RandomCrop(cfg.CONFIG.DATA.CROP.TYPE, cfg.CONFIG.DATA.CROP.SIZE))
             recompute_boxes = cfg.DATA.MASK_ON
         else:
             recompute_boxes = False
@@ -611,9 +612,9 @@ class DatasetMapper:
         ret = {
             "is_train": is_train,
             "augmentations": augs,
-            "image_format": cfg.INPUT.FORMAT,
+            "image_format": "RGB",
             "use_instance_mask": cfg.DATA.MASK_ON,
-            "instance_mask_format": cfg.INPUT.MASK_FORMAT,
+            "instance_mask_format": cfg.CONFIG.DATA.MASK_FORMAT,
             "use_keypoint": cfg.DATA.KEYPOINT_ON,
             "recompute_boxes": recompute_boxes,
         }

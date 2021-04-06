@@ -137,6 +137,7 @@ _C.CONFIG.DATA.NUM_WORKERS = 0
 # Switch for loading optional data
 _C.CONFIG.DATA.LOAD_PROPOSALS = False
 _C.CONFIG.DATA.MASK_ON = False
+_C.CONFIG.DATA.MASK_FORMAT = "polygon"  # alternative: "bitmask"
 _C.CONFIG.DATA.KEYPOINT_ON = False
 
 
@@ -176,6 +177,29 @@ _C.CONFIG.DATA.DETECTION.REPEAT_THRESHOLD = 0.0
 # Tf True, when working on datasets that have instance annotations, the
 # training dataloader will filter out images without associated annotations
 _C.CONFIG.DATA.DETECTION.FILTER_EMPTY_ANNOTATIONS = True
+# Various Detection Size limitations
+_C.CONFIG.DATA.DETECTION.MIN_SIZE_TRAIN_SAMPLING = "choice"
+_C.CONFIG.DATA.DETECTION.MIN_SIZE_TRAIN = (800,)
+_C.CONFIG.DATA.DETECTION.MAX_SIZE_TRAIN = 1333
+_C.CONFIG.DATA.DETECTION.MIN_SIZE_TEST = 800
+_C.CONFIG.DATA.DETECTION.MAX_SIZE_TEST = 1333
+# `True` if cropping is used for data augmentation during training
+_C.CONFIG.DATA.DETECTION.CROP = CN({"ENABLED": False}, new_allowed=True)
+# Cropping type:
+# - "relative" crop (H * CROP.SIZE[0], W * CROP.SIZE[1]) part of an input of size (H, W)
+# - "relative_range" uniformly sample relative crop size from between [CROP.SIZE[0], [CROP.SIZE[1]].
+#   and  [1, 1] and use it as in "relative" scenario.
+# - "absolute" crop part of an input with absolute size: (CROP.SIZE[0], CROP.SIZE[1]).
+# - "absolute_range", for an input of size (H, W), uniformly sample H_crop in
+#   [CROP.SIZE[0], min(H, CROP.SIZE[1])] and W_crop in [CROP.SIZE[0], min(W, CROP.SIZE[1])]
+_C.CONFIG.DATA.CROP.TYPE = "relative_range"
+# Size of crop in range (0, 1] if CROP.TYPE is "relative" or "relative_range" and in number of
+# pixels if CROP.TYPE is "absolute"
+_C.CONFIG.DATA.CROP.SIZE = [0.9, 0.9]
+
+# ------------------------------------------------------------------------------
+# Model
+# ------------------------------------------------------------------------------
 
 _C.CONFIG.MODEL = CN(new_allowed=True)
 # Model architecture. You can find available models in the model zoo.
