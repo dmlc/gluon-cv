@@ -8,6 +8,7 @@ import dill
 import pickle
 from pprint import pformat
 from typing import List, Optional, Union
+import torch
 import torch.utils.data as data
 
 from ..structures import BoxMode
@@ -31,6 +32,7 @@ __all__ = [
     "get_detection_dataset_dicts",
     "load_proposals_into_dataset",
     "print_instances_class_histogram",
+    "trivial_batch_collator",
 ]
 
 

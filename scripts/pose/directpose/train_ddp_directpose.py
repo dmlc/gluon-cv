@@ -35,8 +35,8 @@ def main_worker(cfg):
     # create dataset and dataloader
     # train_loader, val_loader, train_sampler, val_sampler, mg_sampler = build_pose_train_loader(cfg)
     train_loader = build_pose_train_loader(cfg)
-    val_loader = build_pose_test_loader(cfg)
-    optimizer = build_pose_optimizer(cfg)
+    val_loader = build_pose_test_loader(cfg, cfg.CONFIG.DATA.DATASET.TEST[0])
+    optimizer = build_pose_optimizer(cfg, model)
     scheduler = build_lr_scheduler(cfg, optimizer)
 
     # if cfg.CONFIG.MODEL.LOAD:

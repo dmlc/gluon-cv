@@ -5,6 +5,7 @@ import numpy as np
 import torch
 
 from .. import comm
+from ..optimizer import maybe_add_gradient_clipping
 
 def _detect_anomaly(losses, loss_dict, iteration):
     if not torch.isfinite(losses).all():

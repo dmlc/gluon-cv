@@ -82,6 +82,19 @@ _C.CONFIG.TRAIN.WARMUP_END_LR: 0.1
 # Resume training from a specific epoch. Set to -1 means train from beginning.
 _C.CONFIG.TRAIN.RESUME_EPOCH: -1
 
+# Gradient clipping
+_C.CONFIG.TRAIN.CLIP_GRADIENTS = CN({"ENABLED": False})
+# Type of gradient clipping, currently 2 values are supported:
+# - "value": the absolute values of elements of each gradients are clipped
+# - "norm": the norm of the gradient for each parameter is clipped thus
+#   affecting all elements in the parameter
+_C.CONFIG.TRAIN.CLIP_GRADIENTS.CLIP_TYPE = "value"
+# Maximum absolute value used for clipping gradients
+_C.CONFIG.TRAIN.CLIP_GRADIENTS.CLIP_VALUE = 1.0
+# Floating point number p for L-p norm to be used with the "norm"
+# gradient clipping type; for L-inf, please specify .inf
+_C.CONFIG.TRAIN.CLIP_GRADIENTS.NORM_TYPE = 2.0
+
 
 _C.CONFIG.VAL = CN(new_allowed=True)
 # Evaluate model on test data every eval period epochs.

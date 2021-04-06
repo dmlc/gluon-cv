@@ -110,3 +110,78 @@ class RAdam(Optimizer):
                     p_data_fp32.add_(-step_size * group['lr'], exp_avg)
                     p.data.copy_(p_data_fp32)
         return loss
+
+
+class GradientClipType(Enum):
+    VALUE = "value"
+    NORM = "norm"
+
+
+def _create_gradient_clipper(cfg):
+    """
+    Creates gradient clipping closure to clip by value or by norm,
+    according to the provided config.
+    """
+    cfg = cfg.clone()
+
+    def clip_grad_norm(p: _GradientClipperInput):
+        torch.nn.utils.clip_grad_norm_(p, cfg.CLIP_VALUE, cfg.NORM_TYPE)
+
+    def clip_grad_value(p: _GradientClipperInput):
+        torch.nn.utils.clip_grad_value_(p, cfg.CLIP_VALUE)
+
+    _GRADIENT_CLIP_TYPE_TO_CLIPPER = {
+        GradientClipType.VALUE: clip_grad_value,
+        GradientClipType.NORM: clip_grad_norm,
+    }
+    return _GRADIENT_CLIP_TYPE_TO_CLIPPER[GradientClipType(cfg.CLIP_TYPE)]
+
+
+def _generate_optimizer_class_with_gradient_clipping(
+        optimizer_type, gradient_clipper):
+    """
+    Dynamically creates a new type that inherits the type of a given instance
+    and overrides the `step` method to add gradient clipping
+    """
+
+    def optimizer_wgc_step(self, closure=None):
+        for group in self.param_groups:
+            for p in group["params"]:
+                gradient_clipper(p)
+        super(type(self), self).step(closure)
+
+    OptimizerWithGradientClip = type(
+        optimizer_type.__name__ + "WithGradientClip",
+        (optimizer_type,),
+        {"step": optimizer_wgc_step},
+    )
+    return OptimizerWithGradientClip
+
+def maybe_add_gradient_clipping(cfg, optimizer):
+    """
+    If gradient clipping is enabled through config options, wraps the existing
+    optimizer instance of some type OptimizerType to become an instance
+    of the new dynamically created class OptimizerTypeWithGradientClip
+    that inherits OptimizerType and overrides the `step` method to
+    include gradient clipping.
+
+    Args:
+        cfg: CfgNode
+            configuration options
+        optimizer: torch.optim.Optimizer
+            existing optimizer instance
+
+    Return:
+        optimizer: torch.optim.Optimizer
+            either the unmodified optimizer instance (if gradient clipping is
+            disabled), or the same instance with adjusted __class__ to override
+            the `step` method and include gradient clipping
+    """
+    if not cfg.CONFIG.TRAIN.CLIP_GRADIENTS.ENABLED:
+        return optimizer
+    grad_clipper = _create_gradient_clipper(cfg.CONFIG.TRAIN.CLIP_GRADIENTS)
+    OptimizerWithGradientClip = _generate_optimizer_class_with_gradient_clipping(
+        type(optimizer), grad_clipper
+    )
+    optimizer.__class__ = OptimizerWithGradientClip
+    return optimizer

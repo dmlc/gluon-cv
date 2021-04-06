@@ -2,13 +2,14 @@
 import itertools
 import logging
 import numpy as np
+import torch
 
 from ..registry.catalog import DatasetCatalog, MetadataCatalog
 from ..detection.detection_dataset import load_proposals_into_dataset, filter_images_with_few_keypoints, filter_images_with_only_crowd_annotations, get_detection_dataset_dicts
-from ..detection.detection_dataset import print_instances_class_histogram, build_batch_data_loader
+from ..detection.detection_dataset import print_instances_class_histogram, build_batch_data_loader, trivial_batch_collator
 from ..detection.detection_utils import check_metadata_consistency, read_image, filter_empty_instances, check_image_size, build_augmentation
 from ..detection.detection_dataset import DatasetFromList, MapDataset, DatasetMapper
-from ..detection.samplers import RepeatFactorTrainingSampler, TrainingSampler
+from ..detection.samplers import RepeatFactorTrainingSampler, TrainingSampler, InferenceSampler
 from ..transforms.instance_transforms import RandomCropWithInstance
 
 def compute_pseudo_bbox_with_keypoint_annotation(dataset_dicts):
