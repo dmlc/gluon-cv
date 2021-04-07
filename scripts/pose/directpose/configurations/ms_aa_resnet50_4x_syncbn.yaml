@@ -19,6 +19,7 @@ CONFIG:
       MAX_SIZE_TRAIN: 2666
       MAX_SIZE_TEST: 1333
       MIN_SIZE_TEST: 800
+      HFLIP_TRAIN: True
     KEYPOINT_ON: True
     CROP:
       ENABLED: True

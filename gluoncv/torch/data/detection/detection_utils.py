@@ -32,7 +32,7 @@ __all__ = [
     "annotations_to_instances",
     # "annotations_to_instances_rotated",
     "build_augmentation",
-    "build_augmentation_v2",
+    "build_augmentation_ranged_clip",
     "create_keypoint_hflip_indices",
     "filter_empty_instances",
     "read_image",
@@ -722,7 +722,7 @@ def build_augmentation(cfg, is_train):
         augmentation.append(T.RandomFlip())
     return augmentation
 
-def build_augmentation_v2(cfg, is_train):
+def build_augmentation_ranged_clip(cfg, is_train):
     """
     With option to don't use hflip
 
@@ -730,20 +730,20 @@ def build_augmentation_v2(cfg, is_train):
         list[Augmentation]
     """
     if is_train:
-        if cfg.INPUT.MIN_SIZE_RANGE_TRAIN[0] == -1:
-            min_size = cfg.INPUT.MIN_SIZE_TRAIN
+        if cfg.CONFIG.DATA.DETECTION.MIN_SIZE_RANGE_TRAIN[0] == -1:
+            min_size = cfg.CONFIG.DATA.DETECTION.MIN_SIZE_TRAIN
         else:
-            assert len(cfg.INPUT.MIN_SIZE_RANGE_TRAIN) == 2, \
+            assert len(cfg.CONFIG.DATA.DETECTION.MIN_SIZE_RANGE_TRAIN) == 2, \
                 "MIN_SIZE_RANGE_TRAIN must have two elements (lower bound, upper bound)"
             min_size = range(
-                cfg.INPUT.MIN_SIZE_RANGE_TRAIN[0],
-                cfg.INPUT.MIN_SIZE_RANGE_TRAIN[1] + 1
+                cfg.CONFIG.DATA.DETECTION.MIN_SIZE_RANGE_TRAIN[0],
+                cfg.CONFIG.DATA.DETECTION.MIN_SIZE_RANGE_TRAIN[1] + 1
             )
-        max_size = cfg.INPUT.MAX_SIZE_TRAIN
-        sample_style = cfg.INPUT.MIN_SIZE_TRAIN_SAMPLING
+        max_size = cfg.CONFIG.DATA.DETECTION.MAX_SIZE_TRAIN
+        sample_style = cfg.CONFIG.DATA.DETECTION.MIN_SIZE_TRAIN_SAMPLING
     else:
-        min_size = cfg.INPUT.MIN_SIZE_TEST
-        max_size = cfg.INPUT.MAX_SIZE_TEST
+        min_size = cfg.CONFIG.DATA.DETECTION.MIN_SIZE_TEST
+        max_size = cfg.CONFIG.DATA.DETECTION.MAX_SIZE_TEST
         sample_style = "choice"
     if sample_style == "range":
         assert (
@@ -755,7 +755,7 @@ def build_augmentation_v2(cfg, is_train):
     augmentation = []
     augmentation.append(T.ResizeShortestEdge(min_size, max_size, sample_style))
     if is_train:
-        if cfg.INPUT.HFLIP_TRAIN:
+        if cfg.CONFIG.DATA.DETECTION.HFLIP_TRAIN:
             augmentation.append(T.RandomFlip())
         logger.info("Augmentations used in training: " + str(augmentation))
     return augmentation
