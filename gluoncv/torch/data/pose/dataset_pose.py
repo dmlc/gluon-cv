@@ -8,7 +8,8 @@ import torch
 from ..registry.catalog import DatasetCatalog, MetadataCatalog
 from ..detection.detection_dataset import load_proposals_into_dataset, filter_images_with_few_keypoints, filter_images_with_only_crowd_annotations, get_detection_dataset_dicts
 from ..detection.detection_dataset import print_instances_class_histogram, build_batch_data_loader, trivial_batch_collator
-from ..detection.detection_utils import check_metadata_consistency, read_image, filter_empty_instances, check_image_size, build_augmentation_ranged_clip
+from ..detection.detection_utils import check_metadata_consistency, read_image, filter_empty_instances, annotations_to_instances
+from ..detection.detection_utils import check_image_size, build_augmentation_ranged_clip, transform_instance_annotations
 from ..detection.detection_dataset import DatasetFromList, MapDataset, DatasetMapper
 from ..detection.samplers import RepeatFactorTrainingSampler, TrainingSampler, InferenceSampler
 from ..transforms import instance_transforms as T
