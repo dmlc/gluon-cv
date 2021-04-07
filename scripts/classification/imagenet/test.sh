@@ -24,8 +24,8 @@ if [ -z "$TRAIN_DATA_DIR" ]; then
   export TRAIN_DATA_DIR=~/.mxnet/datasets/imagenet
 fi
 
-if [ -z "$DALI_VERSION" ]; then
-  export DALI_VERSION=nvidia-dali-cuda100
+if [ -z "$DALI_VER" ]; then
+  export DALI_VER=nvidia-dali-cuda100
 fi
 
 python train_imagenet.py --model $MODEL --data-backend $DATA_BACKEND --num-gpus $NUM_GPUS \

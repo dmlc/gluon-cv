@@ -12,13 +12,8 @@ from gluoncv.data import imagenet
 from gluoncv.model_zoo import get_model
 from gluoncv.utils import makedirs, LRSequential, LRScheduler
 
-import dali
-
-dali_ver = 'DALI_VERSION'
-dali_version = os.environ.get(dali_ver) if dali_ver in os.environ else 'nvidia-dali-cuda100'
-
 # CLI
-def parse_args():
+def parse_args(logger = None):
     def float_list(x):
         return list(map(float, x.split(',')))
 
@@ -120,8 +115,40 @@ def parse_args():
                         help='a tuple of size 3 for the std rgb')
     parser.add_argument('--num-training-samples', type=int, default=1281167,
                         help='Number of training samples')
-    parser = dali.add_dali_args(parser)
-    dali.add_data_args(parser)
+    if logger:
+        # DALI is expected to be used
+        try:
+            import dali
+        except ImportError:
+            raise ImportError('Unable to import modules dali.py')
+
+        dali_ver = 'DALI_VER'
+        dali_version = os.environ.get(dali_ver) if dali_ver in os.environ else 'nvidia-dali-cuda100'
+        stream = os.popen("pip list | grep dali")
+        output = stream.read()
+        if output == '':
+            # DALI is not installed
+            cmd_install = 'pip install --extra-index-url https://developer.download.nvidia.com/compute/redist ' + dali_version
+            logger.info('DALI is supposed to be used, but it is not installed.\nWe can try to install it for you (and continue this test) OR\n' \
+                        'this test will be stopped and you can later restart it after installing DALI manually')
+            answer = input('Do you want to install DALI now? (Y/N):')
+            if answer[0] == 'Y' or answer[0] == 'y':
+                logger.info('Trying to install DALI version \'%s\'' % dali_version)
+                ret = os.system(cmd_install)
+                if ret != 0:
+                    logger.info('Cannot install DALI version \'%s\'.\n' \
+                                'Perhaps, the latest DALI version should be used.\n' % dali_version)
+            else:
+                ret = 1
+                logger.info('To install DALI, please, use:\n' + cmd_install)
+        if ret != 0:
+            logger.info('Please, see documentation on ' \
+                        'https://docs.nvidia.com/deeplearning/dali/user-guide/docs/installation.html\n' \
+                        'and set the environment variable %s to the appropriate version ID (default is \'%s\')' % (dali_ver, dali_version))
+            raise RuntimeError('DALI is not installed')
+
+        parser = dali.add_dali_args(parser)
+        dali.add_data_args(parser)
     return parser.parse_args()
 
 
@@ -140,6 +167,8 @@ def main():
     logger.setLevel(logging.INFO)
     logger.addHandler(filehandler)
     logger.addHandler(streamhandler)
+    if opt.data_backend[0:5] == 'dali-':
+        opt = parse_args(logger)   # Adding DALI parameters
 
     if opt.data_backend == 'dali-gpu' and opt.num_gpus == 0:
         stream = os.popen('nvidia-smi -L | wc -l')
@@ -307,18 +336,7 @@ def main():
 
         # Check if DALI is installed:
         if args.data_backend[0:5] == 'dali-':
-            stream = os.popen("pip list | grep dali")
-            output = stream.read()
-            if output == '':
-                # DALI is not installed
-                logger.info('DALI is not installed\nTrying to install DALI version \'%s\'' % dali_version)
-                ret = os.system('pip install --extra-index-url https://developer.download.nvidia.com/compute/redist ' + dali_version)
-                if ret != 0:
-                    logger.info('Cannot install DALI version \'%s\'.\nPerhaps, the latest DALI version should be used.\n' \
-                                'Please, see documentation on ' \
-                                'https://docs.nvidia.com/deeplearning/dali/user-guide/docs/installation.html\n' \
-                                'and set the environment variable %s to the appropriate version ID' % (dali_version, dali_ver))
-                    raise RuntimeError('DALI is not installed')
+            import dali
         if args.data_backend == 'dali-gpu':
             return (lambda *args, **kwargs: dali.get_rec_iter(*args, **kwargs, batch_fn=batch_func, dali_cpu=False))
         if args.data_backend == 'dali-cpu':
