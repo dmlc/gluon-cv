@@ -5,6 +5,7 @@ Utility functions, misc
 import os
 import sys
 import time
+import functools
 import numpy as np
 import logging
 from contextlib import contextmanager
@@ -30,6 +31,11 @@ def read_labelmap(labelmap_file):
                 class_ids.add(class_id)
     return labelmap, class_ids
 
+# cache the opened file object, so that different calls to `setup_logger`
+# with the same file name can safely write to the same file.
+@functools.lru_cache(maxsize=None)
+def _cached_log_stream(filename):
+    return open(filename, "a")
 
 def build_log_dir(cfg):
     # create base log directory
@@ -41,7 +47,7 @@ def build_log_dir(cfg):
 
     # setup log file and stdout
     logger = logging.getLogger()
-    log_level = logging.getLevel(cfg.CONFIG.LOG.LEVEL)
+    log_level = logging.getLevelName(cfg.CONFIG.LOG.LEVEL)
     plain_formatter = logging.Formatter(
         "[%(asctime)s] %(name)s %(levelname)s: %(message)s", datefmt="%m/%d %H:%M:%S"
     )
@@ -50,7 +56,7 @@ def build_log_dir(cfg):
     log_filename = cfg.CONFIG.LOG.LOG_FILENAME
     if cfg.DDP_CONFIG.WORLD_RANK > 0:
         log_filename += f".rank{cfg.DDP_CONFIG.WORLD_RANK}"
-    fh = logging.FileHandler(log_filename, mode='a')
+    fh = logging.StreamHandler(_cached_log_stream(log_filename))
     fh.setLevel(log_level)
     fh.setFormatter(plain_formatter)
     logger.addHandler(fh)

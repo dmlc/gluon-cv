@@ -19,7 +19,7 @@ from gluoncv.torch.utils.lr_policy import build_lr_scheduler
 
 def main_worker(cfg):
     # create tensorboard and logs
-    if cfg.DDP_CONFIG.WORLD_RANK == 0:
+    if cfg.DDP_CONFIG.GPU_WORLD_RANK == 0:
         tb_logdir = build_log_dir(cfg)
         writer = SummaryWriter(log_dir=tb_logdir)
     else:
