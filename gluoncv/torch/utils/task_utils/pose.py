@@ -46,7 +46,7 @@ def train_directpose(base_iter,
 
         batch_time = time.perf_counter() - end
         end = time.perf_counter()
-        metrics_dict["batch_time"] = batch_timef
+        metrics_dict["batch_time"] = batch_time
 
         # gather all metrics
         metrics_dict = {

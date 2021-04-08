@@ -249,6 +249,10 @@ _C.CONFIG.LOG.EVAL_DIR = ''
 _C.CONFIG.LOG.SAVE_FREQ = 1
 # Display the training log after every this number of iterations
 _C.CONFIG.LOG.DISPLAY_FREQ = 1
+# LOG LEVEL, choices are (CRITICAL, ERROR, WARNING, INFO, DEBUG)
+_C.CONFIG.LOG.LEVEL = 'DEBUG'
+# LOG output file, ends with .txt or .log
+_C.CONFIG.LOG.LOG_FILENAME = 'log.txt'
 
 # ---------------------------------------------------------------------------- #
 # DLA backbone

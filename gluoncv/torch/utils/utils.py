@@ -3,6 +3,7 @@
 Utility functions, misc
 """
 import os
+import sys
 import time
 import numpy as np
 import logging
@@ -37,6 +38,27 @@ def build_log_dir(cfg):
     log_path = os.path.join(cfg.CONFIG.LOG.BASE_PATH, cfg.CONFIG.LOG.EXP_NAME)
     if not os.path.exists(log_path):
         os.makedirs(log_path)
+
+    # setup log file and stdout
+    logger = logging.getLogger()
+    log_level = logging.getLevel(cfg.CONFIG.LOG.LEVEL)
+    plain_formatter = logging.Formatter(
+        "[%(asctime)s] %(name)s %(levelname)s: %(message)s", datefmt="%m/%d %H:%M:%S"
+    )
+    logger.setLevel(log_level)
+    # file logger, enabled for all workers
+    log_filename = cfg.CONFIG.LOG.LOG_FILENAME
+    if cfg.DDP_CONFIG.WORLD_RANK > 0:
+        log_filename += f".rank{cfg.DDP_CONFIG.WORLD_RANK}"
+    fh = logging.FileHandler(log_filename, mode='a')
+    fh.setLevel(log_level)
+    fh.setFormatter(plain_formatter)
+    logger.addHandler(fh)
+    if cfg.DDP_CONFIG.WORLD_RANK == 0:
+        # stdout in rank 0 only
+        ch = logging.StreamHandler(stream=sys.stdout)
+        ch.setLevel(log_level)
+        logger.addHandler(ch)
 
     # dump config file
     with open(os.path.join(log_path, 'config.yaml'), 'w') as f:
