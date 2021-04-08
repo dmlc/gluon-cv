@@ -44,12 +44,14 @@ def train_directpose(base_iter,
         batch_time = time.perf_counter() - end
         end = time.perf_counter()
         metrics_dict["batch_time"] = batch_time
+
+        # gather all metrics
+        metrics_dict = {
+            k: v.detach().cpu().item() if isinstance(v, torch.Tensor) else float(v)
+            for k, v in metrics_dict.items()
+        }
+        all_metrics_dict = comm.gather(metrics_dict)
         if step % cfg.CONFIG.LOG.DISPLAY_FREQ == 0 and cfg.DDP_CONFIG.GPU_WORLD_RANK == 0:
-            metrics_dict = {
-                k: v.detach().cpu().item() if isinstance(v, torch.Tensor) else float(v)
-                for k, v in metrics_dict.items()
-            }
-            all_metrics_dict = comm.gather(metrics_dict)
             if "data_time" in all_metrics_dict[0]:
                 # data_time among workers can have high variance. The actual latency
                 # caused by data_time is the maximum among workers.
