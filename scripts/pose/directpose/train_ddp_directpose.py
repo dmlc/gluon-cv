@@ -1,7 +1,6 @@
 import os
 import argparse
 import logging
-
 import torch
 import torch.nn as nn
 import torch.distributed as dist
@@ -62,6 +61,7 @@ def main_worker(cfg):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Train video action recognition models.')
     parser.add_argument('--config-file', type=str, help='path to config file.', required=True)
+    parser.add_argument('--log-level', type=str, default='INFO', help='Logging level, choices are (CRITICAL, ERROR, WARNING, INFO, DEBUG)')
     parser.add_argument("opts", help="Modify config options using the command-line", default=None, nargs=argparse.REMAINDER)
     args = parser.parse_args()
 
@@ -69,4 +69,5 @@ if __name__ == '__main__':
     cfg.merge_from_file(args.config_file)
     cfg.merge_from_list(args.opts)
     cfg.CONFIG.MODEL.DIRECTPOSE.ENABLE_HM_BRANCH = True  # enable HM_BRANCH in training
+    logging.basicConfig(level=logging.getLevelName(args.log_level))
     spawn_workers(main_worker, cfg)

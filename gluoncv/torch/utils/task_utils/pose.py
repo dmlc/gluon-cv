@@ -1,11 +1,14 @@
 """Pose utils"""
 import time
+import logging
 
 import numpy as np
 import torch
 
 from .. import comm
 from ..optimizer import maybe_add_gradient_clipping
+
+logger = logging.getLogger(__name__)
 
 def _detect_anomaly(losses, loss_dict, iteration):
     if not torch.isfinite(losses).all():
@@ -43,7 +46,7 @@ def train_directpose(base_iter,
 
         batch_time = time.perf_counter() - end
         end = time.perf_counter()
-        metrics_dict["batch_time"] = batch_time
+        metrics_dict["batch_time"] = batch_timef
 
         # gather all metrics
         metrics_dict = {
@@ -65,25 +68,21 @@ def train_directpose(base_iter,
                 k: np.mean([x[k] for x in all_metrics_dict]) for k in all_metrics_dict[0].keys()
             }
             total_losses_reduced = sum(loss for loss in metrics_dict.values())
-            print('-------------------------------------------------------')
             for param in optimizer.param_groups:
                 lr = param['lr']
-            print('lr: ', lr)
-            print_string = 'Epoch: [{0}][{1}/{2}]'.format(
-                epoch, step + 1, len(dataloader))
-            print(print_string)
-            print_string = 'data_time: {data_time:.3f}, batch time: {batch_time:.3f}'.format(
-                data_time=data_time.val, batch_time=batch_time.val)
-            print(print_string)
-            print_string = 'loss: {loss:.5f}'.format(loss=total_losses_reduced)
-            print(print_string)
+            print_string = 'Epoch: [{0}][{1}]'.format(
+                epoch, step + 1)
+            print_string += ' data_time: {data_time:.3f}, batch time: {batch_time:.3f}'.format(
+                data_time=data_time, batch_time=batch_time)
+            print_string += ' loss: {loss:.5f}'.format(loss=total_losses_reduced)
             iteration = base_iter
             writer.add_scalar('total_loss', total_losses_reduced, iteration)
             writer.add_scalar('learning_rate', lr, iteration)
             if len(metrics_dict) > 1:
                 for km, kv in metrics_dict.items():
                     writer.add_scalar(km, kv, iteration)
-                    print(f'{km}: {kv:.2f}')
+                    print_string += f' {km}: {kv:.2f}'
+            logger.info(print_string)
     return base_iter
 
 def validate_directpose():

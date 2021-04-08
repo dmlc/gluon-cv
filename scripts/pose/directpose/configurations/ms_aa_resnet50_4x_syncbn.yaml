@@ -67,10 +67,9 @@ CONFIG:
     ITER_LR_SCHEDULER_NAME: "WarmupLinearLR"    # ("WarmupLinearLR", "WarmupCosineLR", "WarmupMultiStepLR")
   VAL:
     EVAL_PERIOD: 10000
-  OUTPUT_DIR: "output/directpose/DIRECTPOSE_RT_MS_R50_syncbn_3FPN_debug"
   LOG:
-    BASE_PATH: './logs/directpose_mscoco/'
+    BASE_PATH: './logs/DIRECTPOSE_RT_MS_R50_syncbn_3FPN_debug/'
     LOG_DIR: 'tb_log'
     SAVE_DIR: 'checkpoints'
-    EVAL_DIR: './logs/directpose_mscoco/eval'
+    EVAL_DIR: './logs/DIRECTPOSE_RT_MS_R50_syncbn_3FPN_debug/eval'
     SAVE_FREQ: 5
