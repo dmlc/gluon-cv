@@ -46,14 +46,14 @@ def build_log_dir(cfg):
         os.makedirs(log_path)
 
     # setup log file and stdout
-    logger = logging.getLogger()
+    logger = logging.getLogger("gluoncv")
     log_level = logging.getLevelName(cfg.CONFIG.LOG.LEVEL)
     plain_formatter = logging.Formatter(
         "[%(asctime)s] %(name)s %(levelname)s: %(message)s", datefmt="%m/%d %H:%M:%S"
     )
     logger.setLevel(log_level)
     # file logger, enabled for all workers
-    log_filename = cfg.CONFIG.LOG.LOG_FILENAME
+    log_filename = os.path.join(log_path, cfg.CONFIG.LOG.LOG_FILENAME)
     if cfg.DDP_CONFIG.WORLD_RANK > 0:
         log_filename += f".rank{cfg.DDP_CONFIG.WORLD_RANK}"
     fh = logging.StreamHandler(_cached_log_stream(log_filename))
