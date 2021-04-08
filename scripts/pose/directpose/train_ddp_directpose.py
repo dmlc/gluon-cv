@@ -65,5 +65,6 @@ if __name__ == '__main__':
 
     cfg = get_cfg_defaults()
     cfg.merge_from_file(args.config_file)
+    cfg.merge_from_list(args.opts)
     cfg.CONFIG.MODEL.DIRECTPOSE.ENABLE_HM_BRANCH = True  # enable HM_BRANCH in training
     spawn_workers(main_worker, cfg)

@@ -28,7 +28,7 @@ def train_directpose(base_iter,
     end = time.perf_counter()
     for step, data in enumerate(dataloader):
         base_iter = base_iter + 1
-        data_time.update(time.perf_counter() - end)
+        data_time = time.perf_counter() - end
 
         loss_dict = model(data)
         losses = sum(loss_dict.values())
@@ -41,7 +41,7 @@ def train_directpose(base_iter,
         losses.backward()
         optimizer.step()
 
-        batch_time.update(time.perf_counter() - end)
+        batch_time = time.perf_counter() - end
         end = time.perf_counter()
         metrics_dict["batch_time"] = batch_time
         if step % cfg.CONFIG.LOG.DISPLAY_FREQ == 0 and cfg.DDP_CONFIG.GPU_WORLD_RANK == 0:

@@ -9,9 +9,11 @@ import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
 
+from ...data.structures import ImageList
 from ...nn.batch_norm import get_norm
 from ...nn.batch_norm import NaiveSyncBatchNorm
 from ...nn.shape_spec import ShapeSpec
+from ..detection.model_utils import detector_postprocess
 from .directpose import DirectPose
 
 
@@ -650,14 +652,60 @@ class LastLevelP6(nn.Module):
 
 
 class ResNetFPNDirectPose(nn.Module):
-    def __init__(self, backbone, pose):
+    def __init__(self, backbone, pose, pixel_mean=(0.485, 0.456, 0.406),
+                 pixel_std=(0.229, 0.224, 0.225)):
         super(ResNetFPNDirectPose, self).__init__()
         self.backbone = backbone
         self.proposal_generator = pose
+        self.register_buffer("pixel_mean", torch.Tensor(pixel_mean).view(-1, 1, 1))
+        self.register_buffer("pixel_std", torch.Tensor(pixel_std).view(-1, 1, 1))
 
-    def forward(self, images, gt_instances=None, top_module=None):
-        features = self.backbone(images)
-        return self.proposal_generator(images, features, gt_instances, top_module)
+    def forward(self, batched_inputs_or_tensor):
+        if isinstance(batched_inputs_or_tensor, torch.Tensor):
+            images = images_tensor = batched_inputs_or_tensor
+            is_tensor = True
+        else:
+            # preprocess
+            images = self.preprocess_image(batched_inputs_or_tensor)
+            images_tensor = images.tensor
+            is_tensor = False
+
+        features = self.backbone(images_tensor)
+
+        if "instances" in batched_inputs[0]:
+            gt_instances = [x["instances"].to(self.device) for x in batched_inputs]
+        elif "targets" in batched_inputs[0]:
+            gt_instances = [x["targets"].to(self.device) for x in batched_inputs]
+        else:
+            gt_instances = None
+        proposals, proposal_losses = self.proposal_generator(images, features, gt_instances)
+        if self.training:
+            return proposal_losses
+
+        if is_tensor:
+            # raw tensor input, e.g., during tracing
+            return proposals
+        
+        processed_results = []
+        for results_per_image, input_per_image, image_size in zip(
+            proposals, batched_inputs, images.image_sizes
+        ):
+            height = input_per_image.get("height", image_size[0])
+            width = input_per_image.get("width", image_size[1])
+            r = detector_postprocess(results_per_image, height, width)
+            processed_results.append({"proposals": r})
+        processed_results = [{"instances": r["proposals"]} for r in processed_results]
+        return processed_results
+
+
+    def preprocess_image(self, batched_inputs):
+        """
+        Normalize, pad and batch the input images.
+        """
+        images = [x["image"].to(self.device) for x in batched_inputs]
+        images = [(x / 255 - self.pixel_mean) / self.pixel_std for x in images]
+        images = ImageList.from_tensors(images, self.backbone.size_divisibility)
+        return images
 
 
 def resnet_lpf_fpn_directpose(cfg):

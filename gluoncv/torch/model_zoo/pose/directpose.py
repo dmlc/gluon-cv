@@ -127,6 +127,11 @@ class DirectPose(nn.Module):
                 f: b for f, b in zip(self.in_features, kpts_towers)
             }
 
+        if isinstance(images, torch.Tensor):
+            image_sizes = [image.size()[-2:] for image in images]
+        else:
+            image_sizes = images.image_sizes
+
         if self.training:
             results, losses = self.directpose_outputs.losses(
                 logits_pred, bbox_reg_pred, kpt_reg_pred, kpts_locator_reg_pred, ctrness_pred, hms, hms_offset,
@@ -137,21 +142,16 @@ class DirectPose(nn.Module):
                 with torch.no_grad():
                     results["proposals"] = self.directpose_outputs.predict_proposals(
                         logits_pred, bbox_reg_pred, kpt_reg_pred, ctrness_pred, hms,
-                        locations, images.image_sizes, top_feats
+                        locations, image_sizes, top_feats
                     )
             return results, losses
         else:
-            if isinstance(images, torch.Tensor):
-                image_sizes = [image.size()[-2:] for image in images]
-            else:
-                image_sizes = images.image_sizes
             results = self.directpose_outputs.predict_proposals(
                 logits_pred, bbox_reg_pred, kpt_reg_pred, ctrness_pred, hms, hms_offset,
                 locations, image_sizes, top_feats, None
             )
             
-            # return results, {}
-            return results
+            return results, {}
 
     def compute_locations(self, features):
         locations = []
