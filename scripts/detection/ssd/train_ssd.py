@@ -89,6 +89,8 @@ def parse_args():
                         'Currently supports only COCO.')
     parser.add_argument('--amp', action='store_true',
                         help='Use MXNet AMP for mixed precision training.')
+    parser.add_argument('--auto-layout', action='store_true',
+                        help='Add layout optimization to AMP. Must be used in addition of `--amp`.')
     parser.add_argument('--horovod', action='store_true',
                         help='Use MXNet Horovod for distributed training. Must be run with OpenMPI. '
                         '--gpus is ignored when using --horovod.')
@@ -362,8 +364,10 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
 if __name__ == '__main__':
     args = parse_args()
 
+    assert not args.auto_layout or args.amp, "--auto-layout needs to be used with --amp"
+
     if args.amp:
-        amp.init()
+        amp.init(layout_optimization=args.auto_layout)
 
     if args.horovod:
         hvd.init()

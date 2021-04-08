@@ -6,6 +6,7 @@ import gluoncv as gcv
 from mxnet import gluon, nd
 from mxnet import autograd as ag
 from mxnet.gluon.data.vision import transforms
+from mxnet.contrib import amp
 
 import gluoncv as gcv
 gcv.utils.check_version('0.6.0')
@@ -104,6 +105,10 @@ def parse_args():
                         help='name of training log file')
     parser.add_argument('--use-gn', action='store_true',
                         help='whether to use group norm.')
+    parser.add_argument('--amp', action='store_true',
+                    help='Use MXNet AMP for mixed precision training.')
+    parser.add_argument('--auto-layout', action='store_true',
+                        help='Add layout optimization to AMP. Must be used in addition of `--amp`.')
     opt = parser.parse_args()
     return opt
 
@@ -120,6 +125,11 @@ def main():
     logger.addHandler(streamhandler)
 
     logger.info(opt)
+
+    assert not opt.auto_layout or opt.amp, "--auto-layout needs to be used with --amp"
+
+    if opt.amp:
+        amp.init(layout_optimization=opt.auto_layout)
 
     batch_size = opt.batch_size
     classes = 1000
@@ -347,9 +357,12 @@ def main():
             for k, v in net.collect_params('.*beta|.*gamma|.*bias').items():
                 v.wd_mult = 0.0
 
-        trainer = gluon.Trainer(net.collect_params(), optimizer, optimizer_params)
+        trainer = gluon.Trainer(net.collect_params(), optimizer, optimizer_params, update_on_kvstore=(False if opt.amp else None))
         if opt.resume_states != '':
             trainer.load_states(opt.resume_states)
+
+        if opt.amp:
+            amp.init_trainer(trainer)
 
         if opt.label_smoothing or opt.mixup:
             sparse_label_loss = False
@@ -402,8 +415,13 @@ def main():
                                   p.astype('float32', copy=False)) for yhat, y, p in zip(outputs, label, teacher_prob)]
                     else:
                         loss = [L(yhat, y.astype(opt.dtype, copy=False)) for yhat, y in zip(outputs, label)]
-                for l in loss:
-                    l.backward()
+                    if opt.amp:
+                        with amp.scale_loss(loss, trainer) as scaled_loss:
+                            ag.backward(scaled_loss)
+                    else:
+                        for l in loss:
+                            l.backward()
+
                 trainer.step(batch_size)
 
                 if opt.mixup:

@@ -8,6 +8,7 @@ from tqdm import tqdm
 import mxnet as mx
 from mxnet import gluon, autograd
 from mxnet.gluon.data.vision import transforms
+from mxnet.contrib import amp
 
 import gluoncv
 gluoncv.utils.check_version('0.6.0')
@@ -99,6 +100,11 @@ def parse_args():
     # synchronized Batch Normalization
     parser.add_argument('--syncbn', action='store_true', default=False,
                         help='using Synchronized Cross-GPU BatchNorm')
+    # performance related
+    parser.add_argument('--amp', action='store_true',
+                        help='Use MXNet AMP for mixed precision training.')
+    parser.add_argument('--auto-layout', action='store_true',
+                        help='Add layout optimization to AMP. Must be used in addition of `--amp`.')
     # the parser
     args = parser.parse_args()
 
@@ -229,7 +235,12 @@ class Trainer(object):
                 v.wd_mult = 0.0
 
         self.optimizer = gluon.Trainer(self.net.module.collect_params(), args.optimizer,
-                                       optimizer_params, kvstore=kv)
+                                       optimizer_params, update_on_kvstore=(False if args.amp else None))
+
+
+        if args.amp:
+            amp.init_trainer(self.optimizer)
+
         # evaluation metrics
         self.metric = gluoncv.utils.metrics.SegmentationMetric(trainset.num_class)
 
@@ -241,7 +252,11 @@ class Trainer(object):
                 outputs = self.net(data.astype(args.dtype, copy=False))
                 losses = self.criterion(outputs, target)
                 mx.nd.waitall()
-                autograd.backward(losses)
+                if args.amp:
+                    with amp.scale_loss(losses, self.optimizer) as scaled_losses:
+                        autograd.backward(scaled_losses)
+                else:
+                    autograd.backward(losses)
             self.optimizer.step(self.args.batch_size)
             for loss in losses:
                 train_loss += np.mean(loss.asnumpy()) / len(losses)
@@ -281,7 +296,10 @@ def save_checkpoint(net, args, epoch, mIoU, is_best=False):
 
 if __name__ == "__main__":
     args = parse_args()
+    assert not args.auto_layout or args.amp, "--auto-layout needs to be used with --amp"
 
+    if args.amp:
+        amp.init(layout_optimization=args.auto_layout)
     # build logger
     filehandler = logging.FileHandler(os.path.join(args.save_dir, args.logging_file))
     streamhandler = logging.StreamHandler()
