@@ -221,7 +221,7 @@ class DirectPoseOutputs(nn.Module):
             xmax = center_x[beg:end] + stride
             ymax = center_y[beg:end] + stride
             # limit sample region in gt
-            center_gts.append(torch.cat([
+            center_gts.append(torch.stack([
                 torch.where(xmin > boxes[beg:end, :, 0], xmin, boxes[beg:end, :, 0]),
                 torch.where(ymin > boxes[beg:end, :, 1], ymin, boxes[beg:end, :, 1]),
                 torch.where(xmax > boxes[beg:end, :, 2], boxes[beg:end, :, 2], xmax),
