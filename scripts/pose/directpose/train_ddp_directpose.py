@@ -61,6 +61,7 @@ def main_worker(cfg):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Train video action recognition models.')
     parser.add_argument('--config-file', type=str, help='path to config file.', required=True)
+    parser.add_argument("opts", help="Modify config options using the command-line", default=None, nargs=argparse.REMAINDER)
     args = parser.parse_args()
 
     cfg = get_cfg_defaults()

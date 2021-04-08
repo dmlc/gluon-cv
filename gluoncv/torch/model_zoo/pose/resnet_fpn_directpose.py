@@ -13,7 +13,7 @@ from ...data.structures import ImageList
 from ...nn.batch_norm import get_norm
 from ...nn.batch_norm import NaiveSyncBatchNorm
 from ...nn.shape_spec import ShapeSpec
-from ..detection.model_utils import detector_postprocess
+from ..object_detection.model_utils import detector_postprocess
 from .directpose import DirectPose
 
 
@@ -660,6 +660,10 @@ class ResNetFPNDirectPose(nn.Module):
         self.register_buffer("pixel_mean", torch.Tensor(pixel_mean).view(-1, 1, 1))
         self.register_buffer("pixel_std", torch.Tensor(pixel_std).view(-1, 1, 1))
 
+    @property
+    def device(self):
+        return self.pixel_mean.device
+
     def forward(self, batched_inputs_or_tensor):
         if isinstance(batched_inputs_or_tensor, torch.Tensor):
             images = images_tensor = batched_inputs_or_tensor
@@ -672,10 +676,10 @@ class ResNetFPNDirectPose(nn.Module):
 
         features = self.backbone(images_tensor)
 
-        if "instances" in batched_inputs[0]:
-            gt_instances = [x["instances"].to(self.device) for x in batched_inputs]
-        elif "targets" in batched_inputs[0]:
-            gt_instances = [x["targets"].to(self.device) for x in batched_inputs]
+        if not is_tensor and "instances" in batched_inputs_or_tensor[0]:
+            gt_instances = [x["instances"].to(self.device) for x in batched_inputs_or_tensor]
+        elif not is_tensor and "targets" in batched_inputs_or_tensor[0]:
+            gt_instances = [x["targets"].to(self.device) for x in batched_inputs_or_tensor]
         else:
             gt_instances = None
         proposals, proposal_losses = self.proposal_generator(images, features, gt_instances)
@@ -688,7 +692,7 @@ class ResNetFPNDirectPose(nn.Module):
         
         processed_results = []
         for results_per_image, input_per_image, image_size in zip(
-            proposals, batched_inputs, images.image_sizes
+            proposals, batched_inputs_or_tensor, images.image_sizes
         ):
             height = input_per_image.get("height", image_size[0])
             width = input_per_image.get("width", image_size[1])
