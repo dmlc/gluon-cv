@@ -10,7 +10,7 @@ from gluoncv.torch.model_zoo import get_model
 from gluoncv.torch.model_zoo.pose import resnet_lpf_fpn_directpose
 from gluoncv.torch.data.pose import build_pose_train_loader, build_pose_test_loader
 from gluoncv.torch.utils.model_utils import deploy_model, load_model, save_model
-from gluoncv.torch.utils.task_utils import train_directpose, validate_directpose, build_pose_optimizer
+from gluoncv.torch.utils.task_utils import DirectposePipeline, build_pose_optimizer
 from gluoncv.torch.engine.config import get_cfg_defaults
 from gluoncv.torch.engine.launch import spawn_workers
 from gluoncv.torch.utils.utils import build_log_dir
@@ -42,10 +42,12 @@ def main_worker(cfg):
     #     model, _ = load_model(model, optimizer, cfg, load_fc=True)
     # criterion = nn.CrossEntropyLoss().cuda()
 
-    base_iter = 0
-    for epoch in range(cfg.CONFIG.TRAIN.EPOCH_NUM):
-
-        base_iter = train_directpose(base_iter, model, train_loader, epoch, optimizer, cfg, writer=writer)
+    pipeline = DirectposePipeline(0, cfg.CONFIG.TRAIN.ITER_NUM, model, train_loader, optimizer, cfg, writer=writer)
+    while pipeline.base_iter < pipeline.max_iter:
+        pipeline.train_step()
+        
+        if pipeline.base_iter % cfg.CONFIG.VAL.EVAL_PERIOD or pipeline.base_iter == pipeline.max_iter:
+            pipeline.validate(val_loader)
 
         # if epoch % cfg.CONFIG.VAL.FREQ == 0 or epoch == cfg.CONFIG.TRAIN.EPOCH_NUM - 1:
         #     validation_classification(model, val_loader, epoch, criterion, cfg, writer)

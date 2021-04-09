@@ -20,22 +20,26 @@ def _detect_anomaly(losses, loss_dict, iteration):
             )
         )
 
-def train_directpose(base_iter,
-                     max_iter,
-                     model,
-                     dataloader,
-                     epoch,
-                     optimizer,
-                     cfg,
-                     writer=None):
-    "training pipeline for directpose"
-    iter_time = AverageMeter()
-    model.train()
-    end = time.perf_counter()
-    for step, data in enumerate(dataloader):
-        base_iter = base_iter + 1
-        if base_iter > max_iter:
+
+class DirectposePipeline:
+    def __init__(self, base_iter, max_iter, model, dataloader, optimizer, cfg, writer=None):
+        self.base_iter = base_iter
+        self.max_iter = max_iter
+        self.model = model
+        self.dataloader = dataloader
+        self.optimizer = optimizer
+        self.cfg = cfg
+        self.writer = writer
+        self.iter_timer = AverageMeter()
+
+    def train_step(self):
+        self.model.train()
+        end = time.perf_counter()
+        data = next(self.dataloader)
+        self.base_iter += 1
+        if self.base_iter >= self.max_iter:
             break
+        
         data_time = time.perf_counter() - end
 
         loss_dict = model(data)
@@ -59,7 +63,7 @@ def train_directpose(base_iter,
             for k, v in metrics_dict.items()
         }
         all_metrics_dict = comm.gather(metrics_dict)
-        if step % cfg.CONFIG.LOG.DISPLAY_FREQ == 0 and cfg.DDP_CONFIG.GPU_WORLD_RANK == 0:
+        if self.base_iter % cfg.CONFIG.LOG.DISPLAY_FREQ == 0 and cfg.DDP_CONFIG.GPU_WORLD_RANK == 0:
             eta_str = None
             if "data_time" in all_metrics_dict[0]:
                 # data_time among workers can have high variance. The actual latency
@@ -69,8 +73,8 @@ def train_directpose(base_iter,
                 # batch_time among workers can have high variance. The actual latency
                 # caused by batch_time is the maximum among workers.
                 batch_time = np.max([x.pop("batch_time") for x in all_metrics_dict])
-                iter_time.update(batch_time)
-                eta = (max_iter - base_iter) * iter_time.avg
+                self.iter_timer.update(batch_time)
+                eta = (max_iter - base_iter) * self.iter_timer.avg
                 eta_str = str(datetime.timedelta(seconds=int(eta)))
             # average the rest metrics
             metrics_dict = {
@@ -79,8 +83,8 @@ def train_directpose(base_iter,
             total_losses_reduced = sum(loss for loss in metrics_dict.values())
             for param in optimizer.param_groups:
                 lr = param['lr']
-            print_string = 'Epoch: [{0}][{1}]'.format(
-                epoch, step + 1)
+            print_string = 'Iter: [{0}/{1}]'.format(
+                self.base_iter, self.max_iter)
             if eta_str is not None:
                 print_string += f' ETA: {eta_str} '
             print_string += ' data_time: {data_time:.3f}, batch time: {batch_time:.3f}'.format(
@@ -94,10 +98,14 @@ def train_directpose(base_iter,
                     writer.add_scalar(km, kv, iteration)
                     print_string += f' {km}: {kv:.2f}'
             logger.info(print_string)
-    return base_iter
+        return self.base_iter
 
-def validate_directpose():
-    pass
+    def validate(self, val_loader):
+        pass
+
+    def checkpoint(self):
+        pass
+
 
 def build_pose_optimizer(cfg, model) -> torch.optim.Optimizer:
     """
