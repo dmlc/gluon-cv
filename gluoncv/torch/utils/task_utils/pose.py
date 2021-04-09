@@ -26,32 +26,34 @@ class DirectposePipeline:
         self.base_iter = base_iter
         self.max_iter = max_iter
         self.model = model
-        self.dataloader = dataloader
+        self.dataloader = iter(dataloader)
         self.optimizer = optimizer
         self.cfg = cfg
         self.writer = writer
         self.iter_timer = AverageMeter()
 
     def train_step(self):
+        cfg = self.cfg
+        writer = self.writer
         self.model.train()
         end = time.perf_counter()
         data = next(self.dataloader)
         self.base_iter += 1
         if self.base_iter >= self.max_iter:
-            break
+            return
         
         data_time = time.perf_counter() - end
 
-        loss_dict = model(data)
+        loss_dict = self.model(data)
         losses = sum(loss_dict.values())
         _detect_anomaly(losses, loss_dict, base_iter)
 
         metrics_dict = loss_dict
         metrics_dict["data_time"] = data_time
 
-        optimizer.zero_grad()
+        self.optimizer.zero_grad()
         losses.backward()
-        optimizer.step()
+        self.optimizer.step()
 
         batch_time = time.perf_counter() - end
         end = time.perf_counter()
@@ -81,7 +83,7 @@ class DirectposePipeline:
                 k: np.mean([x[k] for x in all_metrics_dict]) for k in all_metrics_dict[0].keys()
             }
             total_losses_reduced = sum(loss for loss in metrics_dict.values())
-            for param in optimizer.param_groups:
+            for param in self.optimizer.param_groups:
                 lr = param['lr']
             print_string = 'Iter: [{0}/{1}]'.format(
                 self.base_iter, self.max_iter)
@@ -98,7 +100,6 @@ class DirectposePipeline:
                     writer.add_scalar(km, kv, iteration)
                     print_string += f' {km}: {kv:.2f}'
             logger.info(print_string)
-        return self.base_iter
 
     def validate(self, val_loader):
         pass
