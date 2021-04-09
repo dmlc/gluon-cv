@@ -52,6 +52,7 @@ def build_log_dir(cfg):
         "[%(asctime)s] %(name)s %(levelname)s: %(message)s", datefmt="%m/%d %H:%M:%S"
     )
     logger.setLevel(log_level)
+    logger.propagate = False
     # file logger, enabled for all workers
     log_filename = os.path.join(log_path, cfg.CONFIG.LOG.LOG_FILENAME)
     if cfg.DDP_CONFIG.WORLD_RANK > 0:

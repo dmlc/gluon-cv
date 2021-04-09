@@ -1,11 +1,13 @@
 """Pose utils"""
 import time
 import logging
+import datetime
 
 import numpy as np
 import torch
 
 from .. import comm
+from ..utils import AverageMeter
 from ..optimizer import maybe_add_gradient_clipping
 
 logger = logging.getLogger(__name__)
@@ -19,18 +21,21 @@ def _detect_anomaly(losses, loss_dict, iteration):
         )
 
 def train_directpose(base_iter,
-               model,
-               dataloader,
-               epoch,
-               optimizer,
-               cfg,
-               writer=None):
+                     max_iter,
+                     model,
+                     dataloader,
+                     epoch,
+                     optimizer,
+                     cfg,
+                     writer=None):
     "training pipeline for directpose"
-
+    iter_time = AverageMeter()
     model.train()
     end = time.perf_counter()
     for step, data in enumerate(dataloader):
         base_iter = base_iter + 1
+        if base_iter > max_iter:
+            break
         data_time = time.perf_counter() - end
 
         loss_dict = model(data)
@@ -55,6 +60,7 @@ def train_directpose(base_iter,
         }
         all_metrics_dict = comm.gather(metrics_dict)
         if step % cfg.CONFIG.LOG.DISPLAY_FREQ == 0 and cfg.DDP_CONFIG.GPU_WORLD_RANK == 0:
+            eta_str = None
             if "data_time" in all_metrics_dict[0]:
                 # data_time among workers can have high variance. The actual latency
                 # caused by data_time is the maximum among workers.
@@ -63,6 +69,9 @@ def train_directpose(base_iter,
                 # batch_time among workers can have high variance. The actual latency
                 # caused by batch_time is the maximum among workers.
                 batch_time = np.max([x.pop("batch_time") for x in all_metrics_dict])
+                iter_time.update(batch_time)
+                eta = (max_iter - base_iter) * iter_time.avg
+                eta_str = str(datetime.timedelta(seconds=int(eta)))
             # average the rest metrics
             metrics_dict = {
                 k: np.mean([x[k] for x in all_metrics_dict]) for k in all_metrics_dict[0].keys()
@@ -72,6 +81,8 @@ def train_directpose(base_iter,
                 lr = param['lr']
             print_string = 'Epoch: [{0}][{1}]'.format(
                 epoch, step + 1)
+            if eta_str is not None:
+                print_string += f' ETA: {eta_str} '
             print_string += ' data_time: {data_time:.3f}, batch time: {batch_time:.3f}'.format(
                 data_time=data_time, batch_time=batch_time)
             print_string += ' loss: {loss:.5f}'.format(loss=total_losses_reduced)
