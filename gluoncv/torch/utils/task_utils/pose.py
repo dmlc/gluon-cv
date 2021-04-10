@@ -46,7 +46,7 @@ class DirectposePipeline:
 
         loss_dict = self.model(data)
         losses = sum(loss_dict.values())
-        _detect_anomaly(losses, loss_dict, base_iter)
+        _detect_anomaly(losses, loss_dict, self.base_iter)
 
         metrics_dict = loss_dict
         metrics_dict["data_time"] = data_time
@@ -76,7 +76,7 @@ class DirectposePipeline:
                 # caused by batch_time is the maximum among workers.
                 batch_time = np.max([x.pop("batch_time") for x in all_metrics_dict])
                 self.iter_timer.update(batch_time)
-                eta = (max_iter - base_iter) * self.iter_timer.avg
+                eta = (self.max_iter - self.base_iter) * self.iter_timer.avg
                 eta_str = str(datetime.timedelta(seconds=int(eta)))
             # average the rest metrics
             metrics_dict = {
@@ -92,7 +92,7 @@ class DirectposePipeline:
             print_string += ' data_time: {data_time:.3f}, batch time: {batch_time:.3f}'.format(
                 data_time=data_time, batch_time=batch_time)
             print_string += ' loss: {loss:.5f}'.format(loss=total_losses_reduced)
-            iteration = base_iter
+            iteration = self.base_iter
             writer.add_scalar('total_loss', total_losses_reduced, iteration)
             writer.add_scalar('learning_rate', lr, iteration)
             if len(metrics_dict) > 1:
@@ -104,7 +104,7 @@ class DirectposePipeline:
     def validate(self, val_loader):
         pass
 
-    def checkpoint(self):
+    def save_model(self):
         pass
 
 

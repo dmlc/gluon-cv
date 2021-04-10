@@ -33,7 +33,7 @@ CONFIG:
       NAME: "build_directpose_resnet_fpn_backbone"
       ANTI_ALIAS: True
       FREEZE_AT: 0
-    WEIGHTS: "model/resnet50_lpf3.pth"
+      LOAD_URL: "https://antialiased-cnns.s3.us-east-2.amazonaws.com/weights_v0.1/resnet50_lpf3-a4e868d2.pth"
     RESNETS:
       OUT_FEATURES: ["res3", "res4", "res5"]
       DEPTH: 50

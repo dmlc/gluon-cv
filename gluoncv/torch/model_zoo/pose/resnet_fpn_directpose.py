@@ -8,6 +8,7 @@ import torch.nn.parallel
 import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
+import torch.utils.model_zoo as model_zoo
 
 from ...data.structures import ImageList
 from ...nn.batch_norm import get_norm
@@ -731,6 +732,11 @@ def resnet_lpf_fpn_directpose(cfg):
     model._out_features = out_features
     model._out_feature_channels = out_feature_channels
     model._out_feature_strides = out_feature_strides
+
+    if cfg.CONFIG.MODEL.BACKBONE.LOAD_URL:
+        model.load_state_dict(
+            model_zoo.load_url(cfg.CONFIG.MODEL.BACKBONE.LOAD_URL, map_location='cpu', check_hash=True)['state_dict'],
+            strict=False)
 
     if cfg.CONFIG.MODEL.BACKBONE.ANTI_ALIAS:
         bottom_up = model
