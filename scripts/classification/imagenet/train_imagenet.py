@@ -117,16 +117,10 @@ def parse_args(logger = None):
                         help='Number of training samples')
     if logger:
         # DALI is expected to be used
-        try:
-            import dali
-        except ImportError:
-            raise ImportError('Unable to import modules dali.py')
-
         dali_ver = 'DALI_VER'
         dali_version = os.environ.get(dali_ver) if dali_ver in os.environ else 'nvidia-dali-cuda100'
-        stream = os.popen("pip list | grep dali")
-        output = stream.read()
-        if output == '':
+        stream = os.popen("pip list --format=columns | grep dali")
+        if stream.read() == '':
             # DALI is not installed
             cmd_install = 'pip install --extra-index-url https://developer.download.nvidia.com/compute/redist ' + dali_version
             logger.info('DALI is supposed to be used, but it is not installed.\nWe can try to install it for you (and continue this test) OR\n' \
@@ -141,11 +135,15 @@ def parse_args(logger = None):
             else:
                 ret = 1
                 logger.info('To install DALI, please, use:\n' + cmd_install)
-        if ret != 0:
-            logger.info('Please, see documentation on ' \
-                        'https://docs.nvidia.com/deeplearning/dali/user-guide/docs/installation.html\n' \
-                        'and set the environment variable %s to the appropriate version ID (default is \'%s\')' % (dali_ver, dali_version))
-            raise RuntimeError('DALI is not installed')
+            if ret != 0:
+                logger.info('Please, see documentation on ' \
+                            'https://docs.nvidia.com/deeplearning/dali/user-guide/docs/installation.html\n' \
+                            'and set the environment variable %s to the appropriate version ID (default is \'%s\')' % (dali_ver, dali_version))
+                raise RuntimeError('DALI is not installed')
+        try:
+            import dali
+        except ImportError:
+            raise ImportError('Unable to import modules dali.py')
 
         parser = dali.add_dali_args(parser)
         dali.add_data_args(parser)
