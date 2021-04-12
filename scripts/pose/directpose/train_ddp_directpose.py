@@ -49,16 +49,10 @@ def main_worker(cfg):
         if pipeline.base_iter % cfg.CONFIG.VAL.EVAL_PERIOD or pipeline.base_iter == pipeline.max_iter:
             pipeline.validate(val_loader)
 
-        if pipeline.base_iter % cfg.CONFIG.train.CHECKPOINT_PERIOD == 0:
+        if pipeline.base_iter % cfg.CONFIG.TRAIN.CHECKPOINT_PERIOD == 0:
             if cfg.DDP_CONFIG.GPU_WORLD_RANK == 0 or cfg.DDP_CONFIG.DISTRIBUTED == False:
                 pipeline.save_model()
-
-        # if epoch % cfg.CONFIG.VAL.FREQ == 0 or epoch == cfg.CONFIG.TRAIN.EPOCH_NUM - 1:
-        #     validation_classification(model, val_loader, epoch, criterion, cfg, writer)
-
-        # if epoch % cfg.CONFIG.LOG.SAVE_FREQ == 0:
-        #     if cfg.DDP_CONFIG.GPU_WORLD_RANK == 0 or cfg.DDP_CONFIG.DISTRIBUTED == False:
-        #         save_model(model, optimizer, epoch, cfg)
+    
     if writer is not None:
         writer.close()
 
