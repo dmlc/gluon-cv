@@ -166,7 +166,7 @@ _C.CONFIG.DATA.DATASET.PROPOSAL_FILES_TRAIN = ()
 # Number of top scoring precomputed proposals to keep for training
 _C.CONFIG.DATA.DATASET.PRECOMPUTED_PROPOSAL_TOPK_TRAIN = 2000
 # List of the dataset names for testing. Must be registered in DatasetCatalog
-_C.CONFIG.DATA.DATASET.TEST = ()
+_C.CONFIG.DATA.DATASET.VAL = ()
 # List of the pre-computed proposal files for test, which must be consistent
 # with datasets listed in DATASETS.TEST.
 _C.CONFIG.DATA.DATASET.PROPOSAL_FILES_TEST = ()

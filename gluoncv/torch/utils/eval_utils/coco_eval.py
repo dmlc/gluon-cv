@@ -76,7 +76,7 @@ class COCOEvaluator:
         with contextlib.redirect_stdout(io.StringIO()):
             self._coco_api = COCO(json_file)
 
-        self._kpt_oks_sigmas = cfg.TEST.KEYPOINT_OKS_SIGMAS
+        self._kpt_oks_sigmas = cfg.CONFIG.VAL.KEYPOINT_OKS_SIGMAS
         # Test set json files do not contain annotations (evaluation must be
         # performed using the COCO evaluation server).
         self._do_evaluation = "annotations" in self._coco_api.dataset
@@ -90,9 +90,9 @@ class COCOEvaluator:
             tuple[str]: tasks that can be evaluated under the given configuration.
         """
         tasks = ("bbox",)
-        if cfg.MODEL.MASK_ON:
+        if cfg.CONFIG.DATA.MASK_ON:
             tasks = tasks + ("segm",)
-        if cfg.MODEL.KEYPOINT_ON:
+        if cfg.CONFIG.DATA.KEYPOINT_ON:
             tasks = tasks + ("keypoints",)
         return tasks
 
@@ -501,7 +501,7 @@ def _evaluate_predictions_on_coco(coco_gt, coco_results, iou_type, kpt_oks_sigma
         assert num_keypoints_oks == num_keypoints_dt == num_keypoints_gt, (
             f"[COCOEvaluator] Prediction contain {num_keypoints_dt} keypoints. "
             f"Ground truth contains {num_keypoints_gt} keypoints. "
-            f"The length of cfg.TEST.KEYPOINT_OKS_SIGMAS is {num_keypoints_oks}. "
+            f"The length of cfg.CONFIG.VAL.KEYPOINT_OKS_SIGMAS is {num_keypoints_oks}. "
             "They have to agree with each other. For meaning of OKS, please refer to "
             "http://cocodataset.org/#keypoints-eval."
         )

@@ -33,8 +33,10 @@ class DirectposePipeline:
         self.cfg = cfg
         self.writer = writer
         self.iter_timer = AverageMeter()
-        self.evaluator = COCOEvaluator(
-            cfg.CONFIG.DATA.DATASET.TEST, cfg, distrbuted=True, output_dir=cfg.CONFIG.LOG.EVAL_DIR)
+        val_datasets = cfg.CONFIG.DATA.DATASET.VAL.split(',')
+        self.evaluators = [COCOEvaluator(
+            val_dataset, cfg, distributed=True, 
+            output_dir=cfg.CONFIG.LOG.EVAL_DIR) for val_dataset in val_datasets]
 
     def train_step(self):
         cfg = self.cfg
@@ -106,9 +108,13 @@ class DirectposePipeline:
             logger.info(print_string)
 
     def validate(self, val_loader):
+        if not self.evaluators:
+            self.info('No evaluation data specified, skip...')
+            return
         is_training = self.model.training
         self.model.eval()
-        self.evaluator.reset()
+        for evaluator in self.evaluators:
+            evaluator.reset()
 
         # inference
         num_devices = comm.get_world_size()
@@ -129,7 +135,8 @@ class DirectposePipeline:
                 if torch.cuda.is_available():
                     torch.cuda.synchronize()
                 total_compute_time += time.perf_counter() - start_compute_time
-                self.evaluator.process(inputs, outputs)
+                for evaluator in self.evaluators:
+                    evaluator.process(inputs, outputs)
                 iters_after_start = idx + 1 - warmup_meter * int(idx >= warmup_meter)
                 seconds_per_img = total_compute_time / iters_after_start
                 if idx >= warmup_meter * 2 or seconds_per_img > 5:
@@ -152,15 +159,16 @@ class DirectposePipeline:
                 total_compute_time_str, total_compute_time / (total - num_warmup), num_devices
             )
         )
-        results = self.evaluator.evaluate()
-        cfg.DDP_CONFIG.GPU_WORLD_RANK == 0:
-            assert isinstance(results, dict)
-            for task, res in results.items():
-                # Don't print "AP-category" metrics since they are usually not tracked.
-                important_res = [(k, v) for k, v in res.items() if "-" not in k]
-                logger.info("copypaste: Task: {}".format(task))
-                logger.info("copypaste: " + ",".join([k[0] for k in important_res]))
-                logger.info("copypaste: " + ",".join(["{0:.4f}".format(k[1]) for k in important_res]))
+        for evaluator in self.evaluators:
+            results = evaluator.evaluate()
+            if cfg.DDP_CONFIG.GPU_WORLD_RANK == 0:
+                assert isinstance(results, dict)
+                for task, res in results.items():
+                    # Don't print "AP-category" metrics since they are usually not tracked.
+                    important_res = [(k, v) for k, v in res.items() if "-" not in k]
+                    logger.info("copypaste: Task: {}".format(task))
+                    logger.info("copypaste: " + ",".join([k[0] for k in important_res]))
+                    logger.info("copypaste: " + ",".join(["{0:.4f}".format(k[1]) for k in important_res]))
 
         # resume training state if applicable
         self.model.train(is_training)

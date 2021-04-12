@@ -171,7 +171,7 @@ def build_pose_test_loader(cfg, dataset_name, mapper=None):
         [dataset_name],
         filter_empty=False,
         proposal_files=[
-            cfg.CONFIG.DATA.DATASET.PROPOSAL_FILES_TEST[list(cfg.CONFIG.DATA.DATASET.TEST).index(dataset_name)]
+            cfg.CONFIG.DATA.DATASET.PROPOSAL_FILES_TEST[list(cfg.CONFIG.DATA.DATASET.VAL).index(dataset_name)]
         ]
         if cfg.CONFIG.DATA.LOAD_PROPOSALS
         else None,
