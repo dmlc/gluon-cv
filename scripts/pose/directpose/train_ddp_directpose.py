@@ -46,7 +46,7 @@ def main_worker(cfg):
     while pipeline.base_iter < pipeline.max_iter:
         pipeline.train_step()
         
-        if pipeline.base_iter % cfg.CONFIG.VAL.EVAL_PERIOD or pipeline.base_iter == pipeline.max_iter:
+        if pipeline.base_iter % cfg.CONFIG.VAL.EVAL_PERIOD == 0 or pipeline.base_iter == pipeline.max_iter:
             pipeline.validate(val_loader)
 
         if pipeline.base_iter % cfg.CONFIG.TRAIN.CHECKPOINT_PERIOD == 0:

@@ -5,6 +5,7 @@ from torch import nn
 import torch.nn.functional as F
 import numpy as np
 import os
+from torchvision.ops import nms
 
 from ...data.structures import Instances, Boxes
 from ...utils.comm import get_world_size
@@ -117,6 +118,8 @@ class DirectPoseOutputs(nn.Module):
         soi.append([prev_size, INF])
         self.sizes_of_interest = soi
         self.cnt = 0
+        # TVM MODE
+        self._tvm_mode = cfg.CONFIG.MODEL.TVM_MODE
 
     def _transpose(self, training_targets, num_loc_list):
         '''
@@ -621,33 +624,31 @@ class DirectPoseOutputs(nn.Module):
                 ) * i
 
         boxlists = list(zip(*sampled_boxes))
-        ret = [Instances.cat(boxlist) for boxlist in boxlists]
+        # ret = [Instances.cat(boxlist) for boxlist in boxlists]
         # output = [x.pred_boxes.tensor for x in ret] + [x.pred_keypoints for x in ret]
         # return output
         # boxlists = [Instances.cat(boxlist) for boxlist in boxlists]
         # boxlists = [self.select_over_all_level(Instances.cat(boxlist)) for boxlist in boxlists]
         boxlists = [Instances.cat(boxlist) for boxlist in boxlists]
-        pred_boxes = [boxlist.pred_boxes.tensor for boxlist in boxlists]
-        pred_keypoints = [boxlist.pred_keypoints for boxlist in boxlists]
-        pred_scores = [boxlist.scores for boxlist in boxlists]
-        pred_ids = [boxlist.pred_classes for boxlist in boxlists]
-        # keep = [boxlist._keep for boxlist in boxlists]
 
-        if self.enable_hm_branch and self.combine_hm_and_kpt:
-            # boxlists = self.refine_kpt(boxlists, hms, hms_offset, images, topk=40, thresh=0.1)
-            pred_keypoints = self._refine_kpt(pred_boxes, pred_keypoints, hms, hms_offset, images, topk=40, thresh=0.1)
-
-        # visualize_kpt_offset(images, boxlists, vis_dir=self.vis_res_dir, cnt=self.cnt)
-        # self.cnt += 1
-        if len(pred_ids) == 1:
-            # bs = 1, tvm output
-            from torchvision.ops import nms
+        if self._tvm_mode and not self.training and len(pred_ids) == 1:
+            pred_boxes = [boxlist.pred_boxes.tensor for boxlist in boxlists]
+            pred_keypoints = [boxlist.pred_keypoints for boxlist in boxlists]
+            pred_scores = [boxlist.scores for boxlist in boxlists]
+            pred_ids = [boxlist.pred_classes for boxlist in boxlists]
+            if self.enable_hm_branch and self.combine_hm_and_kpt:
+                pred_keypoints = self._refine_kpt(pred_boxes, pred_keypoints, hms, hms_offset, images, topk=40, thresh=0.1)
             # nms_input = torch.cat((, torch.arange(end=int(pred_boxes[0].shape[0])).to(pred_boxes[0].device).unsqueeze(-1)), dim=1)
             # print(nms_input.shape)
             nms_ret = nms(pred_boxes[0], pred_scores[0], self.nms_thresh)
             return pred_ids[0], nms_ret, pred_boxes[0], pred_scores[0], pred_keypoints[0]
-        return tuple(pred_ids), tuple(pred_scores), tuple(pred_boxes), tuple(pred_keypoints) #, tuple(keep)
-        # return boxlists
+        
+        boxlists = self.select_over_all_levels(boxlists)
+        if self.enable_hm_branch and self.combine_hm_and_kpt:
+            boxlists = self.refine_kpt(boxlists, hms, hms_offset, images, topk=40, thresh=0.1)
+        # visualize_kpt_offset(images, boxlists, vis_dir=self.vis_res_dir, cnt=self.cnt)
+        # self.cnt += 1
+        return boxlists
 
     def forward_for_single_feature_map(
             self, locations, logits_pred, bbox_reg_pred, kpt_reg_pred, kpt_vis_pred,

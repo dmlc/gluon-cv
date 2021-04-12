@@ -179,7 +179,7 @@ def build_pose_test_loader(cfg, dataset_name, mapper=None):
 
     dataset = DatasetFromList(dataset_dicts)
     if mapper is None:
-        mapper = DatasetMapperWithBasis.from_config(cfg, False)
+        mapper = DatasetMapperWithBasis(cfg, False)
     dataset = MapDataset(dataset, mapper)
 
     sampler = InferenceSampler(len(dataset))

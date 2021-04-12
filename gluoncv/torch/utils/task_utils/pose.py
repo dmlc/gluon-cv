@@ -33,7 +33,7 @@ class DirectposePipeline:
         self.cfg = cfg
         self.writer = writer
         self.iter_timer = AverageMeter()
-        val_datasets = cfg.CONFIG.DATA.DATASET.VAL.split(',')
+        val_datasets = cfg.CONFIG.DATA.DATASET.VAL
         self.evaluators = [COCOEvaluator(
             val_dataset, cfg, distributed=True, 
             output_dir=cfg.CONFIG.LOG.EVAL_DIR) for val_dataset in val_datasets]
@@ -118,7 +118,7 @@ class DirectposePipeline:
 
         # inference
         num_devices = comm.get_world_size()
-        total = len(data_loader)
+        total = len(val_loader)
         logger.info(f"Start evaluation on {total} images.")
         warmup_meter = min(5, total - 1)
         start_time = time.perf_counter()
@@ -131,7 +131,7 @@ class DirectposePipeline:
                     total_compute_time = 0
                 
                 start_compute_time = time.perf_counter()
-                outputs = model(inputs)
+                outputs = self.model(inputs)
                 if torch.cuda.is_available():
                     torch.cuda.synchronize()
                 total_compute_time += time.perf_counter() - start_compute_time
