@@ -690,16 +690,7 @@ class ResNetFPNDirectPose(nn.Module):
         if is_tensor:
             # raw tensor input, e.g., during tracing
             return proposals
-        
-        processed_results = []
-        for results_per_image, input_per_image, image_size in zip(
-            proposals, batched_inputs_or_tensor, images.image_sizes
-        ):
-            height = input_per_image.get("height", image_size[0])
-            width = input_per_image.get("width", image_size[1])
-            r = detector_postprocess(results_per_image, height, width)
-            processed_results.append({"proposals": r})
-        processed_results = [{"instances": r["proposals"]} for r in processed_results]
+        processed_results = [{"instances": r["proposals"]} for r in proposals]
         return processed_results
 
 
