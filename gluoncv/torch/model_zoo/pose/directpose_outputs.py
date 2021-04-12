@@ -982,9 +982,6 @@ class DirectPoseOutputs(nn.Module):
 
     def select_over_all_levels(self, boxlists):
         num_images = len(boxlists)
-        if num_images == 1:
-            # tvm deployment
-            return boxlists[0]
         results = []
         for i in range(num_images):
             # multiclass nms
