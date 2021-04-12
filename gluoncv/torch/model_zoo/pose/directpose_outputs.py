@@ -589,6 +589,11 @@ class DirectPoseOutputs(nn.Module):
         if len(top_feats) > 0:
             bundle["t"] = top_feats
 
+        if self._tvm_mode and not self.training
+            forward_for_single_feature_map_func = self.forward_for_single_feature_map_tvm
+        else:
+            forward_for_single_feature_map_func = self.forward_for_single_feature_map
+
         for i, per_bundle in enumerate(zip(*bundle.values())):
             # get per-level bundle
             per_bundle = dict(zip(bundle.keys(), per_bundle))
@@ -613,7 +618,7 @@ class DirectPoseOutputs(nn.Module):
             # continue
 
             sampled_boxes.append(
-                self.forward_for_single_feature_map(
+                forward_for_single_feature_map_func(
                     l, o, r, kr, kr_vis, c, image_sizes, t
                 )
             )
@@ -631,11 +636,12 @@ class DirectPoseOutputs(nn.Module):
         # boxlists = [self.select_over_all_level(Instances.cat(boxlist)) for boxlist in boxlists]
         boxlists = [Instances.cat(boxlist) for boxlist in boxlists]
 
-        if self._tvm_mode and not self.training and len(pred_ids) == 1:
+        if self._tvm_mode and not self.training:
             pred_boxes = [boxlist.pred_boxes.tensor for boxlist in boxlists]
             pred_keypoints = [boxlist.pred_keypoints for boxlist in boxlists]
             pred_scores = [boxlist.scores for boxlist in boxlists]
             pred_ids = [boxlist.pred_classes for boxlist in boxlists]
+            assert len(pred_ids) == 1, "tvm supports bs==1 only"
             if self.enable_hm_branch and self.combine_hm_and_kpt:
                 pred_keypoints = self._refine_kpt(pred_boxes, pred_keypoints, hms, hms_offset, images, topk=40, thresh=0.1)
             # nms_input = torch.cat((, torch.arange(end=int(pred_boxes[0].shape[0])).to(pred_boxes[0].device).unsqueeze(-1)), dim=1)
@@ -650,7 +656,7 @@ class DirectPoseOutputs(nn.Module):
         # self.cnt += 1
         return boxlists
 
-    def forward_for_single_feature_map(
+    def forward_for_single_feature_map_tvm(
             self, locations, logits_pred, bbox_reg_pred, kpt_reg_pred, kpt_vis_pred,
             ctrness_pred, image_sizes, top_feat=None
     ):
@@ -777,7 +783,7 @@ class DirectPoseOutputs(nn.Module):
 
         return results
 
-    def forward_for_single_feature_map_v0(
+    def forward_for_single_feature_map(
             self, locations, logits_pred, bbox_reg_pred, kpt_reg_pred, kpt_vis_pred,
             ctrness_pred, image_sizes, top_feat=None
     ):

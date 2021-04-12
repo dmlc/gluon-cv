@@ -692,7 +692,7 @@ class ResNetFPNDirectPose(nn.Module):
             return proposals
         processed_results = []
         for results_per_image, input_per_image, image_size in zip(
-            proposals, batched_inputs, images.image_sizes
+            proposals, batched_inputs_or_tensor, images.image_sizes
         ):
             height = input_per_image.get("height", image_size[0])
             width = input_per_image.get("width", image_size[1])
