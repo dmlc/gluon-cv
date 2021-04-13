@@ -589,7 +589,7 @@ class DirectPoseOutputs(nn.Module):
         if len(top_feats) > 0:
             bundle["t"] = top_feats
 
-        if self._tvm_mode and not self.training
+        if self._tvm_mode and not self.training:
             forward_for_single_feature_map_func = self.forward_for_single_feature_map_tvm
         else:
             forward_for_single_feature_map_func = self.forward_for_single_feature_map
@@ -822,7 +822,7 @@ class DirectPoseOutputs(nn.Module):
             per_candidate_inds = candidate_inds[i]
             per_box_cls = per_box_cls[per_candidate_inds]
 
-            per_candidate_nonzeros = per_candidate_inds.nonzero()
+            per_candidate_nonzeros = per_candidate_inds.nonzero(as_tuple=False)
             per_box_loc = per_candidate_nonzeros[:, 0]
             per_class = per_candidate_nonzeros[:, 1]
 

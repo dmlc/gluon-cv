@@ -8,6 +8,7 @@ import torch
 
 from .. import comm
 from ..utils import AverageMeter
+from ..model_utils import save_model
 from ..optimizer import maybe_add_gradient_clipping
 from ..eval_utils.coco_eval import COCOEvaluator
 
@@ -111,6 +112,8 @@ class DirectposePipeline:
         if not self.evaluators:
             self.info('No evaluation data specified, skip...')
             return
+        # save model before evaluation so we may recover from bugs
+        self.save_model()
         is_training = self.model.training
         self.model.eval()
         for evaluator in self.evaluators:
@@ -150,18 +153,18 @@ class DirectposePipeline:
         # NOTE this format is parsed by grep
         logger.info(
             "Total inference time: {} ({:.6f} s / img per device, on {} devices)".format(
-                total_time_str, total_time / (total - num_warmup), num_devices
+                total_time_str, total_time / (total - warmup_meter), num_devices
             )
         )
         total_compute_time_str = str(datetime.timedelta(seconds=int(total_compute_time)))
         logger.info(
             "Total inference pure compute time: {} ({:.6f} s / img per device, on {} devices)".format(
-                total_compute_time_str, total_compute_time / (total - num_warmup), num_devices
+                total_compute_time_str, total_compute_time / (total - warmup_meter), num_devices
             )
         )
         for evaluator in self.evaluators:
             results = evaluator.evaluate()
-            if cfg.DDP_CONFIG.GPU_WORLD_RANK == 0:
+            if self.cfg.DDP_CONFIG.GPU_WORLD_RANK == 0:
                 assert isinstance(results, dict)
                 for task, res in results.items():
                     # Don't print "AP-category" metrics since they are usually not tracked.
@@ -174,7 +177,8 @@ class DirectposePipeline:
         self.model.train(is_training)
 
     def save_model(self):
-        pass
+        """Save checkpoint"""
+        save_model(self.model, self.optimizer, self.base_iter, self.cfg)
 
 
 def build_pose_optimizer(cfg, model) -> torch.optim.Optimizer:

@@ -473,7 +473,7 @@ def _evaluate_predictions_on_coco(coco_gt, coco_results, iou_type, kpt_oks_sigma
     Evaluate the coco results using COCOEval API.
     """
     try_import_pycocotools()
-    from pycocotools import COCOeval
+    from pycocotools.cocoeval import COCOeval
     assert len(coco_results) > 0
 
     if iou_type == "segm":

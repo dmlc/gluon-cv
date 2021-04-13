@@ -277,7 +277,7 @@ class Boxes:
         # self.tensor[:, 0::2] *= scale_x
         # self.tensor[:, 1::2] *= scale_y
         self.tensor = torch.stack([self.tensor[:, 0] * scale_x, self.tensor[:, 1] * scale_y,
-                                   self.tensor[:, 2] * scale_x, self.tensor[:, 3] * scale_y])
+                                   self.tensor[:, 2] * scale_x, self.tensor[:, 3] * scale_y], axis=-1)
 
     # classmethod not supported by torchscript. TODO try staticmethod
     @classmethod
