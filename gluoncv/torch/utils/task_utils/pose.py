@@ -174,6 +174,8 @@ class DirectposePipeline:
                     logger.info("copypaste: Task: {}".format(task))
                     logger.info("copypaste: " + ",".join([k[0] for k in important_res]))
                     logger.info("copypaste: " + ",".join(["{0:.4f}".format(k[1]) for k in important_res]))
+                    for k in important_res:
+                        self.writer.add_scalar(':'.join((task, k[0])), k[1], self.base_iter)
 
         # resume training state if applicable
         self.model.train(is_training)
