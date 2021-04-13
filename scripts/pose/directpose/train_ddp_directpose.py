@@ -42,7 +42,7 @@ def main_worker(cfg):
     #     model, _ = load_model(model, optimizer, cfg, load_fc=True)
     # criterion = nn.CrossEntropyLoss().cuda()
 
-    pipeline = DirectposePipeline(0, cfg.CONFIG.TRAIN.ITER_NUM, model, train_loader, optimizer, cfg, writer=writer)
+    pipeline = DirectposePipeline(0, cfg.CONFIG.TRAIN.ITER_NUM, model, train_loader, optimizer, scheduler, cfg, writer=writer)
     while pipeline.base_iter < pipeline.max_iter:
         pipeline.train_step()
         

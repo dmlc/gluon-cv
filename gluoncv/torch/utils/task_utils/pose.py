@@ -24,13 +24,14 @@ def _detect_anomaly(losses, loss_dict, iteration):
 
 
 class DirectposePipeline:
-    def __init__(self, base_iter, max_iter, model, dataloader, optimizer,
+    def __init__(self, base_iter, max_iter, model, dataloader, optimizer, scheduler,
                  cfg, writer=None):
         self.base_iter = base_iter
         self.max_iter = max_iter
         self.model = model
         self.dataloader = iter(dataloader)
         self.optimizer = optimizer
+        self.scheduler = scheduler
         self.cfg = cfg
         self.writer = writer
         self.iter_timer = AverageMeter()
@@ -107,6 +108,7 @@ class DirectposePipeline:
                     writer.add_scalar(km, kv, iteration)
                     print_string += f' {km}: {kv:.2f}'
             logger.info(print_string)
+        self.scheduler.step()
 
     def validate(self, val_loader):
         if not self.evaluators:
