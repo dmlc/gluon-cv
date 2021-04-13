@@ -36,7 +36,7 @@ class DirectposePipeline:
         self.iter_timer = AverageMeter()
         val_datasets = cfg.CONFIG.DATA.DATASET.VAL
         self.evaluators = [COCOEvaluator(
-            val_dataset, cfg, distributed=True, 
+            val_dataset, cfg, distributed=cfg.DDP_CONFIG.DISTRIBUTED, 
             output_dir=cfg.CONFIG.LOG.EVAL_DIR) for val_dataset in val_datasets]
 
     def train_step(self):
@@ -178,7 +178,8 @@ class DirectposePipeline:
 
     def save_model(self):
         """Save checkpoint"""
-        save_model(self.model, self.optimizer, self.base_iter, self.cfg)
+        if self.cfg.DDP_CONFIG.GPU_WORLD_RANK == 0:
+            save_model(self.model, self.optimizer, self.base_iter, self.cfg)
 
 
 def build_pose_optimizer(cfg, model) -> torch.optim.Optimizer:
