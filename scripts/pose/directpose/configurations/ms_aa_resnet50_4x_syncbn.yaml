@@ -60,7 +60,7 @@ CONFIG:
       USE_SCALE: False
   TRAIN:
     BATCH_SIZE: 32
-    LR: 0.001
+    LR: 0.01
     ITER_LR_STEPS: (60000, 80000)
     ITER_NUM: 180000
     CHECKPOINT_PERIOD: 60000
@@ -74,3 +74,4 @@ CONFIG:
     SAVE_DIR: 'checkpoints'
     EVAL_DIR: './logs/DIRECTPOSE_RT_MS_R50_syncbn_3FPN_debug/eval'
     SAVE_FREQ: 5
+    DISPLAY_FREQ: 20

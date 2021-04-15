@@ -26,6 +26,7 @@ def _detect_anomaly(losses, loss_dict, iteration):
 class DirectposePipeline:
     def __init__(self, base_iter, max_iter, model, dataloader, optimizer, scheduler,
                  cfg, writer=None):
+        logger.info('Configuration:\n' + str(cfg))
         self.base_iter = base_iter
         self.max_iter = max_iter
         self.model = model
@@ -100,6 +101,7 @@ class DirectposePipeline:
             print_string += ' data_time: {data_time:.3f}, batch time: {batch_time:.3f}'.format(
                 data_time=data_time, batch_time=batch_time)
             print_string += ' loss: {loss:.5f}'.format(loss=total_losses_reduced)
+            print_string += ' lr: {lr:.6f}'.format(lr=lr)
             iteration = self.base_iter
             writer.add_scalar('total_loss', total_losses_reduced, iteration)
             writer.add_scalar('learning_rate', lr, iteration)
