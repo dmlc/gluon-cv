@@ -12,12 +12,8 @@ import matplotlib.pyplot as plt
 
 DATASET_INFO = {
     'MSCOCOPerson2017_val': {
-        "img_dir": '/home/zhiz/.mxnet/datasets/coco/val2017',
-        "ann_file": '/home/zhiz/.mxnet/datasets/coco/annotations/person_keypoints_val2017.json'
-    },
-    'IVISION_val': {
-        "img_dir": '/workplace/data/motion_efs/datasets/omni_data/ivision_all/raw_data/frames/2020_09_10_middle_frame_pose',
-        "ann_file": '/workplace/data/motion_efs/datasets/omni_data/ivision_all/raw_data/annotations_coco_format/2020_09_10_middle_frame_pose.json'
+        "img_dir": os.path.expanduser('~/.mxnet/datasets/coco/val2017'),
+        "ann_file": os.path.expanduser('~/.mxnet/datasets/coco/annotations/person_keypoints_val2017.json')
     },
 }
 
@@ -27,7 +23,7 @@ def parse_args():
     parser.add_argument('--index', type=int, default=0)
     parser.add_argument('--load-result', action='store_true')
     parser.add_argument('--gpus', type=int, default=8)
-    parser.add_argument('--val-annotations', type=str, nargs='+', default=['MSCOCOPerson2017_val', 'IVISION_val'], help='MSCOCOPerson2017_val and IVISION_val')
+    parser.add_argument('--val-annotations', type=str, nargs='+', default=['MSCOCOPerson2017_val',], help='MSCOCOPerson2017_val and IVISION_val')
     parser.add_argument('--model-prefix', type=str, default='./compiled')
     parser.add_argument("--image-width", type=int, default=1280)
     parser.add_argument("--image-height", type=int, default=800)

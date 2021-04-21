@@ -37,13 +37,13 @@ class PoseEstimationInferenceModel():
                 device_ctx
             )
             module.load_params(model_params)
-            return module 
+            return module
         import torch
         from gluoncv.torch import model_zoo
         from gluoncv.torch.engine.config import get_cfg_defaults
         torch.set_grad_enabled(False)
         device = torch.device('cuda')
-        cfg = get_cfg_defaults()
+        cfg = get_cfg_defaults(name='directpose')
         # cfg.merge_from_file('./configurations/ms_dla_34_4x_syncbn.yaml')
         # net = model_zoo.dla34_fpn_directpose(cfg).to(device).eval()
         # model = torch.load('model_final.pth')['model']
@@ -100,7 +100,7 @@ class PoseEstimationInferenceModel():
                 # raise
                 np_bbox, np_ids, np_scores, np_kpts = self. __postprocess(bounding_boxs, class_IDs, scores, keypoints, transform_info, idxs)
 
-            
+
             results.append({
                 "bboxes": np_bbox,
                 "class_ids": np_ids,
@@ -136,7 +136,7 @@ class PoseEstimationInferenceModel():
         transform_info = (p_b_w, p_b_h, pad_size[0], pad_size[1])
 
         image = payload.astype(np.float32)
-        
+
 
         # noramlize the image
         image = (image - self.mean) / self.std
@@ -146,7 +146,7 @@ class PoseEstimationInferenceModel():
 
         # image resize (for opencv, width come first)
         image = cv2.resize(image, (self.image_width, self.image_height), interpolation=cv2.INTER_LINEAR)
-        
+
         # noramlize the image
         # image = (image - self.mean) / self.std
 

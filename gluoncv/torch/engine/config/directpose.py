@@ -1,4 +1,4 @@
-"""Default setting in training/testing"""
+"""Default setting in training/testing for directpose"""
 from yacs.config import CfgNode as CN
 
 
@@ -37,18 +37,12 @@ _C.DDP_CONFIG.DISTRIBUTED = True
 _C.CONFIG = CN(new_allowed=True)
 
 _C.CONFIG.TRAIN = CN(new_allowed=True)
-# Maximal number of epochs.
-_C.CONFIG.TRAIN.EPOCH_NUM = 196
 # Per GPU mini-batch size.
 _C.CONFIG.TRAIN.BATCH_SIZE = 8
 # Base learning rate.
 _C.CONFIG.TRAIN.LR = 0.01
 # Momentum.
 _C.CONFIG.TRAIN.MOMENTUM = 0.9
-# Adam Beta 2
-_C.CONFIG.TRAIN.ADAM_BETA2 = 0.98
-# Adam eps
-_C.CONFIG.TRAIN.ADAM_EPS = 1.5e-09
 # L2 regularization.
 _C.CONFIG.TRAIN.W_DECAY = 1e-4
 # The weight decay that's applied to parameters of normalization layers
@@ -79,8 +73,6 @@ _C.CONFIG.TRAIN.ITER_BASED_WARMUP_METHOD = "linear"
 _C.CONFIG.TRAIN.WARMUP_START_LR: 0.01
 # The end learning rate of the warm up.
 _C.CONFIG.TRAIN.WARMUP_END_LR: 0.1
-# Resume training from a specific epoch. Set to -1 means train from beginning.
-_C.CONFIG.TRAIN.RESUME_EPOCH: -1
 
 # Gradient clipping
 _C.CONFIG.TRAIN.CLIP_GRADIENTS = CN({"ENABLED": False})
@@ -95,60 +87,8 @@ _C.CONFIG.TRAIN.CLIP_GRADIENTS.CLIP_VALUE = 1.0
 # gradient clipping type; for L-inf, please specify .inf
 _C.CONFIG.TRAIN.CLIP_GRADIENTS.NORM_TYPE = 2.0
 
-# Whether to use multigrid training to speed up.
-_C.CONFIG.TRAIN.MULTIGRID = CN(new_allowed=True)
-_C.CONFIG.TRAIN.MULTIGRID.USE_LONG_CYCLE = False
-_C.CONFIG.TRAIN.MULTIGRID.USE_SHORT_CYCLE = False
-_C.CONFIG.TRAIN.MULTIGRID.LONG_CYCLE_EPOCH = [10, 20, 30]
-
-_C.CONFIG.VAL = CN(new_allowed=True)
-# Evaluate model on test data every eval period epochs.
-_C.CONFIG.VAL.FREQ = 2
-# Per GPU mini-batch size.
-_C.CONFIG.VAL.BATCH_SIZE = 8
-
-
-_C.CONFIG.INFERENCE = CN(new_allowed=True)
-# Whether to extract features or make predictions.
-# If set to True, only features will be returned.
-_C.CONFIG.INFERENCE.FEAT = False
-
 
 _C.CONFIG.DATA = CN(new_allowed=True)
-
-# Paths of annotation files and actual data
-_C.CONFIG.DATA.TRAIN_ANNO_PATH = ''
-_C.CONFIG.DATA.TRAIN_DATA_PATH = ''
-_C.CONFIG.DATA.VAL_ANNO_PATH = ''
-_C.CONFIG.DATA.VAL_DATA_PATH = ''
-# The number of classes to predict for the model.
-_C.CONFIG.DATA.NUM_CLASSES = 400
-# The number of frames of the input clip.
-_C.CONFIG.DATA.CLIP_LEN = 16
-# The video sampling rate of the input clip.
-_C.CONFIG.DATA.FRAME_RATE = 2
-# Whether to keep aspect ratio when resizing input
-_C.CONFIG.DATA.KEEP_ASPECT_RATIO = False
-# Temporal segment setting for training video action recognition models.
-_C.CONFIG.DATA.NUM_SEGMENT = 1
-_C.CONFIG.DATA.NUM_CROP = 1
-# Multi-view evaluation for video action recognition models.
-# Usually for 2D models, it is 25 segments with 10 crops.
-# For 3D models, it is 10 segments with 3 crops.
-# Number of clips to sample from a video uniformly for aggregating the
-# prediction results.
-_C.CONFIG.DATA.TEST_NUM_SEGMENT = 10
-# Number of crops to sample from a frame spatially for aggregating the
-# prediction results.
-_C.CONFIG.DATA.TEST_NUM_CROP = 3
-# The spatial crop size for training.
-_C.CONFIG.DATA.CROP_SIZE = 224
-# Size of the smallest side of the image during testing.
-_C.CONFIG.DATA.SHORT_SIDE_SIZE = 256
-# Pre-defined height for resizing input video frames.
-_C.CONFIG.DATA.NEW_HEIGHT = 256
-# Pre-defined width for resizing input video frames.
-_C.CONFIG.DATA.NEW_WIDTH = 340
 _C.CONFIG.DATA.NUM_WORKERS = 0
 # Switch for loading optional data
 _C.CONFIG.DATA.LOAD_PROPOSALS = False
@@ -362,20 +302,3 @@ _C.CONFIG.MODEL.DIRECTPOSE.SEPERATE_CONV_CHANNEL = 64
 
 _C.CONFIG.MODEL.DIRECTPOSE.CLOSEKPT_NMS = False
 _C.CONFIG.MODEL.DIRECTPOSE.CENTER_BRANCH = 'cls'
-
-# ---------------------------------------------------------------------------- #
-# Video-Language: COOT CONFIG
-# ---------------------------------------------------------------------------- #
-
-_C.CONFIG.COOT_DATA = CN(new_allowed=True)
-_C.CONFIG.COOT_MODEL = CN(new_allowed=True)
-_C.CONFIG.COOT_MODEL.MODEL_CONFIG = CN(new_allowed=True)
-_C.CONFIG.COOT_MODEL.MODEL_CONFIG.VIDEO_POOLER = CN(new_allowed=True)
-_C.CONFIG.COOT_MODEL.MODEL_CONFIG.VIDEO_SEQUENCER = CN(new_allowed=True)
-_C.CONFIG.COOT_MODEL.MODEL_CONFIG.TEXT_POOLER = CN(new_allowed=True)
-_C.CONFIG.COOT_MODEL.MODEL_CONFIG.TEXT_SEQUENCER = CN(new_allowed=True)
-_C.CONFIG.COOT_MODEL.MODEL_CONFIG.TEXT_ENCODER = CN(new_allowed=True)
-
-def get_cfg_defaults():
-    """Get a yacs CfgNode object with default values for your project."""
-    return _C.clone()

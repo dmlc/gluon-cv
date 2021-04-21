@@ -45,14 +45,14 @@ def main_worker(cfg):
     pipeline = DirectposePipeline(0, cfg.CONFIG.TRAIN.ITER_NUM, model, train_loader, optimizer, scheduler, cfg, writer=writer)
     while pipeline.base_iter < pipeline.max_iter:
         pipeline.train_step()
-        
+
         if pipeline.base_iter % cfg.CONFIG.VAL.EVAL_PERIOD == 0 or pipeline.base_iter == pipeline.max_iter:
             pipeline.validate(val_loader)
 
         if pipeline.base_iter % cfg.CONFIG.TRAIN.CHECKPOINT_PERIOD == 0:
             if cfg.DDP_CONFIG.GPU_WORLD_RANK == 0 or cfg.DDP_CONFIG.DISTRIBUTED == False:
                 pipeline.save_model()
-    
+
     if writer is not None:
         writer.close()
 
@@ -63,7 +63,7 @@ if __name__ == '__main__':
     parser.add_argument("opts", help="Modify config options using the command-line", default=None, nargs=argparse.REMAINDER)
     args = parser.parse_args()
 
-    cfg = get_cfg_defaults()
+    cfg = get_cfg_defaults(name='directpose')
     cfg.merge_from_file(args.config_file)
     cfg.merge_from_list(args.opts)
     cfg.CONFIG.MODEL.DIRECTPOSE.ENABLE_HM_BRANCH = True  # enable HM_BRANCH in training

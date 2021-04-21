@@ -37,7 +37,7 @@ def nms(inputs, input_types):
 
     # More efficient way to run NMS for torchvision.nms
     scores = AttrCvt(op_name="expand_dims", extras={"axis": -1, "num_newaxis": 1})([scores], {})
-    
+
     data = _op.concatenate([scores, boxes, indices], -1)
     data = _op.expand_dims(data, 0, 1)
     valid_ret = _op.vision.get_valid_counts(
@@ -122,7 +122,7 @@ def get_image(img_name='street_small.jpg', img_url=None):
     def get_transforms():
         tforms = T.Compose([T.ToTensor(), T.Normalize(mean=[0.406, 0.456, 0.485], std=[0.00392157, 0.00392157, 0.00392157])])
         return tforms
-    
+
     if img_url is None:
         img_url = f"https://raw.githubusercontent.com/dmlc/web-data/master/gluoncv/detection/{img_name}"
     img, orig_img, img_path = get_single_image_input(img_url)
@@ -218,7 +218,7 @@ def verify_model_vm(input_model, ishapes, idtype=None, idata=None, targets=["llv
 if __name__ == '__main__':
     torch.set_grad_enabled(False)
     device = torch.device('cuda')
-    cfg = get_cfg_defaults()
+    cfg = get_cfg_defaults(name='directpose')
     # cfg.merge_from_file('./configurations/ms_dla_34_4x_syncbn.yaml')
     # net = model_zoo.dla34_fpn_directpose(cfg).to(device).eval()
     # model = torch.load('model_final.pth')['model']
@@ -264,9 +264,9 @@ if __name__ == '__main__':
     # scores = relay.expand_dims(scores, -1, 1)
     # data = relay.concatenate([scores, bboxes], -1)
     # data = relay.expand_dims(data, 0, 1)
-    
+
     # nms_ret = relay.vision.non_max_suppression(
-    #     data=bboxes, 
+    #     data=bboxes,
     #     valid_count=num_boxes,
     #     indices=indices,
     #     max_output_size=-1,
