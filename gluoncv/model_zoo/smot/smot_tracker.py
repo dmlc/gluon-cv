@@ -10,6 +10,7 @@ import numpy as np
 
 import mxnet as mx
 from gluoncv.utils.bbox import bbox_iou
+from gluoncv.data import COCODetection
 from .utils import timeit, Track
 from .motion_estimation import FarneBeckFlowMotionEstimator
 from .motion_estimation import DummyMotionEstimator
@@ -79,11 +80,13 @@ class SMOTTracker:
     3. Run the detractor with the tracking anchor information
     4. Run tracker.update(new_detection, track_info).
     """
+    # pylint: disable=dangerous-default-value,unnecessary-comprehension
 
     def __init__(self,
                  motion_model='no',
                  anchor_array=None,
                  use_motion=True,
+                 tracking_classes=[],
                  match_top_k=10,
                  track_keep_alive_thresh=0.1,
                  new_track_iou_thresh=0.3,
@@ -127,6 +130,16 @@ class SMOTTracker:
         self.mx_ctx = mx.gpu(gpu_id)
         self.anchor_assignment_method = anchor_assignment_method
         self.joint_linking = joint_linking
+
+        if len(tracking_classes) == 0:
+            raise ValueError("Unknown tracking classes, please let us know what object you want to track")
+        self.coco_class_set = set(COCODetection.CLASSES)
+        self.coco_class2index_dict = {i:name for i, name in enumerate(COCODetection.CLASSES)}
+        self.class_set = set(tracking_classes)
+        for class_name in tracking_classes:
+            if class_name not in self.coco_class_set:
+                raise ValueError("Your cunstom class {} is not supported, only COCO classes are currently supported,\
+                 the classes are {}".format(class_name, COCODetection.CLASSES))
 
         if motion_model == 'farneback':
             self.motion_estimator = FarneBeckFlowMotionEstimator()
@@ -504,77 +517,6 @@ class SMOTTracker:
         return tracking_anchor_indices, tracking_anchor_weights, tracking_anchor_validity
 
     @timeit
-    def _link_face_body(self, detections, detection_kp, tracking_bbox, tracking_kp, tracking_classes,
-                        thresh=1):
-        det_cls_id = detections[:, -1]
-        det_bbox = detections[:, :4]
-        det_face_idx = (det_cls_id == 0).nonzero()[0]
-        det_body_idx = (det_cls_id == 1).nonzero()[0]
-
-        if len(tracking_bbox) > 0:
-            track_cls_id = tracking_classes[:, 0]
-            track_face_idx = (track_cls_id == 0).nonzero()[0]
-            track_body_idx = (track_cls_id == 1).nonzero()[0]
-            face_bboxes = np.concatenate((det_bbox[det_face_idx, :], tracking_bbox[track_face_idx, :4]), axis=0)
-            head_kp = np.concatenate((detection_kp[det_body_idx, :], tracking_kp[track_body_idx, :]), axis=0)
-        else:
-            track_face_idx = []
-            track_body_idx = []
-            face_bboxes = det_bbox[det_face_idx, :]
-            head_kp = detection_kp[det_body_idx, :]
-
-        def get_cost(kp, bboxes):
-            centers = (bboxes[:, [0, 1]] + bboxes[:, [2, 3]]) / 2
-            wh = bboxes[:, [2, 3]] - bboxes[:, [0, 1]]
-
-            rel_offset = (kp[:, :, None] - centers.T[None, :, :]) / wh.T[None, :, :]
-            cost = np.abs(rel_offset).sum(axis=1)
-            # pad the cost matrix by 1000
-            max_size = max(cost.shape)
-            out = np.ones((max_size, max_size)) * 1000
-            out[:cost.shape[0], :cost.shape[1]] = cost
-            return out
-
-        matching_cost = get_cost(head_kp, face_bboxes)
-
-        from ...utils.filesystem import try_import_munkres
-        Munkres = try_import_munkres()
-        m = Munkres()
-        indexes = m.compute(matching_cost.tolist())
-        d2d = dict()
-        d2t = dict()
-        t2t = dict()
-        t2d = dict()
-
-        logging.debug(len(det_body_idx), len(det_face_idx))
-        logging.debug(head_kp, len(head_kp))
-        logging.debug(face_bboxes, len(face_bboxes))
-
-        # import pdb; pdb.set_trace()
-        for row, column in indexes:
-            if matching_cost[row][column] < thresh:
-                if row < len(det_body_idx) and column < len(det_face_idx):
-                    # detection-detection pair
-                    d2d[det_body_idx[row]] = det_face_idx[column]
-                elif row >= len(det_body_idx) and column >= len(det_face_idx):
-                    # tracking-tracking pair
-                    t2t[track_body_idx[row - len(det_body_idx)]] = track_face_idx[column - len(track_face_idx)]
-                elif row < len(det_body_idx) and column >= len(det_face_idx):
-                    # detection-tracking pair
-                    d2t[det_body_idx[row]] = track_face_idx[column - len(track_face_idx)]
-                elif row >= len(det_body_idx) and column < len(det_face_idx):
-                    # tracking-detection pair
-                    t2d[track_body_idx[row - len(det_body_idx)]] = det_face_idx[column]
-
-        def reverse_link(link_dict):
-            return {v:k for k, v in link_dict.items()}
-
-        ret = [d2d, t2t, d2t, t2d]
-
-        logging.debug(ret)
-        return ret, [reverse_link(x) for x in [d2d, t2t, t2d, d2t]]
-
-    @timeit
     def _produce_frame_result(self):
         tracked_objects = []
         for track in self.active_tracks:
@@ -586,14 +528,16 @@ class SMOTTracker:
             }
             tid = track.display_id
             age = track.age
+            classId = track.class_id
             obj = {
                 'bbox': box,
                 'track_id': tid,
-                'age': age
+                'age': age,
+                'class_id':classId,
+                'class_name':self.coco_class2index_dict[classId]
             }
             if track.attributes is not None:
                 obj['landmarks'] = track.attributes
-
-            tracked_objects.append(obj)
-
+            if obj["class_name"] in self.class_set:
+                tracked_objects.append(obj)
         return tracked_objects

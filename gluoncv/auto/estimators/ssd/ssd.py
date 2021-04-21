@@ -1,9 +1,11 @@
 """SSD Estimator."""
-# pylint: disable=logging-format-interpolation,abstract-method
+# pylint: disable=logging-format-interpolation,abstract-method,arguments-differ,logging-not-lazy
 import os
+import math
 import time
 import warnings
 
+from PIL import Image
 import pandas as pd
 import numpy as np
 import mxnet as mx
@@ -23,6 +25,9 @@ from ....loss import SSDMultiBoxLoss
 from .utils import _get_dataloader, _get_dali_dataloader
 from ..base_estimator import BaseEstimator, set_default
 from .default import SSDCfg
+from ...data.dataset import ObjectDetectionDataset
+from ..conf import _BEST_CHECKPOINT_FILE
+from ..utils import EarlyStopperOnPlateau
 
 try:
     import horovod.mxnet as hvd
@@ -59,6 +64,7 @@ class SSDEstimator(BaseEstimator):
     _cfg : autocfg.dataclass
         The configurations.
     """
+    Dataset = ObjectDetectionDataset
     def __init__(self, config, logger=None, reporter=None):
         super(SSDEstimator, self).__init__(config, logger, reporter, name=self.__class__.__name__)
 
@@ -67,8 +73,9 @@ class SSDEstimator(BaseEstimator):
         if self._cfg.horovod:
             hvd.init()
 
-    def _fit(self, train_data, val_data):
+    def _fit(self, train_data, val_data, time_limit=math.inf):
         """Fit SSD model."""
+        tic = time.time()
         self._best_map = 0
         self.epoch = 0
         self._time_elapsed = 0
@@ -76,9 +83,11 @@ class SSDEstimator(BaseEstimator):
             return {'time', self._time_elapsed}
         self.net.collect_params().reset_ctx(self.ctx)
         self._init_trainer()
-        return self._resume_fit(train_data, val_data)
+        self._time_elapsed += time.time() - tic
+        return self._resume_fit(train_data, val_data, time_limit=time_limit)
 
-    def _resume_fit(self, train_data, val_data):
+    def _resume_fit(self, train_data, val_data, time_limit=math.inf):
+        tic = time.time()
         if max(self._cfg.train.start_epoch, self.epoch) >= self._cfg.train.epochs:
             return {'time', self._time_elapsed}
         if not self.classes or not self.num_class:
@@ -104,9 +113,11 @@ class SSDEstimator(BaseEstimator):
                 self.async_net, train_dataset, val_dataset, self._cfg.ssd.data_shape,
                 self.batch_size, self._cfg.num_workers)
 
-        return self._train_loop(train_loader, val_loader, train_eval_loader)
+        self._time_elapsed += time.time() - tic
+        return self._train_loop(train_loader, val_loader, train_eval_loader, time_limit=time_limit)
 
-    def _train_loop(self, train_data, val_data, train_eval_data):
+    def _train_loop(self, train_data, val_data, train_eval_data, time_limit=math.inf):
+        start_tic = time.time()
         # fix seed for mxnet, numpy and python builtin random generator.
         gutils.random.seed(self._cfg.train.seed)
         # loss and metric
@@ -121,8 +132,25 @@ class SSDEstimator(BaseEstimator):
         self._logger.info('Start training from [Epoch %d]', max(self._cfg.train.start_epoch, self.epoch))
 
         self.net.collect_params().reset_ctx(self.ctx)
+        early_stopper = EarlyStopperOnPlateau(
+            patience=self._cfg.train.early_stop_patience,
+            min_delta=self._cfg.train.early_stop_min_delta,
+            baseline_value=self._cfg.train.early_stop_baseline,
+            max_value=self._cfg.train.early_stop_max_value)
+        mean_ap = [-1]
+        cp_name = ''
+        self._time_elapsed += time.time() - start_tic
         for self.epoch in range(max(self._cfg.train.start_epoch, self.epoch), self._cfg.train.epochs):
             epoch = self.epoch
+            tic = time.time()
+            last_tic = time.time()
+            if self._best_map >= 1.0:
+                self._logger.info('[Epoch {}] Early stopping as mAP is reaching 1.0'.format(epoch))
+                break
+            should_stop, stop_message = early_stopper.get_early_stop_advice()
+            if should_stop:
+                self._logger.info('[Epoch {}] '.format(epoch) + stop_message)
+                break
             while lr_steps and epoch >= lr_steps[0]:
                 new_lr = self.trainer.learning_rate * lr_decay
                 lr_steps.pop(0)
@@ -130,11 +158,14 @@ class SSDEstimator(BaseEstimator):
                 self._logger.info("[Epoch {}] Set learning rate to {}".format(epoch, new_lr))
             ce_metric.reset()
             smoothl1_metric.reset()
-            tic = time.time()
-            btic = time.time()
             self.net.hybridize(static_alloc=True, static_shape=True)
 
             for i, batch in enumerate(train_data):
+                btic = time.time()
+                if self._time_elapsed > time_limit:
+                    self._logger.warning(f'`time_limit={time_limit}` reached, exit early...')
+                    return {'train_map': float(mean_ap[-1]), 'valid_map': self._best_map,
+                            'time': self._time_elapsed, 'checkpoint': cp_name}
                 if self._cfg.train.dali:
                     # dali iterator returns a mxnet.io.DataBatch
                     data = [d.data[0] for d in batch]
@@ -173,10 +204,12 @@ class SSDEstimator(BaseEstimator):
                         name1, loss1 = ce_metric.get()
                         name2, loss2 = smoothl1_metric.get()
                         self._logger.info('[Epoch %d][Batch %d], Speed: %f samples/sec, %s=%f, %s=%f',
-                                          epoch, i, self._cfg.train.batch_size/(time.time()-btic),
+                                          epoch, i, self._cfg.train.batch_size/(time.time()-last_tic),
                                           name1, loss1, name2, loss2)
-                    btic = time.time()
+                        last_tic = time.time()
+                self._time_elapsed += time.time() - btic
 
+            post_tic = time.time()
             if not self._cfg.horovod or hvd.rank() == 0:
                 name1, loss1 = ce_metric.get()
                 name2, loss2 = smoothl1_metric.get()
@@ -190,17 +223,21 @@ class SSDEstimator(BaseEstimator):
                     self._logger.info('[Epoch %d] Validation: \n%s', epoch, str(val_msg))
                     current_map = float(mean_ap[-1])
                     if current_map > self._best_map:
-                        cp_name = os.path.join(self._logdir, 'best_checkpoint.pkl')
+                        cp_name = os.path.join(self._logdir, _BEST_CHECKPOINT_FILE)
                         self._logger.info('[Epoch %d] Current best map: %f vs previous %f, saved to %s',
                                           self.epoch, current_map, self._best_map, cp_name)
                         self.save(cp_name)
                         self._best_map = current_map
-                if self._reporter:
-                    self._reporter(epoch=epoch, map_reward=current_map)
-            self._time_elapsed += time.time() - btic
+                    if self._reporter:
+                        self._reporter(epoch=epoch, map_reward=current_map)
+                    early_stopper.update(current_map, epoch=epoch)
+            self._time_elapsed += time.time() - post_tic
         # map on train data
+        tic = time.time()
         map_name, mean_ap = self._evaluate(train_eval_data)
-        return {'train_map': float(mean_ap[-1]), 'valid_map': self._best_map, 'time': self._time_elapsed}
+        self._time_elapsed += time.time() - tic
+        return {'train_map': float(mean_ap[-1]), 'valid_map': self._best_map,
+                'time': self._time_elapsed, 'checkpoint': cp_name}
 
     def _evaluate(self, val_data):
         """Evaluate on validation dataset."""
@@ -222,8 +259,11 @@ class SSDEstimator(BaseEstimator):
         self.net.collect_params().reset_ctx(self.ctx)
         self.net.hybridize(static_alloc=True, static_shape=True)
         for batch in val_data:
-            data = gluon.utils.split_and_load(batch[0], ctx_list=self.ctx, batch_axis=0, even_split=False)
-            label = gluon.utils.split_and_load(batch[1], ctx_list=self.ctx, batch_axis=0, even_split=False)
+            val_ctx = self.ctx
+            if batch[0].shape[0] < len(val_ctx):
+                val_ctx = val_ctx[:batch[0].shape[0]]
+            data = gluon.utils.split_and_load(batch[0], ctx_list=val_ctx, batch_axis=0, even_split=False)
+            label = gluon.utils.split_and_load(batch[1], ctx_list=val_ctx, batch_axis=0, even_split=False)
             det_bboxes = []
             det_ids = []
             det_scores = []
@@ -245,24 +285,34 @@ class SSDEstimator(BaseEstimator):
             eval_metric.update(det_bboxes, det_ids, det_scores, gt_bboxes, gt_ids, gt_difficults)
         return eval_metric.get()
 
-    def _predict(self, x):
+    def _predict(self, x, ctx_id=0):
         """Predict an individual example."""
         short_size = int(self._cfg.ssd.data_shape)
         if isinstance(x, str):
             x = load_test(x, short=short_size, max_size=1024)[0]
+        elif isinstance(x, Image.Image):
+            return self._predict(np.array(x))
+        elif isinstance(x, np.ndarray):
+            return self._predict(mx.nd.array(x))
         elif isinstance(x, mx.nd.NDArray):
+            if len(x.shape) != 3 or x.shape[-1] != 3:
+                raise ValueError('array input with shape (h, w, 3) is required for predict')
             x = transform_test(x, short=short_size, max_size=1024)[0]
         elif isinstance(x, pd.DataFrame):
             assert 'image' in x.columns, "Expect column `image` for input images"
-            def _predict_merge(x):
-                y = self._predict(x)
+            def _predict_merge(x, ctx_id=0):
+                y = self._predict(x, ctx_id=ctx_id)
                 y['image'] = x
                 return y
-            return pd.concat([_predict_merge(xx) for xx in x['image']]).reset_index(drop=True)
+            return pd.concat([_predict_merge(xx, ctx_id=ii % len(self.ctx)) \
+                for ii, xx in enumerate(x['image'])]).reset_index(drop=True)
+        elif isinstance(x, (list, tuple)):
+            return pd.concat([self._predict(xx, ctx_id=ii % len(self.ctx)) \
+                for ii, xx in enumerate(x)]).reset_index(drop=True)
         else:
             raise ValueError('Input is not supported: {}'.format(type(x)))
         height, width = x.shape[2:4]
-        x = x.as_in_context(self.ctx[0])
+        x = x.as_in_context(self.ctx[ctx_id])
         ids, scores, bboxes = [xx[0].asnumpy() for xx in self.net(x)]
         bboxes[:, (0, 2)] /= width
         bboxes[:, (1, 3)] /= height
@@ -284,7 +334,16 @@ class SSDEstimator(BaseEstimator):
         if self._cfg.horovod:
             self.ctx = [mx.gpu(hvd.local_rank())]
         else:
-            ctx = [mx.gpu(int(i)) for i in self._cfg.gpus]
+            valid_gpus = []
+            if self._cfg.gpus:
+                valid_gpus = self._validate_gpus(self._cfg.gpus)
+                if not valid_gpus:
+                    self._logger.warning(
+                        'No gpu detected, fallback to cpu. You can ignore this warning if this is intended.')
+                elif len(valid_gpus) != len(self._cfg.gpus):
+                    self._logger.warning(
+                        f'Loaded on gpu({valid_gpus}), different from gpu({self._cfg.gpus}).')
+            ctx = [mx.gpu(int(i)) for i in valid_gpus]
             self.ctx = ctx if ctx else [mx.cpu()]
 
         if self._cfg.ssd.transfer is not None:
@@ -294,9 +353,12 @@ class SSDEstimator(BaseEstimator):
             self._logger.info(
                 f'Using transfer learning from {self._cfg.ssd.transfer}, the other network parameters are ignored.')
             if self._cfg.ssd.syncbn and len(self.ctx) > 1:
-                self.net = get_model(self._cfg.ssd.transfer, pretrained=True, norm_layer=gluon.contrib.nn.SyncBatchNorm,
-                                     norm_kwargs={'num_devices': len(self.ctx)})
-                self.async_net = get_model(self._cfg.ssd.transfer, pretrained=True)  # used by cpu worker
+                with warnings.catch_warnings(record=True) as w:
+                    warnings.simplefilter("always")
+                    self.net = get_model(self._cfg.ssd.transfer, pretrained=True,
+                                         norm_layer=gluon.contrib.nn.SyncBatchNorm,
+                                         norm_kwargs={'num_devices': len(self.ctx)})
+                    self.async_net = get_model(self._cfg.ssd.transfer, pretrained=True)  # used by cpu worker
                 self.net.reset_class(self.classes,
                                      reuse_weights=[cname for cname in self.classes if cname in self.net.classes])
             else:
@@ -307,38 +369,42 @@ class SSDEstimator(BaseEstimator):
         # elif self._cfg.ssd.custom_model:
         else:
             if self._cfg.ssd.syncbn and len(self.ctx) > 1:
-                self.net = custom_ssd(base_network_name=self._cfg.ssd.backbone,
-                                      base_size=self._cfg.ssd.data_shape,
-                                      filters=self._cfg.ssd.filters,
-                                      sizes=self._cfg.ssd.sizes,
-                                      ratios=self._cfg.ssd.ratios,
-                                      steps=self._cfg.ssd.steps,
-                                      classes=self.classes,
-                                      dataset='auto',
-                                      pretrained_base=True,
-                                      norm_layer=gluon.contrib.nn.SyncBatchNorm,
-                                      norm_kwargs={'num_devices': len(self.ctx)})
-                self.async_net = custom_ssd(base_network_name=self._cfg.ssd.backbone,
-                                            base_size=self._cfg.ssd.data_shape,
-                                            filters=self._cfg.ssd.filters,
-                                            sizes=self._cfg.ssd.sizes,
-                                            ratios=self._cfg.ssd.ratios,
-                                            steps=self._cfg.ssd.steps,
-                                            classes=self.classes,
-                                            dataset='auto',
-                                            pretrained_base=False)
+                with warnings.catch_warnings(record=True) as w:
+                    warnings.simplefilter("always")
+                    self.net = custom_ssd(base_network_name=self._cfg.ssd.base_network,
+                                          base_size=self._cfg.ssd.data_shape,
+                                          filters=self._cfg.ssd.filters,
+                                          sizes=self._cfg.ssd.sizes,
+                                          ratios=self._cfg.ssd.ratios,
+                                          steps=self._cfg.ssd.steps,
+                                          classes=self.classes,
+                                          dataset='auto',
+                                          pretrained_base=True,
+                                          norm_layer=gluon.contrib.nn.SyncBatchNorm,
+                                          norm_kwargs={'num_devices': len(self.ctx)})
+                    self.async_net = custom_ssd(base_network_name=self._cfg.ssd.base_network,
+                                                base_size=self._cfg.ssd.data_shape,
+                                                filters=self._cfg.ssd.filters,
+                                                sizes=self._cfg.ssd.sizes,
+                                                ratios=self._cfg.ssd.ratios,
+                                                steps=self._cfg.ssd.steps,
+                                                classes=self.classes,
+                                                dataset='auto',
+                                                pretrained_base=False)
             else:
-                self.net = custom_ssd(base_network_name=self._cfg.ssd.backbone,
-                                      base_size=self._cfg.ssd.data_shape,
-                                      filters=self._cfg.ssd.filters,
-                                      sizes=self._cfg.ssd.sizes,
-                                      ratios=self._cfg.ssd.ratios,
-                                      steps=self._cfg.ssd.steps,
-                                      classes=self.classes,
-                                      dataset=self._cfg.dataset,
-                                      pretrained_base=True,
-                                      norm_layer=gluon.nn.BatchNorm)
-                self.async_net = self.net
+                with warnings.catch_warnings(record=True) as w:
+                    warnings.simplefilter("always")
+                    self.net = custom_ssd(base_network_name=self._cfg.ssd.base_network,
+                                          base_size=self._cfg.ssd.data_shape,
+                                          filters=self._cfg.ssd.filters,
+                                          sizes=self._cfg.ssd.sizes,
+                                          ratios=self._cfg.ssd.ratios,
+                                          steps=self._cfg.ssd.steps,
+                                          classes=self.classes,
+                                          dataset=self._cfg.dataset,
+                                          pretrained_base=True,
+                                          norm_layer=gluon.nn.BatchNorm)
+                    self.async_net = self.net
 
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")

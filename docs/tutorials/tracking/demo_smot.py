@@ -26,7 +26,7 @@ im_video = utils.download(video_path)
 #
 # ::
 #
-#     python demo.py MOT17-02-FRCNN-raw.webm
+#     python demo.py MOT17-02-FRCNN-raw.webm --network-name ssd_512_mobilenet1.0_coco --use-pretrained --custom-classes person --use-motion
 #
 #
 ################################################################
@@ -43,4 +43,32 @@ im_video = utils.download(video_path)
 
 ################################################################
 # Our model is able to track multiple persons even when they are partially occluded.
-# Try it on your own video and see the results!
+# If you want to track multiple object categories at the same time,
+# you can simply pass in the extra class names.
+#
+# For example, let's download a video from MOT challenge website,
+
+from gluoncv import utils
+video_path = 'https://motchallenge.net/sequenceVideos/MOT17-13-FRCNN-raw.webm'
+im_video = utils.download(video_path)
+
+################################################################
+# Then you can simply use our provided script under `/scripts/tracking/smot/demo.py` to obtain the multi-object tracking result.
+#
+# ::
+#
+#     python demo.py MOT17-13-FRCNN-raw.webm --network-name ssd_512_resnet50_v1_coco --use-pretrained --custom-classes person car --detect-thresh 0.7 --use-motion
+#
+#
+# Now we are tracking both person and cars,
+#
+# .. raw:: html
+#
+#     <div align="center">
+#         <img src="../../_static/smot_multi_demo.gif">
+#     </div>
+#
+#     <br>
+
+################################################################
+# Try SMOT on your own video and see the results!

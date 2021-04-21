@@ -7,7 +7,7 @@ from autocfg import dataclass, field
 @dataclass
 class YOLOv3:
     # Base network name which serves as feature extraction base.
-    backbone : str = 'darknet53'
+    base_network : str = 'darknet53'
     # List of convolution layer channels which is going to be appended to the
     # base network feature extractor. If `name` is `None`, this is ignored.
     filters : Union[Tuple, list] = (512, 256, 128)
@@ -74,6 +74,11 @@ class TrainCfg:
     no_mixup_epochs : int = 20
     # Use label smoothing.
     label_smooth : bool = False
+    early_stop_patience : int = -1  # epochs with no improvement after which train is early stopped, negative: disabled
+    early_stop_min_delta : float = 0.001  # ignore changes less than min_delta for metrics
+    # the baseline value for metric, training won't stop if not reaching baseline
+    early_stop_baseline : Union[float, int] = 0.0
+    early_stop_max_value : Union[float, int] = 1.0  # early stop if reaching max value instantly
 
 
 @dataclass

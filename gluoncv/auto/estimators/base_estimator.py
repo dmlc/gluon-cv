@@ -1,5 +1,7 @@
 """Base Estimator"""
+# pylint: disable=bare-except
 import os
+import math
 import pickle
 import io
 import logging
@@ -8,6 +10,7 @@ import numpy as np
 import pandas as pd
 from ...utils import random as _random
 from ...utils.filesystem import temporary_filename
+from .utils import _suggest_load_context
 
 logging.basicConfig(level=logging.INFO)
 
@@ -28,9 +31,7 @@ def set_default(cfg):
                         "  Config used to override default configurations. \n"
                         "  If `str`, assume config file (.yml, .yaml) is used. \n"
                         "logger : logger, default is `None`.\n"
-                        "  If not `None`, will use default logging object.\n"
-                        "logdir : str, default is None.\n"
-                        "  Directory for saving logs. If `None`, current working directory is used.\n")
+                        "  If not `None`, will use default logging object.\n")
         cls.__doc__ += '\nDefault configurations: \n--------------------\n'
         sio = io.StringIO()
         cfg.save(sio)
@@ -66,7 +67,6 @@ class BaseEstimator:
 
     """
     def __init__(self, config, logger=None, reporter=None, name=None):
-        # self._init_args = [config, logger, reporter]
         self._reporter = reporter
         name = name if isinstance(name, str) else self.__class__.__name__
         self._name = name
@@ -81,22 +81,22 @@ class BaseEstimator:
         self.dataset = 'auto'
 
         # logdir
-        logdir = config.pop('logdir', None)
-        self._logdir = os.path.abspath(logdir) if logdir else os.getcwd()
+        logdir = config.pop('log_dir', None) if isinstance(config, dict) else None
+        if logdir:
+            self._logdir = os.path.abspath(logdir)
+        else:
+            self._logdir = os.path.join(os.getcwd(), name.lower() + datetime.now().strftime("-%m-%d-%Y"))
 
         # finalize config
-        cfg = self._default_cfg.merge(config)
+        cfg = self._default_cfg.merge(config)  # config can be dict or yaml file
         diffs = self._default_cfg.diff(cfg)
         if diffs:
-            self._logger.info('modified configs: {')
+            self._logger.info('modified configs(<old> != <new>): {')
             for diff in diffs:
                 self._logger.info(diff)
             self._logger.info('}')
         self._cfg = cfg
 
-        prefix = name.lower() + datetime.now().strftime("-%m-%d-%Y")
-        self._logdir = os.path.join(self._logdir, prefix)
-        # r.config['logdir'] = self._logdir
         os.makedirs(self._logdir, exist_ok=True)
         config_file = os.path.join(self._logdir, 'config.yaml')
         # log file
@@ -112,7 +112,9 @@ class BaseEstimator:
         seed = self._cfg.get('seed', np.random.randint(1000000))
         _random.seed(seed)
 
-    def fit(self, train_data, val_data=None, train_size=0.9, random_state=None, resume=False):
+    def fit(self, train_data, val_data=None, train_size=0.9, random_state=None,
+            resume=False, time_limit=None):
+
         """Fit with train/validation data.
 
         Parameters
@@ -128,12 +130,22 @@ class BaseEstimator:
             Random state for splitting, for `np.random.seed`.
         resume : bool
             Whether resume from previous `fit`(if possible) or start as fresh.
+        time_limit : int, default is None
+            The wall clock time limit(second) for fit process, if `None`, time limit is not enforced.
+            If `fit` takes longer than `time_limit`, the process will terminate early and return the
+            model prematurally.
+            Due to callbacks and additional validation functions, the `time_limit` may not be very precise
+            (few minutes allowance), but you can use it to safe-guard a very long training session.
 
         Returns
         -------
         None
 
         """
+        if time_limit is None:
+            time_limit = math.inf
+        elif not isinstance(time_limit, (int, float)):
+            raise TypeError(f'Invalid type `time_limit={time_limit}`, int/float or None expected')
         if not resume:
             self.classes = train_data.classes
             self.num_class = len(self.classes)
@@ -142,8 +154,11 @@ class BaseEstimator:
             assert val_data is not None, \
                 "Please provide `val_data` as we do not know how to split `train_data` of type: \
                 {}".format(type(train_data))
-            return self._fit(train_data, val_data) if not resume else self._resume_fit(train_data, val_data)
+            ret = self._fit(train_data, val_data, time_limit=time_limit) if not resume \
+                else self._resume_fit(train_data, val_data, time_limit=time_limit)
+            return self._reload_best(ret)
 
+        os.makedirs(self._logdir, exist_ok=True)
         if val_data is None:
             assert 0 <= train_size <= 1.0
             if random_state:
@@ -153,9 +168,13 @@ class BaseEstimator:
             val = train_data[~split_mask]
             self._logger.info('Randomly split train_data into train[%d]/validation[%d] splits.',
                               len(train), len(val))
-            return self._fit(train, val) if not resume else self._resume_fit(train, val)
+            ret = self._fit(train, val, time_limit=time_limit) if not resume else \
+                self._resume_fit(train, val, time_limit=time_limit)
+            return self._reload_best(ret)
 
-        return self._fit(train_data, val_data) if not resume else self._resume_fit(train_data, val_data)
+        ret = self._fit(train_data, val_data, time_limit=time_limit) if not resume else \
+            self._resume_fit(train_data, val_data, time_limit=time_limit)
+        return self._reload_best(ret)
 
     def evaluate(self, val_data):
         """Evaluate estimator on validation data.
@@ -168,7 +187,7 @@ class BaseEstimator:
         """
         return self._evaluate(val_data)
 
-    def predict(self, x):
+    def predict(self, x, **kwargs):
         """Predict using this estimator.
 
         Parameters
@@ -177,7 +196,7 @@ class BaseEstimator:
             The input, can be str(filepath), pd.DataFrame with 'image' column, or raw ndarray input.
 
         """
-        return self._predict(x)
+        return self._predict(x, **kwargs)
 
     def predict_feature(self, x):
         """Predict intermediate features using this estimator.
@@ -190,16 +209,30 @@ class BaseEstimator:
         """
         return self._predict_feature(x)
 
-    def _predict(self, x):
+    def _reload_best(self, return_value):
+        """Applying the best checkpoint before return"""
+        cp = return_value.get('checkpoint', '')
+        if not cp:
+            return return_value
+        self._logger.info('Applying the state from the best checkpoint...')
+        try:
+            tmp = self.load(cp)
+            self.__dict__.update(tmp.__dict__)
+        except:
+            self._logger.warning(
+                'Unable to resume the state from the best checkpoint, using the latest state.')
+        return return_value
+
+    def _predict(self, x, **kwargs):
         raise NotImplementedError
 
-    def _predict_feature(self, x):
+    def _predict_feature(self, x, **kwargs):
         raise NotImplementedError
 
-    def _fit(self, train_data, val_data):
+    def _fit(self, train_data, val_data, time_limit=math.inf):
         raise NotImplementedError
 
-    def _resume_fit(self, train_data, val_data):
+    def _resume_fit(self, train_data, val_data, time_limit=math.inf):
         raise NotImplementedError
 
     def _evaluate(self, val_data):
@@ -211,6 +244,54 @@ class BaseEstimator:
     def _init_trainer(self):
         raise NotImplementedError
 
+    def _validate_gpus(self, gpu_ids):
+        """validate if requested gpus are actually available"""
+        valid_gpus = []
+        try:
+            import mxnet as mx
+            for gid in gpu_ids:
+                try:
+                    _ = mx.nd.zeros((1,), ctx=mx.gpu(gid))
+                    valid_gpus.append(gid)
+                except:
+                    pass
+        except ImportError:
+            pass
+        return valid_gpus
+
+    def reset_ctx(self, ctx=None):
+        """Reset model context.
+
+        Parameters
+        ----------
+        ctx : list or ctx
+            The desired new ctx list, the type must match the network.
+            For example, if using mxnet, the ctx must be `mxnet.Context`.
+
+        """
+        if not ctx:
+            return
+        if not isinstance(ctx, (tuple, list)):
+            ctx_list = [ctx]
+        else:
+            ctx_list = ctx
+        done = False
+        try:
+            import mxnet as mx
+            if isinstance(self.net, mx.gluon.Block):
+                for c in ctx_list:
+                    assert isinstance(c, mx.Context)
+                if hasattr(self.net, 'reset_ctx'):
+                    self.net.reset_ctx(ctx_list)
+                else:
+                    self.net.collect_params().reset_ctx(ctx_list)
+                self.ctx = ctx_list
+                done = True
+        except ImportError:
+            pass
+        if not done:
+            raise RuntimeError("Unable to reset_ctx, no `mxnet` and `pytorch`.")
+
     def save(self, filename):
         """Save the state of this estimator to disk.
 
@@ -221,20 +302,31 @@ class BaseEstimator:
         """
         with open(filename, 'wb') as fid:
             pickle.dump(self, fid)
-        self._logger.info('Pickled to %s', filename)
+        self._logger.debug('Pickled to %s', filename)
 
     @classmethod
-    def load(cls, filename):
+    def load(cls, filename, ctx='auto'):
         """Load the state from disk copy.
 
         Parameters
         ----------
         filename : str
             The file name to load from.
+        ctx: str, default is 'auto'
+            The context for reloaded model.
+            'auto': use previously saved context type if still available, fallback
+            to cpu if no gpu detected.
+            Use `cpu` if no GPU available.
+            'cpu': use cpu for inference regardless.
+            'gpu': use as many gpus available as possible.
+            [0, 2, 4, ...]: if a list or tuple of integers are provided, the context
+            will be [gpu(0), gpu(2), gpu(4)...]
         """
         with open(filename, 'rb') as fid:
             obj = pickle.load(fid)
-            obj._logger.info('Unpickled from %s', filename)
+            obj._logger.debug('Unpickled from %s', filename)
+            new_ctx = _suggest_load_context(obj.net, ctx, obj.ctx)
+            obj.reset_ctx(new_ctx)
             return obj
 
     def __getstate__(self):
@@ -265,9 +357,13 @@ class BaseEstimator:
         self.__dict__.update(state)
         # logger
         self._logger = logging.getLogger(state.get('_name', self.__class__.__name__))
-        self._logger.setLevel(logging.INFO)
-        fh = logging.FileHandler(self._log_file)
-        self._logger.addHandler(fh)
+        self._logger.setLevel(logging.ERROR)
+        try:
+            fh = logging.FileHandler(self._log_file)
+            self._logger.addHandler(fh)
+        #pylint: disable=bare-except
+        except:
+            pass
         try:
             import mxnet as _
             net_params = state['net']
@@ -275,7 +371,7 @@ class BaseEstimator:
             with temporary_filename() as tfile:
                 with open(tfile, 'wb') as fo:
                     fo.write(net_params)
-                self.net.load_parameters(tfile)
+                self.net.load_parameters(tfile, ignore_extra=True)
             trainer_state = state['trainer']
             self._init_trainer()
             with temporary_filename() as tfile:
@@ -284,3 +380,4 @@ class BaseEstimator:
                 self.trainer.load_states(tfile)
         except ImportError:
             pass
+        self._logger.setLevel(logging.INFO)

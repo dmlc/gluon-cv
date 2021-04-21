@@ -10,6 +10,7 @@ os.environ['MXNET_EXEC_BULK_EXEC_MAX_NODE_TRAIN_FWD'] = '999'
 os.environ['MXNET_EXEC_BULK_EXEC_MAX_NODE_TRAIN_BWD'] = '25'
 os.environ['MXNET_GPU_COPY_NTHREADS'] = '1'
 os.environ['MXNET_OPTIMIZER_AGGREGATION_SIZE'] = '54'
+os.environ['MXNET_USE_FUSION'] = '0'
 
 import logging
 import time
@@ -17,7 +18,10 @@ import numpy as np
 import mxnet as mx
 from mxnet import gluon
 from mxnet.contrib import amp
+from distutils.version import LooseVersion
 import gluoncv as gcv
+
+_PRE_GCV_0_9_0 = LooseVersion(gcv.__version__) < LooseVersion('0.9.0')
 
 gcv.utils.check_version('0.7.0')
 from gluoncv import data as gdata
@@ -323,12 +327,16 @@ def get_dataloader(net, train_dataset, val_dataset, train_transform, val_transfo
                    num_shards_per_process, args):
     """Get dataloader."""
     train_bfn = batchify.MaskRCNNTrainBatchify(net, num_shards_per_process)
+    if _PRE_GCV_0_9_0:
+        sampler = gcv.nn.sampler
+    else:
+        sampler = gcv.data.sampler
     train_sampler = \
-        gcv.data.sampler.SplitSortedBucketSampler(train_dataset.get_im_aspect_ratio(),
-                                                batch_size,
-                                                num_parts=hvd.size() if args.horovod else 1,
-                                                part_index=hvd.rank() if args.horovod else 0,
-                                                shuffle=True)
+        sampler.SplitSortedBucketSampler(train_dataset.get_im_aspect_ratio(),
+                                         batch_size,
+                                         num_parts=hvd.size() if args.horovod else 1,
+                                         part_index=hvd.rank() if args.horovod else 0,
+                                         shuffle=True)
     train_loader = mx.gluon.data.DataLoader(train_dataset.transform(
         train_transform(net.short, net.max_size, net, ashape=net.ashape, multi_stage=args.use_fpn)),
         batch_sampler=train_sampler, batchify_fn=train_bfn, num_workers=args.num_workers)
@@ -551,6 +559,7 @@ def train(net, train_data, val_data, eval_metric, batch_size, ctx, logger, args)
             metric.reset()
         tic = time.time()
         btic = time.time()
+        speed = []
         train_data_iter = iter(train_data)
         next_data_batch = next(train_data_iter)
         next_data_batch = split_and_load(next_data_batch, ctx_list=ctx)
@@ -587,23 +596,29 @@ def train(net, train_data, val_data, eval_metric, batch_size, ctx, logger, args)
             except StopIteration:
                 pass
 
+            trainer.step(batch_size)
+
             for metric, record in zip(metrics, metric_losses):
                 metric.update(0, record)
             for metric, records in zip(metrics2, add_losses):
                 for pred in records:
                     metric.update(pred[0], pred[1])
-            trainer.step(batch_size)
+
             if (not args.horovod or hvd.rank() == 0) and args.log_interval \
                     and not (i + 1) % args.log_interval:
                 msg = ','.join(['{}={:.3f}'.format(*metric.get()) for metric in metrics + metrics2])
+                batch_speed = args.log_interval * args.batch_size / (time.time() - btic)
+                speed.append(batch_speed)
                 logger.info('[Epoch {}][Batch {}], Speed: {:.3f} samples/sec, {}'.format(
-                    epoch, i, args.log_interval * args.batch_size / (time.time() - btic), msg))
+                    epoch, i, batch_speed, msg))
                 btic = time.time()
+        if speed:
+            avg_batch_speed = sum(speed) / len(speed)
         # validate and save params
         if (not args.horovod) or hvd.rank() == 0:
             msg = ','.join(['{}={:.3f}'.format(*metric.get()) for metric in metrics])
-            logger.info('[Epoch {}] Training cost: {:.3f}, {}'.format(
-                epoch, (time.time() - tic), msg))
+            logger.info('[Epoch {}] Training cost: {:.3f}, Speed: {:.3f} samples/sec, {}'.format(
+                epoch, (time.time() - tic), avg_batch_speed, msg))
         if not (epoch + 1) % args.val_interval:
             # consider reduce the frequency of validation to save time
             validate(net, val_data, async_eval_processes, ctx, eval_metric, logger, epoch, best_map,

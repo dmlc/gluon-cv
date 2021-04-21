@@ -18,6 +18,25 @@ __all__ = ['TPN', 'TPNet', 'tpn_resnet50_f8s8_kinetics400', 'tpn_resnet50_f16s4_
            'tpn_resnet50_f32s2_custom']
 
 
+def rgetattr(obj, attr, *args):
+    import functools
+    def _getattr(obj, attr):
+        return getattr(obj, attr, *args)
+
+    return functools.reduce(_getattr, [obj] + attr.split('.'))
+
+
+def rhasattr(obj, attr, *args):
+    import functools
+    def _hasattr(obj, attr):
+        if hasattr(obj, attr):
+            return getattr(obj, attr)
+        else:
+            return None
+
+    return functools.reduce(_hasattr, [obj] + attr.split('.')) is not None
+
+
 def conv3x3x3(in_planes, out_planes, spatial_stride=1, temporal_stride=1, dilation=1):
     "3x3x3 convolution with padding"
     return nn.Conv3d(
@@ -599,7 +618,8 @@ class TPNet(nn.Module):
                  bn_frozen=False,
                  partial_bn=False,
                  with_cp=False,
-                 dropout_ratio=0.5):
+                 dropout_ratio=0.5,
+                 init_std=0.01):
         super(TPNet, self).__init__()
         if depth not in self.arch_settings:
             raise KeyError('invalid depth {} for resnet'.format(depth))
@@ -629,6 +649,7 @@ class TPNet(nn.Module):
         self.feat_ext = feat_ext
 
         self.dropout_ratio = dropout_ratio
+        self.init_std = init_std
 
         self.block, stage_blocks = self.arch_settings[depth]
         self.stage_blocks = stage_blocks[:num_stages]
@@ -677,6 +698,35 @@ class TPNet(nn.Module):
             self.dropout = None
         self.avg_pool = nn.AdaptiveAvgPool3d(1)
         self.fc = nn.Linear(2048, self.num_classes)
+        nn.init.normal_(self.fc.weight, 0, self.init_std)
+        nn.init.constant_(self.fc.bias, 0)
+        self.init_weights()
+
+    def init_weights(self):
+        if not self.pretrained_base:
+            raise RuntimeError("TPN models need to be inflated. Please set PRETRAINED_BASE to True in config.")
+
+        if self.pretrained_base and not self.pretrained:
+            import torchvision
+            if self.depth == 50:
+                R2D = torchvision.models.resnet50(pretrained=True, progress=True)
+            elif self.depth == 101:
+                R2D = torchvision.models.resnet101(pretrained=True, progress=True)
+            else:
+                raise RuntimeError("We only support ResNet50 and ResNet101 for TPN models at this moment.")
+
+            for name, module in self.named_modules():
+                if isinstance(module, nn.Conv3d) and rhasattr(R2D, name):
+                    new_weight = rgetattr(R2D, name).weight.data.unsqueeze(2).expand_as(module.weight) / \
+                                 module.weight.data.shape[2]
+                    module.weight.data.copy_(new_weight)
+                    if hasattr(module, 'bias') and module.bias is not None:
+                        new_bias = rgetattr(R2D, name).bias.data
+                        module.bias.data.copy_(new_bias)
+                elif isinstance(module, nn.BatchNorm3d) and rhasattr(R2D, name):
+                    for attr in ['weight', 'bias', 'running_mean', 'running_var']:
+                        setattr(module, attr, getattr(rgetattr(R2D, name), attr))
+            print('TPN weights inflated from pretrained C2D.')
 
     def forward(self, x):
         x = self.conv1(x)

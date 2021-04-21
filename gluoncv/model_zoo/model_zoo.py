@@ -215,7 +215,7 @@ _models = {
     'resnext50_32x4d': resnext50_32x4d,
     'resnext101_32x4d': resnext101_32x4d,
     'resnext101_64x4d': resnext101_64x4d,
-    'resnext101b_64x4d': resnext101e_64x4d,
+    'resnext101e_64x4d': resnext101e_64x4d,
     'se_resnext50_32x4d': se_resnext50_32x4d,
     'se_resnext101_32x4d': se_resnext101_32x4d,
     'se_resnext101_64x4d': se_resnext101_64x4d,

@@ -1,6 +1,7 @@
 """Mask RCNN Estimator."""
-# pylint: disable=consider-using-enumerate,abstract-method
+# pylint: disable=consider-using-enumerate,abstract-method,arguments-differ
 import os
+import math
 import time
 import logging
 from multiprocessing import Process
@@ -282,7 +283,7 @@ class MaskRCNNEstimator(BaseEstimator):
             async_eval_processes.append(p)
             p.start()
 
-    def _fit(self, train_data, val_data):
+    def _fit(self, train_data, val_data, time_limit=math.inf):
         """
         Fit Mask R-CNN models.
         """

@@ -1,4 +1,5 @@
 """Auto data preparation."""
+# pylint: disable=bare-except
 import os
 import re
 from pathlib import Path
@@ -6,8 +7,10 @@ import yaml
 from ...utils.download import download
 from ...utils.filesystem import unzip, untar, PathTree
 
+__all__ = ['url_data']
+
 def url_data(url, path=None, overwrite=False, overwrite_folder=False, sha1_hash=None, root=None, disp_depth=1):
-    """Download an given URL
+    """Download dataset with a given URL
 
     Parameters
     ----------
@@ -49,8 +52,11 @@ def url_data(url, path=None, overwrite=False, overwrite_folder=False, sha1_hash=
         raise ValueError('Unknown url data with file: {}'.format(fname))
 
     if disp_depth > 0:
-        path_tree = PathTree(folder, disp_depth)
-        print(path_tree)
+        try:
+            path_tree = PathTree(folder, disp_depth)
+            print(path_tree)
+        except:
+            pass
 
     return Path(folder)
 

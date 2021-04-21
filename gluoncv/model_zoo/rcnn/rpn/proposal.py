@@ -25,12 +25,19 @@ class RPNProposal(gluon.HybridBlock):
         These values must be the same as stds used in RPNTargetGenerator.
     nms : boolean
         Whether to do nms.
+    minimal_opset : bool
+        We sometimes add special operators to accelerate training/inference, however, for exporting
+        to third party compilers we want to utilize most widely used operators.
+        If `minimal_opset` is `True`, the network will use a minimal set of operators good
+        for e.g., `TVM`.
     """
 
-    def __init__(self, clip, min_size, stds):
+    def __init__(self, clip, min_size, stds, minimal_opset=False):
         super(RPNProposal, self).__init__()
         self._box_to_center = BBoxCornerToCenter()
-        self._box_decoder = NormalizedBoxCenterDecoder(stds=stds, clip=clip, convert_anchor=True)
+        self._box_decoder = NormalizedBoxCenterDecoder(
+            stds=stds, clip=clip, convert_anchor=True, minimal_opset=minimal_opset
+        )
         self._clipper = BBoxClipToImage()
         # self._compute_area = BBoxArea()
         self._min_size = min_size

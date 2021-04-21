@@ -8,6 +8,8 @@
 *.npy
 *.npz
 *.pth
+docs/_static/*_throughputs.html
+docs/_static/detection_coco_per_class.html
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -119,4 +121,3 @@ ENV/
 .idea/*
 *.sh
 /logs/
-

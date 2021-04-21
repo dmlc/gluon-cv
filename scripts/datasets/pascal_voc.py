@@ -5,7 +5,7 @@ import argparse
 import tarfile
 from gluoncv.utils import download, makedirs
 
-_TARGET_DIR = os.path.expanduser('~/.mxnet/datasets/voc')
+_TARGET_DIR = os.path.expanduser(os.environ.get('MXNET_HOME', os.path.join('~', '.mxnet', 'datasets', 'voc')))
 
 
 def parse_args():

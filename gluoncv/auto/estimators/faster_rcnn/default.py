@@ -5,8 +5,8 @@ from autocfg import dataclass, field
 
 @dataclass
 class FasterRCNN:
-    # Backbone network.
-    backbone : str = 'resnet50_v1b'  # base feature network
+    # Base network name which serves as feature extraction base.
+    base_network : str = 'resnet50_v1b'  # base feature network
     # Final R-CNN non-maximum suppression threshold. You can specify < 0 or > 1 to disable NMS.
     nms_thresh : float = 0.5
     # Apply R-CNN NMS to top k detection results, use -1 to disable so that every Detection
@@ -70,9 +70,9 @@ class FasterRCNN:
     num_box_head_dense_filters : int = 1024
 
     # Input image short side size.
-    image_short : int = 800
+    image_short : int = 600
     # Maximum size of input image long side.
-    image_max_size : int = 1333
+    image_max_size : int = 1000
 
     # Whether to enable custom model.
     # custom_model = True
@@ -143,7 +143,7 @@ class TrainCfg:
     # Misc
     # ----
     # log interval in terms of iterations
-    log_interval : int = 100
+    log_interval : int = 10
     # Random seed to be fixed.
     seed : int = 233
     # Whether to enable verbose logging
@@ -157,6 +157,11 @@ class TrainCfg:
     # but may speed up throughput. Note that when horovod is used,
     # it is set to 1.
     executor_threads : int = 4
+    early_stop_patience : int = -1  # epochs with no improvement after which train is early stopped, negative: disabled
+    early_stop_min_delta : float = 0.001  # ignore changes less than min_delta for metrics
+    # the baseline value for metric, training won't stop if not reaching baseline
+    early_stop_baseline : Union[float, int] = 0.0
+    early_stop_max_value : Union[float, int] = 1.0  # early stop if reaching max value instantly
 
 
 @dataclass
@@ -202,4 +207,4 @@ class FasterRCNNCfg:
     # dist_async are available.
     kv_store : str = 'nccl'
     # Whether to disable hybridize the model. Memory usage and speed will decrese.
-    disable_hybridization : bool = False
+    disable_hybridization : bool = True

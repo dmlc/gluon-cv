@@ -61,11 +61,16 @@ class RCNN(gluon.HybridBlock):
     nms_topk : int
         Apply NMS to top k detection results, use -1 to disable so that every Detection
          result is used in NMS.
+    minimal_opset : bool
+        We sometimes add special operators to accelerate training/inference, however, for exporting
+        to third party compilers we want to utilize most widely used operators.
+        If `minimal_opset` is `True`, the network will use a minimal set of operators good
+        for e.g., `TVM`.
     """
 
     def __init__(self, features, top_features, classes, box_features, short, max_size,
                  train_patterns, nms_thresh, nms_topk, post_nms, roi_mode, roi_size, strides, clip,
-                 force_nms=False, **kwargs):
+                 force_nms=False, minimal_opset=False, **kwargs):
         super(RCNN, self).__init__(**kwargs)
         self.classes = classes
         self.num_class = len(classes)
@@ -93,7 +98,7 @@ class RCNN(gluon.HybridBlock):
             self.box_predictor = nn.Dense(
                 self.num_class * 4, weight_initializer=mx.init.Normal(0.001))
             self.cls_decoder = MultiPerClassDecoder(num_class=self.num_class + 1)
-            self.box_decoder = NormalizedBoxCenterDecoder(clip=clip, convert_anchor=True)
+            self.box_decoder = NormalizedBoxCenterDecoder(clip=clip, convert_anchor=True, minimal_opset=minimal_opset)
 
     def collect_train_params(self, select=None):
         """Collect trainable params.

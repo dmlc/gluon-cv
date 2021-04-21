@@ -40,6 +40,11 @@ class TrainCfg:
     momentum : float = 0.9  # SGD momentum
     wd : float = 1e-4  # weight decay
     log_interval : int = 100  # logging interval
+    early_stop_patience : int = -1  # epochs with no improvement after which train is early stopped, negative: disabled
+    early_stop_min_delta : float = 0.001  # ignore changes less than min_delta for metrics
+    # the baseline value for metric, training won't stop if not reaching baseline
+    early_stop_baseline : Union[float, int] = 0.0
+    early_stop_max_value : Union[float, int] = 1.0  # early stop if reaching max value instantly
 
 @dataclass
 class ValidCfg:
@@ -58,4 +63,4 @@ class CenterNetCfg:
     center_net : CenterNet = field(default_factory=CenterNet)
     train : TrainCfg = field(default_factory=TrainCfg)
     valid : ValidCfg = field(default_factory=ValidCfg)
-    gpus : Union[Tuple, list] = (0, 1, 2, 3, 4, 5, 6, 7)  # gpu individual ids, not necessarily consecutive
+    gpus : Union[Tuple, list] = (0, 1, 2, 3)  # gpu individual ids, not necessarily consecutive

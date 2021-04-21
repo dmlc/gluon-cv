@@ -6,8 +6,8 @@ from autocfg import dataclass, field
 
 @dataclass
 class SSD:
-    # Backbone network.
-    backbone : str = 'vgg16_atrous'  # base feature network
+    # Base network name which serves as feature extraction base.
+    base_network : str = 'vgg16_atrous'  # base feature network
     # Input data shape, use 300, 512.
     data_shape : int = 300
     # List of convolution layer channels which is going to be appended to the base
@@ -56,6 +56,12 @@ class TrainCfg:
     # Use DALI for data loading and data preprocessing in training.
     # Currently supports only COCO.
     dali : bool = False
+
+    early_stop_patience : int = -1  # epochs with no improvement after which train is early stopped, negative: disabled
+    early_stop_min_delta : float = 0.001  # ignore changes less than min_delta for metrics
+    # the baseline value for metric, training won't stop if not reaching baseline
+    early_stop_baseline : Union[float, int] = 0.0
+    early_stop_max_value : Union[float, int] = 1.0  # early stop if reaching max value instantly
 
 
 @dataclass

@@ -6,7 +6,7 @@ import zipfile
 from gluoncv.utils import download, makedirs
 from gluoncv.data.mscoco.utils import try_import_pycocotools
 
-_TARGET_DIR = os.path.expanduser('~/.mxnet/datasets/coco')
+_TARGET_DIR = os.path.expanduser(os.environ.get('MXNET_HOME', os.path.join('~', '.mxnet', 'datasets', 'coco')))
 
 def parse_args():
     parser = argparse.ArgumentParser(
