@@ -47,6 +47,7 @@ _model_sha1 = {name: checksum for checksum, name in [
     ('092c2f7fc98ec9ea204487fa074bc0ca832aba9a', 'tpn_resnet101_f8s8_kinetics400'),
     ('647080df950480e6544e6cd471f0024125656593', 'tpn_resnet101_f16s4_kinetics400'),
     ('a94422a94acda20f34eb07604cd3315307d1a9a2', 'tpn_resnet101_f32s2_kinetics400'),
+    ('6f4ad076996ae86c721530fecff3b7344309aece', 'directpose_resnet50_lpf_fpn_coco'),
 ]}
 
 apache_repo_url = 'https://apache-mxnet.s3-accelerate.dualstack.amazonaws.com/'
@@ -137,5 +138,5 @@ def purge(root=os.path.join('~', '.torch', 'models')):
     root = os.path.expanduser(root)
     files = os.listdir(root)
     for f in files:
-        if f.endswith(".params"):
+        if f.endswith(".pth"):
             os.remove(os.path.join(root, f))

@@ -177,6 +177,13 @@ _C.CONFIG.MODEL.USE_AFFINE = False
 # TVM trace
 _C.CONFIG.MODEL.TVM_MODE = False
 
+# BACKBONE
+_C.CONFIG.MODEL.BACKBONE = CN(new_allowed=True)
+_C.CONFIG.MODEL.BACKBONE.NAME = "build_directpose_resnet_fpn_backbone"
+_C.CONFIG.MODEL.BACKBONE.ANTI_ALIAS = True
+_C.CONFIG.MODEL.BACKBONE.FREEZE_AT = 0
+_C.CONFIG.MODEL.BACKBONE.LOAD_URL = ''
+
 
 _C.CONFIG.LOG = CN(new_allowed=True)
 # Base directory where all output files are written

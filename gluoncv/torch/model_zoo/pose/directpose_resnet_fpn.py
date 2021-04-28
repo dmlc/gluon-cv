@@ -18,7 +18,7 @@ from ..object_detection.model_utils import detector_postprocess
 from .directpose import DirectPose
 
 
-__all__ = ['resnet_lpf_fpn_directpose']
+__all__ = ['directpose_resnet_lpf_fpn', 'directpose_resnet50_lpf_fpn_coco']
 
 
 def conv3x3(in_planes, out_planes, stride=1, groups=1):
@@ -58,30 +58,6 @@ class Conv2d(torch.nn.Conv2d):
             assert not isinstance(
                 self.norm, torch.nn.SyncBatchNorm
             ), "SyncBatchNorm does not support empty inputs!"
-
-        if x.numel() == 0 and TORCH_VERSION <= (1, 4):
-            assert not isinstance(
-                self.norm, torch.nn.GroupNorm
-            ), "GroupNorm does not support empty inputs in PyTorch <=1.4!"
-            # When input is empty, we want to return a empty tensor with "correct" shape,
-            # So that the following operations will not panic
-            # if they check for the shape of the tensor.
-            # This computes the height and width of the output tensor
-            output_shape = [
-                (i + 2 * p - (di * (k - 1) + 1)) // s + 1
-                for i, p, di, k, s in zip(
-                    x.shape[-2:], self.padding, self.dilation, self.kernel_size, self.stride
-                )
-            ]
-            output_shape = [x.shape[0], self.weight.shape[0]] + output_shape
-            empty = _NewEmptyTensorOp.apply(x, output_shape)
-            if self.training:
-                # This is to make DDP happy.
-                # DDP expects all workers to have gradient w.r.t the same set of parameters.
-                _dummy = sum(x.view(-1)[0] for x in self.parameters()) * 0.0
-                return empty + _dummy
-            else:
-                return empty
 
         x = super().forward(x)
         if self.norm is not None:
@@ -361,13 +337,13 @@ class Downsample(nn.Module):
             a = np.array([1., 1.])
         elif(self.filt_size==3):
             a = np.array([1., 2., 1.])
-        elif(self.filt_size==4):    
+        elif(self.filt_size==4):
             a = np.array([1., 3., 3., 1.])
-        elif(self.filt_size==5):    
+        elif(self.filt_size==5):
             a = np.array([1., 4., 6., 4., 1.])
-        elif(self.filt_size==6):    
+        elif(self.filt_size==6):
             a = np.array([1., 5., 10., 10., 5., 1.])
-        elif(self.filt_size==7):    
+        elif(self.filt_size==7):
             a = np.array([1., 6., 15., 20., 15., 6., 1.])
 
         filt = torch.Tensor(a[:,None]*a[None,:])
@@ -379,7 +355,7 @@ class Downsample(nn.Module):
     def forward(self, inp):
         if(self.filt_size==1):
             if(self.pad_off==0):
-                return inp[:,:,::self.stride,::self.stride]    
+                return inp[:,:,::self.stride,::self.stride]
             else:
                 return self.pad(inp)[:,:,::self.stride,::self.stride]
         else:
@@ -711,11 +687,11 @@ class ResNetFPNDirectPose(nn.Module):
         return images
 
 
-def resnet_lpf_fpn_directpose(cfg):
+def directpose_resnet_lpf_fpn(cfg):
     """
-    Create a ResNet instance from config.
+    Create a ResNetFPNDirectPose instance from config.
     Returns:
-        ResNet: a :class:`ResNet` instance.
+        ResNetFPNDirectPose: a :class:`ResNetFPNDirectPose` instance.
     """
     depth = cfg.CONFIG.MODEL.RESNETS.DEPTH
     out_features = cfg.CONFIG.MODEL.RESNETS.OUT_FEATURES
@@ -762,3 +738,53 @@ def resnet_lpf_fpn_directpose(cfg):
     pose_net = DirectPose(cfg, backbone.output_shape())
 
     return ResNetFPNDirectPose(backbone, pose_net)
+
+def directpose_resnet50_lpf_fpn_coco(cfg):
+    depth = 50
+    out_features = ["res3", "res4", "res5"]
+
+    num_blocks_per_stage = {50: [3, 4, 6, 3], 101: [3, 4, 23, 3], 152: [3, 8, 36, 3]}[depth]
+    out_stage_idx = [{"res2": 0, "res3": 1, "res4": 2, "res5": 3}[f] for f in out_features]
+    out_feature_channels = {"res2": 256, "res3": 512,
+                            "res4": 1024, "res5": 2048}
+    out_feature_strides = {"res2": 4, "res3": 8, "res4": 16, "res5": 32}
+    model = ResNetLPF(cfg, Bottleneck, num_blocks_per_stage, norm_layer=NaiveSyncBatchNorm,
+                      filter_size=3, pool_only=True, return_idx=out_stage_idx)
+    model._out_features = out_features
+    model._out_feature_channels = out_feature_channels
+    model._out_feature_strides = out_feature_strides
+
+    if cfg.CONFIG.MODEL.BACKBONE.LOAD_URL and not cfg.CONFIG.MODEL.PRETRAINED:
+        model.load_state_dict(
+            model_zoo.load_url(cfg.CONFIG.MODEL.BACKBONE.LOAD_URL, map_location='cpu', check_hash=True)['state_dict'],
+            strict=False)
+
+    bottom_up = model
+    in_features = ["res3", "res4", "res5"]
+    out_channels = 256
+    in_channels_top = out_channels
+    top_block = LastLevelP6P7(in_channels_top, out_channels, "p5")
+    try:
+        norm_layer = cfg.CONFIG.MODEL.RESNETS.NORM
+    except AttributeError:
+        norm_layer = "BN"
+    backbone = FPN(
+        bottom_up=bottom_up,
+        in_features=in_features,
+        out_channels=out_channels,
+        norm=norm_layer,
+        top_block=top_block,
+        fuse_type="sum",
+    )
+
+    pose_net = DirectPose(cfg, backbone.output_shape())
+
+    model = ResNetFPNDirectPose(backbone, pose_net)
+
+    if cfg.CONFIG.MODEL.PRETRAINED:
+        from ..model_store import get_model_file
+        state_dict = torch.load(get_model_file('directpose_resnet50_lpf_fpn_coco', tag=cfg.CONFIG.MODEL.PRETRAINED),
+                                map_location=torch.device('cpu'))
+        msg = model.load_state_dict(state_dict, strict=False)
+        print("=> Initialized from a DirectPose pretrained on COCO dataset")
+    return model

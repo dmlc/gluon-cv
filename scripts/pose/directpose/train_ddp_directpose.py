@@ -7,7 +7,7 @@ import torch.optim
 from tensorboardX import SummaryWriter
 
 from gluoncv.torch.model_zoo import get_model
-from gluoncv.torch.model_zoo.pose import resnet_lpf_fpn_directpose
+from gluoncv.torch.model_zoo.pose import directpose_resnet_lpf_fpn
 from gluoncv.torch.data.pose import build_pose_train_loader, build_pose_test_loader
 from gluoncv.torch.utils.model_utils import deploy_model, load_model, save_model
 from gluoncv.torch.utils.task_utils import DirectposePipeline, build_pose_optimizer
@@ -28,7 +28,7 @@ def main_worker(cfg):
 
     # create model
     # model = get_model(cfg)
-    model = resnet_lpf_fpn_directpose(cfg)
+    model = directpose_resnet_lpf_fpn(cfg)
     model = deploy_model(model, cfg)
 
     # create dataset and dataloader

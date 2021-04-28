@@ -2,7 +2,11 @@
 import os
 import warnings
 import numpy as np
-from decord import VideoReader, cpu
+try:
+    from decord import VideoReader, cpu
+except ImportError:
+    VideoReader = None
+    cpu = None
 
 import torch
 from torch.utils.data import Dataset
@@ -37,6 +41,8 @@ class VideoClsDataset(Dataset):
         self.num_crop = num_crop
         self.test_num_crop = test_num_crop
         self.use_multigrid = use_multigrid and (mode == 'train')
+        if VideoReader is None:
+            raise ImportError("Unable to import `decord` which is required to read videos.")
 
         import pandas as pd
         cleaned = pd.read_csv(self.anno_path, header=None, delimiter=' ')

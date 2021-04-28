@@ -3,7 +3,10 @@ from tvm.contrib import graph_runtime
 from typing import List
 import cv2
 import numpy as np
-import torch
+try:
+    import torch
+except ImportError:
+    torch = None
 
 class PoseEstimationInferenceModel():
     def __init__(
@@ -13,8 +16,11 @@ class PoseEstimationInferenceModel():
             image_width=1280,
             image_height=720,
             threshold=0.05,
+            use_torch=False
     ):
-        self.torch = False
+        self.torch = use_torch
+        if self.torch:
+            assert torch is not None, "requires torch when `use_torch` is enabled"
         self.__new_nd_array = tvm.nd.array
         self.device_ctx = tvm.gpu(gpu_id)
         self.image_width = image_width
@@ -48,7 +54,7 @@ class PoseEstimationInferenceModel():
         # net = model_zoo.dla34_fpn_directpose(cfg).to(device).eval()
         # model = torch.load('model_final.pth')['model']
         cfg.merge_from_file('./configurations/ms_aa_resnet50_4x_syncbn.yaml')
-        net = model_zoo.resnet_lpf_fpn_directpose(cfg).to(device).eval()
+        net = model_zoo.directpose_resnet_lpf_fpn(cfg).to(device).eval()
         model = torch.load('model_final_resnet.pth')['model']
         # _ = net(torch.zeros((1,3, self.image_height, self.image_width)).cuda())
         net.load_state_dict(model, strict=False)
