@@ -48,9 +48,7 @@ class ImageList(object):
         return self.tensor.device
 
     @staticmethod
-    def from_tensors(
-        tensors: Sequence[torch.Tensor], size_divisibility: int = 0, pad_value: float = 0.0
-    ) -> "ImageList":
+    def from_tensors(tensors: Sequence[torch.Tensor], size_divisibility: int = 0, pad_value: float = 0.0):
         """
         Args:
             tensors: a tuple or list of `torch.Tensors`, each of shape (Hi, Wi) or

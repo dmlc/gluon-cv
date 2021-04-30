@@ -1,5 +1,5 @@
 """Custom and derived deformable convolution"""
-# pylint: disable=missing-function-docstring
+# pylint: disable=missing-function-docstring,bad-continuation
 import torch
 from torch import nn
 from torch.nn.modules.utils import _pair

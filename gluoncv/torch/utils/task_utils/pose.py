@@ -24,6 +24,7 @@ def _detect_anomaly(losses, loss_dict, iteration):
 
 
 class DirectposePipeline:
+    """Train/eval directpose"""
     def __init__(self, base_iter, max_iter, model, dataloader, optimizer, scheduler,
                  cfg, writer=None):
         logger.info('Configuration:\n' + str(cfg))

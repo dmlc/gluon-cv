@@ -14,7 +14,7 @@ class Conv2D(nn.Module):
                  stride=1, dilation=1, groups=1):
         super(Conv2D, self).__init__()
 
-        assert type(kernel_size) in [int, tuple], "Allowed kernel type [int or tuple], not {}".format(type(kernel_size))
+        assert isinstance(kernel_size, (tuple, int)), "Allowed kernel type [int or tuple], not {}".format(type(kernel_size))
         assert padding == 'same', "Allowed padding type {}, not {}".format('same', padding)
 
         self.kernel_size = kernel_size

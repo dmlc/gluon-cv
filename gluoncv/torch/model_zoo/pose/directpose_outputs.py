@@ -1,5 +1,5 @@
 """Directpose outputs"""
-# pylint: disable=line-too-long, redefined-builtin, missing-class-docstring, unused-variable
+# pylint: disable=line-too-long, redefined-builtin, missing-class-docstring, unused-variable, consider-using-enumerate,unused-argument
 import logging
 from typing import List
 import torch
@@ -538,12 +538,8 @@ class DirectPoseOutputs(nn.Module):
                 total_num_pos = reduce_sum(pos_joint_inds.new_tensor([num_pos_local])).item()
                 num_joint_pos_avg = max(total_num_pos / num_gpus, 1.0)
                 hm_loss = sigmoid_focal_loss_jit(
-                                hm_pred,
-                                hm_target,
-                                alpha=self.focal_loss_alpha,
-                                gamma=self.focal_loss_gamma,
-                                reduction="sum",
-                            ) / max(num_joint_pos_avg, 1.0) * self.hm_loss_weight
+                    hm_pred, hm_target, alpha=self.focal_loss_alpha,
+                    gamma=self.focal_loss_gamma, reduction="sum") / max(num_joint_pos_avg, 1.0) * self.hm_loss_weight
 
         losses = {
             "loss_directpose_cls": class_loss,

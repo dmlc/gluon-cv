@@ -8,8 +8,7 @@ from torchvision.ops import nms  # BC-compat
 __all__ = ['batched_nms', 'ml_nms']
 
 
-def batched_nms(
-    boxes: torch.Tensor, scores: torch.Tensor, idxs: torch.Tensor, iou_threshold: float):
+def batched_nms(boxes: torch.Tensor, scores: torch.Tensor, idxs: torch.Tensor, iou_threshold: float):
     """
     Same as torchvision.ops.boxes.batched_nms, but safer.
     """
@@ -85,7 +84,7 @@ def oks_iou(g, d, a_g, a_d, sigmas=None, in_vis_thre=None):
         ious[n_d] = np.sum(np.exp(-e)) / e.shape[0] if e.shape[0] != 0 else 0.0
     return ious
 
-def get_close_kpt_num(g, d, dis_thresh = 1):
+def get_close_kpt_num(g, d, dis_thresh=1):
     """Calculate number of close keypoints"""
     xg = g[0::3]
     yg = g[1::3]

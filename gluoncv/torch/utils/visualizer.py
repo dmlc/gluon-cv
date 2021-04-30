@@ -4,8 +4,8 @@
 import colorsys
 import logging
 import math
-import numpy as np
 from enum import Enum, unique
+import numpy as np
 import matplotlib as mpl
 import matplotlib.colors as mplc
 import matplotlib.figure as mplfigure
@@ -606,16 +606,8 @@ class Visualizer:
             self.draw_panoptic_seg(pan_seg, segments_info, area_threshold=0, alpha=0.5)
         return self.output
 
-    def overlay_instances(
-        self,
-        *,
-        boxes=None,
-        labels=None,
-        masks=None,
-        keypoints=None,
-        assigned_colors=None,
-        alpha=0.5
-    ):
+    def overlay_instances(self, *, boxes=None, labels=None,
+                          masks=None, keypoints=None, assigned_colors=None, alpha=0.5):
         """
         Args:
             boxes (Boxes or ndarray): either a :class:`Boxes`,
@@ -717,10 +709,8 @@ class Visualizer:
                     continue  # drawing the box confidence for keypoints isn't very useful.
                 # for small objects, draw text at the side to avoid occlusion
                 instance_area = (y1 - y0) * (x1 - x0)
-                if (
-                    instance_area < _SMALL_OBJECT_AREA_THRESH * self.output.scale
-                    or y1 - y0 < 40 * self.output.scale
-                ):
+                if (instance_area < _SMALL_OBJECT_AREA_THRESH * self.output.scale
+                    or y1 - y0 < 40 * self.output.scale):
                     if y1 >= self.output.height - 5:
                         text_pos = (x1, y0)
                     else:
@@ -848,16 +838,8 @@ class Visualizer:
     Primitive drawing functions:
     """
 
-    def draw_text(
-        self,
-        text,
-        position,
-        *,
-        font_size=None,
-        color="g",
-        horizontal_alignment="center",
-        rotation=0
-    ):
+    def draw_text(self, text, position, *, font_size=None,
+                  color="g", horizontal_alignment="center", rotation=0):
         """
         Args:
             text (str): class label
@@ -929,9 +911,8 @@ class Visualizer:
         )
         return self.output
 
-    def draw_rotated_box_with_label(
-        self, rotated_box, alpha=0.5, edge_color="g", line_style="-", label=None
-    ):
+    def draw_rotated_box_with_label(self, rotated_box, alpha=0.5,
+                                    edge_color="g", line_style="-", label=None):
         """
         Draw a rotated box with label on its top-left corner.
 
@@ -1033,9 +1014,8 @@ class Visualizer:
         )
         return self.output
 
-    def draw_binary_mask(
-        self, binary_mask, color=None, *, edge_color=None, text=None, alpha=0.5, area_threshold=0
-    ):
+    def draw_binary_mask(self, binary_mask, color=None, *, edge_color=None,
+                         text=None, alpha=0.5, area_threshold=0):
         """
         Args:
             binary_mask (ndarray): numpy array of shape (H, W), where H is the image height and
@@ -1235,6 +1215,7 @@ class Visualizer:
         """
         return self.output
 
+# pylint: disable=all
 _COLORS = np.array(
     [
         0.000, 0.447, 0.741,

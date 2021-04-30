@@ -44,9 +44,7 @@ def compute_pseudo_bbox_with_keypoint_annotation(dataset_dicts):
     )
     return dataset_dicts
 
-def get_pose_dataset_dicts(
-    dataset_names, filter_empty=True, min_keypoints=0, compute_pseudo_bbox=True, proposal_files=None
-):
+def get_pose_dataset_dicts(dataset_names, filter_empty=True, min_keypoints=0, compute_pseudo_bbox=True, proposal_files=None):
     """
     Load and prepare dataset dicts for instance detection/segmentation and semantic segmentation.
 
@@ -224,8 +222,8 @@ class DatasetMapperWithBasis(DatasetMapper):
 
         # fmt: off
         # TODO(zhreshold): remove this?
-        self.basis_loss_on       = False  # cfg.CONFIG.MODEL.BASIS_MODULE.LOSS_ON
-        self.ann_set             = "coco"  # cfg.CONFIG.MODEL.BASIS_MODULE.ANN_SET
+        self.basis_loss_on = False  # cfg.CONFIG.MODEL.BASIS_MODULE.LOSS_ON
+        self.ann_set = "coco"  # cfg.CONFIG.MODEL.BASIS_MODULE.ANN_SET
         # fmt: on
 
     def __call__(self, dataset_dict):

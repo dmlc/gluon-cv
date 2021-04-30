@@ -256,7 +256,7 @@ class COCOEvaluator:
         }[iou_type]
 
         if coco_eval is None:
-            self._logger.warn("No predictions from the model!")
+            self._logger.warning("No predictions from the model!")
             return {metric: float("nan") for metric in metrics}
 
         # the standard metrics

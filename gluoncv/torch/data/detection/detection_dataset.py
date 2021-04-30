@@ -1,4 +1,5 @@
 # adapted from https://github.com/facebookresearch/detectron2/blob/master/detectron2/data/build.py
+# pylint: disable=bad-continuation,bad-whitespace,pointless-string-statement,redefined-outer-name,wrong-import-order
 import itertools
 import random
 import logging

@@ -1,5 +1,5 @@
 """Directpose based on resnet + FPN backbones"""
-# pylint: disable=line-too-long, redefined-builtin, missing-class-docstring, unused-variable
+# pylint: disable=line-too-long, redefined-builtin, missing-class-docstring, unused-variable,unnecessary-pass
 # adpated from https://github.com/aim-uofa/AdelaiDet/blob/master/adet/modeling/backbone
 import math
 from abc import ABCMeta, abstractmethod
@@ -333,42 +333,42 @@ class Downsample(nn.Module):
         self.channels = channels
 
         # print('Filter size [%i]'%filt_size)
-        if(self.filt_size==1):
+        if(self.filt_size == 1):
             a = np.array([1.,])
-        elif(self.filt_size==2):
+        elif(self.filt_size == 2):
             a = np.array([1., 1.])
-        elif(self.filt_size==3):
+        elif(self.filt_size == 3):
             a = np.array([1., 2., 1.])
-        elif(self.filt_size==4):
+        elif(self.filt_size == 4):
             a = np.array([1., 3., 3., 1.])
-        elif(self.filt_size==5):
+        elif(self.filt_size == 5):
             a = np.array([1., 4., 6., 4., 1.])
-        elif(self.filt_size==6):
+        elif(self.filt_size == 6):
             a = np.array([1., 5., 10., 10., 5., 1.])
-        elif(self.filt_size==7):
+        elif(self.filt_size == 7):
             a = np.array([1., 6., 15., 20., 15., 6., 1.])
 
-        filt = torch.Tensor(a[:,None]*a[None,:])
-        filt = filt/torch.sum(filt)
-        self.register_buffer('filt', filt[None,None,:,:].repeat((self.channels,1,1,1)))
+        filt = torch.Tensor(a[:, None] * a[None, :])
+        filt = filt / torch.sum(filt)
+        self.register_buffer('filt', filt[None, None, :, :].repeat((self.channels, 1, 1, 1)))
 
         self.pad = get_pad_layer(pad_type)(self.pad_sizes)
 
     def forward(self, inp):
-        if(self.filt_size==1):
-            if(self.pad_off==0):
-                return inp[:,:,::self.stride,::self.stride]
+        if(self.filt_size == 1):
+            if(self.pad_off == 0):
+                return inp[:, :, ::self.stride, ::self.stride]
             else:
-                return self.pad(inp)[:,:,::self.stride,::self.stride]
+                return self.pad(inp)[:, :, ::self.stride, ::self.stride]
         else:
             return F.conv2d(self.pad(inp), self.filt, stride=self.stride, groups=inp.shape[1])
 
 def get_pad_layer(pad_type):
-    if(pad_type in ['refl','reflect']):
+    if(pad_type in ['refl', 'reflect']):
         PadLayer = nn.ReflectionPad2d
-    elif(pad_type in ['repl','replicate']):
+    elif(pad_type in ['repl', 'replicate']):
         PadLayer = nn.ReplicationPad2d
-    elif(pad_type=='zero'):
+    elif(pad_type == 'zero'):
         PadLayer = nn.ZeroPad2d
     else:
         print('Pad type [%s] not recognized'%pad_type)
@@ -436,9 +436,7 @@ class FPN(Backbone):
     It creates pyramid features built on top of some input feature maps.
     """
 
-    def __init__(
-        self, bottom_up, in_features, out_channels, norm="", top_block=None, fuse_type="sum"
-    ):
+    def __init__(self, bottom_up, in_features, out_channels, norm="", top_block=None, fuse_type="sum"):
         """
         Args:
             bottom_up (Backbone): module representing the bottom up subnetwork.
@@ -543,9 +541,7 @@ class FPN(Backbone):
         results = []
         prev_features = self.lateral_convs[0](x[0])
         results.append(self.output_convs[0](prev_features))
-        for features, lateral_conv, output_conv in zip(
-            x[1:], self.lateral_convs[1:], self.output_convs[1:]
-        ):
+        for features, lateral_conv, output_conv in zip(x[1:], self.lateral_convs[1:], self.output_convs[1:]):
             top_down_features = F.interpolate(prev_features, scale_factor=2, mode="nearest")
             lateral_features = lateral_conv(features)
             prev_features = lateral_features + top_down_features
@@ -669,9 +665,7 @@ class ResNetFPNDirectPose(nn.Module):
             # raw tensor input, e.g., during tracing
             return proposals
         processed_results = []
-        for results_per_image, input_per_image, image_size in zip(
-            proposals, batched_inputs_or_tensor, images.image_sizes
-        ):
+        for results_per_image, input_per_image, image_size in zip(proposals, batched_inputs_or_tensor, images.image_sizes):
             height = input_per_image.get("height", image_size[0])
             width = input_per_image.get("width", image_size[1])
             r = detector_postprocess(results_per_image, height, width)
@@ -806,7 +800,7 @@ def directpose_resnet50_lpf_fpn_coco(cfg):
             msg = model.load_state_dict(state_dict, strict=True)
         except RuntimeError:
             # model saved by DataParallel
-            state_dict = {k.partition('module.')[2]: v for k,v in state_dict.items()}
+            state_dict = {k.partition('module.')[2]: v for k, v in state_dict.items()}
             msg = model.load_state_dict(state_dict, strict=True)
         print("=> Initialized from a DirectPose pretrained on COCO dataset")
     return model

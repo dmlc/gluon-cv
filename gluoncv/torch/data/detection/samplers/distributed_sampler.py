@@ -1,6 +1,5 @@
 # adapted from https://github.com/facebookresearch/detectron2/blob/master/detectron2/data/samplers/distributed_sampler.py
 import itertools
-import itertools
 import math
 from collections import defaultdict
 from typing import Optional

@@ -3,6 +3,7 @@
 Common data processing utilities that are used in a
 typical object detection data pipeline.
 """
+# pylint: disable=pointless-string-statement
 import os
 import logging
 import numpy as np
@@ -126,7 +127,6 @@ def try_import_pycocotools():
     try:
         import pycocotools as _
     except ImportError:
-        import os
         # we need to install pycootools, which is a bit tricky
         # pycocotools sdist requires Cython, numpy(already met)
         import_try_install('cython')
@@ -288,7 +288,7 @@ def check_image_size(dataset_dict, image):
     if "width" in dataset_dict or "height" in dataset_dict:
         image_wh = (image.shape[1], image.shape[0])
         expected_wh = (dataset_dict["width"], dataset_dict["height"])
-        if not image_wh == expected_wh:
+        if image_wh != expected_wh:
             raise SizeMismatchError(
                 "Mismatched (W,H){}, got {}, expect {}".format(
                     " for image " + dataset_dict["file_name"]
@@ -349,9 +349,7 @@ def transform_proposals(dataset_dict, image_shape, transforms, *, proposal_topk,
         dataset_dict["proposals"] = proposals
 
 
-def transform_instance_annotations(
-    annotation, transforms, image_size, *, keypoint_hflip_indices=None
-):
+def transform_instance_annotations(annotation, transforms, image_size, *, keypoint_hflip_indices=None):
     """
     Apply transforms to box, segmentation and keypoints annotations of a single instance.
 

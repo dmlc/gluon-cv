@@ -88,10 +88,7 @@ def register_all_coco(root):
                 os.path.join(root, image_root),
             )
 
-    for (
-        prefix,
-        (panoptic_root, panoptic_json, semantic_root),
-    ) in _PREDEFINED_SPLITS_COCO_PANOPTIC.items():
+    for (prefix, (panoptic_root, panoptic_json, semantic_root),) in _PREDEFINED_SPLITS_COCO_PANOPTIC.items():
         prefix_instances = prefix[: -len("_panoptic")]
         instances_meta = MetadataCatalog.get(prefix_instances)
         image_root, instances_json = instances_meta.image_root, instances_meta.json_file

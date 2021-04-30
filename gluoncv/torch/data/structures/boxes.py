@@ -1,7 +1,7 @@
 import math
-import numpy as np
 from enum import IntEnum, unique
 from typing import Any, List, Tuple, Union
+import numpy as np
 import torch
 
 _RawBoxType = Union[List[float], Tuple[float, ...], torch.Tensor, np.ndarray]

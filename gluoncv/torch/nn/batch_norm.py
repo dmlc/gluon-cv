@@ -1,5 +1,5 @@
 """Custom BatchNorm implementation"""
-# pylint: disable=unused-argument
+# pylint: disable=unused-argument,bad-continuation
 import logging
 import torch
 import torch.distributed as dist

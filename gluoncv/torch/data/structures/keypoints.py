@@ -1,6 +1,6 @@
 # adapted from https://github.com/facebookresearch/detectron2/blob/master/detectron2/structures/keypoints.py
-import numpy as np
 from typing import Any, List, Tuple, Union
+import numpy as np
 import torch
 
 
@@ -80,9 +80,8 @@ class Keypoints:
 
 
 # TODO make this nicer, this is a direct translation from C2 (but removing the inner loop)
-def _keypoints_to_heatmap(
-    keypoints: torch.Tensor, rois: torch.Tensor, heatmap_size: int
-) -> Tuple[torch.Tensor, torch.Tensor]:
+def _keypoints_to_heatmap(keypoints: torch.Tensor, rois: torch.Tensor,
+                          heatmap_size: int) -> Tuple[torch.Tensor, torch.Tensor]:
     """
     Encode keypoint locations into a target heatmap for use in SoftmaxWithLoss across space.
 
@@ -236,11 +235,7 @@ def interpolate(input, size=None, scale_factor=None, mode="nearest", align_corne
             raise ValueError("either size or scale_factor should be defined")
         if size is not None and scale_factor is not None:
             raise ValueError("only one of size or scale_factor should be defined")
-        if (
-            scale_factor is not None
-            and isinstance(scale_factor, tuple)
-            and len(scale_factor) != dim
-        ):
+        if (scale_factor is not None and isinstance(scale_factor, tuple) and len(scale_factor) != dim):
             raise ValueError(
                 "scale_factor shape must match input shape. "
                 "Input is {}D, scale_factor size is {}".format(dim, len(scale_factor))

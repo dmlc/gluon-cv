@@ -1,9 +1,10 @@
 # adapted from https://github.com/facebookresearch/detectron2/blob/master/detectron2/structures/masks.py
+# pylint: disable=unused-argument
 import copy
 import itertools
-import numpy as np
-
 from typing import Any, Iterator, List, Union
+
+import numpy as np
 import torch
 import torchvision
 
@@ -33,9 +34,7 @@ def polygons_to_bitmask(polygons: List[np.ndarray], height: int, width: int) -> 
     return mask_util.decode(rle).astype(np.bool)
 
 
-def rasterize_polygons_within_box(
-    polygons: List[np.ndarray], box: np.ndarray, mask_size: int
-) -> torch.Tensor:
+def rasterize_polygons_within_box(polygons: List[np.ndarray], box: np.ndarray, mask_size: int) -> torch.Tensor:
     """
     Rasterize the polygons into a mask image and
     crop the mask content in the given box.
@@ -154,9 +153,7 @@ class BitMasks:
         return self.tensor.flatten(1).any(dim=1)
 
     @staticmethod
-    def from_polygon_masks(
-        polygon_masks: Union["PolygonMasks", List[List[np.ndarray]]], height: int, width: int
-    ) -> "BitMasks":
+    def from_polygon_masks(polygon_masks: Union["PolygonMasks", List[List[np.ndarray]]], height: int, width: int) -> "BitMasks":
         """
         Args:
             polygon_masks (list[list[ndarray]] or PolygonMasks)
@@ -255,9 +252,7 @@ class PolygonMasks:
                 t = t.cpu().numpy()
             return np.asarray(t).astype("float64")
 
-        def process_polygons(
-            polygons_per_instance: List[Union[torch.Tensor, np.ndarray]]
-        ) -> List[np.ndarray]:
+        def process_polygons(polygons_per_instance: List[Union[torch.Tensor, np.ndarray]]) -> List[np.ndarray]:
             assert isinstance(polygons_per_instance, list), (
                 "Cannot create polygons: Expect a list of polygons per instance. "
                 "Got '{}' instead.".format(type(polygons_per_instance))

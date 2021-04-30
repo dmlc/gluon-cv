@@ -1,5 +1,5 @@
 """Directpose implementation"""
-# pylint: disable=line-too-long, redefined-builtin, missing-class-docstring, unused-variable
+# pylint: disable=line-too-long, redefined-builtin, missing-class-docstring, unused-variable,unnecessary-comprehension
 import math
 from typing import List, Dict
 import torch
@@ -111,17 +111,6 @@ class DirectPose(nn.Module):
         logits_pred, bbox_reg_pred, kpt_reg_pred, kpts_locator_reg_pred, ctrness_pred, top_feats, kpts_towers, hms, hms_offset = \
             self.directpose_head(features, top_module, self.yield_proposal)
 
-        # output = [logits_pred, bbox_reg_pred, kpt_reg_pred, kpts_locator_reg_pred, ctrness_pred, top_feats, kpts_towers, hms, hms_offset]
-        # output = [x for x in output if x]
-        # return tuple([torch.cat((a, b, c), dim=1) for a, b, c in zip(logits_pred, kpt_reg_pred, ctrness_pred)])
-        # print('logits_pred', logits_pred[0].shape)
-        # print('kpt_reg_pred', kpt_reg_pred[0].shape)
-        # # print('kpts_locator_reg_pred', kpts_locator_reg_pred)
-        # print('ctrness_pred', ctrness_pred[0].shape)
-        # # print('top_feats', top_feats)
-        # # print('kpts_towers', kpts_towers)
-        # raise
-        # return logits_pred, kpt_reg_pred, ctrness_pred
         results = {}
         if self.yield_proposal:
             results["features"] = {
@@ -195,15 +184,15 @@ class DIRECTPOSEHead(nn.Module):
         head_configs = {"cls": (cfg.CONFIG.MODEL.DIRECTPOSE.NUM_CLS_CONVS,
                                 cfg.CONFIG.MODEL.DIRECTPOSE.USE_DEFORMABLE),
                         "kpt": (cfg.CONFIG.MODEL.DIRECTPOSE.NUM_KPT_CONVS,
-                                 cfg.CONFIG.MODEL.DIRECTPOSE.USE_DEFORMABLE),
+                                cfg.CONFIG.MODEL.DIRECTPOSE.USE_DEFORMABLE),
                         "share": (cfg.CONFIG.MODEL.DIRECTPOSE.NUM_SHARE_CONVS,
                                   False)}
         if self.enable_bbox_branch:
             head_configs["bbox"] = (cfg.CONFIG.MODEL.DIRECTPOSE.NUM_BOX_CONVS,
-                                 cfg.CONFIG.MODEL.DIRECTPOSE.USE_DEFORMABLE)
+                                    cfg.CONFIG.MODEL.DIRECTPOSE.USE_DEFORMABLE)
         if self.enable_hm_branch:
             head_configs["hm"] = (cfg.CONFIG.MODEL.DIRECTPOSE.NUM_HMS_CONVS,
-                                 cfg.CONFIG.MODEL.DIRECTPOSE.USE_DEFORMABLE)
+                                  cfg.CONFIG.MODEL.DIRECTPOSE.USE_DEFORMABLE)
 
         norm = None if cfg.CONFIG.MODEL.DIRECTPOSE.NORM == "none" else cfg.CONFIG.MODEL.DIRECTPOSE.NORM
         self.num_levels = len(input_shape)
@@ -219,7 +208,7 @@ class DIRECTPOSEHead(nn.Module):
             for i in range(num_convs):
                 if use_deformable and i == num_convs - 1:
                     raise NotImplementedError("Deformable Conv v2 is not supported yet!")
-                    conv_func = DFConv2d
+                    # conv_func = DFConv2d
                 else:
                     conv_func = nn.Conv2d
 
