@@ -1,4 +1,5 @@
 # adapted from https://github.com/facebookresearch/detectron2/blob/master/detectron2/data/catalog.py
+# pylint: disable=no-else-raise
 import copy
 import logging
 import types
@@ -243,4 +244,3 @@ metadata to each split (now called dataset) separately!
         Remove the metadata registered by ``name``.
         """
         MetadataCatalog._NAME_TO_META.pop(name)
-

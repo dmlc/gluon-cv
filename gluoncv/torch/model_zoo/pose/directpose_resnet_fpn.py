@@ -1,12 +1,12 @@
 """Directpose based on resnet + FPN backbones"""
-# pylint: disable=line-too-long, redefined-builtin, missing-class-docstring, unused-variable,unnecessary-pass
+# pylint: disable=line-too-long, redefined-builtin, missing-class-docstring, unused-variable,unnecessary-pass,arguments-differ
 # adpated from https://github.com/aim-uofa/AdelaiDet/blob/master/adet/modeling/backbone
 import math
 from abc import ABCMeta, abstractmethod
 
+import numpy as np
 import torch
 import torch.nn.parallel
-import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.model_zoo as model_zoo
@@ -201,12 +201,11 @@ class Backbone(nn.Module, metaclass=ABCMeta):
 
 
 class ResNetLPF(Backbone):
-
-    def __init__(self, cfg, block, layers, num_classes=1000, zero_init_residual=False,
+    def __init__(self, cfg, block, layers, zero_init_residual=False,
                  groups=1, width_per_group=64, norm_layer=None, filter_size=1,
-                 pool_only=True, return_idx=[0, 1, 2, 3]):
+                 pool_only=True, return_idx=(0, 1, 2, 3)):
         super().__init__()
-        self.return_idx = return_idx
+        self.return_idx = list(return_idx)
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
         planes = [int(width_per_group * groups * 2 ** i) for i in range(4)]
@@ -257,8 +256,7 @@ class ResNetLPF(Backbone):
                 elif isinstance(m, BasicBlock):
                     nn.init.constant_(m.bn2.weight, 0)
         self._freeze_backbone(cfg.CONFIG.MODEL.BACKBONE.FREEZE_AT)
-        if False:
-            self._freeze_bn()
+        # self._freeze_bn()
 
     def _freeze_backbone(self, freeze_at):
         if freeze_at < 0:
@@ -795,12 +793,7 @@ def directpose_resnet50_lpf_fpn_coco(cfg):
     if cfg.CONFIG.MODEL.PRETRAINED:
         from ..model_store import get_model_file
         state_dict = torch.load(get_model_file('directpose_resnet50_lpf_fpn_coco', tag=cfg.CONFIG.MODEL.PRETRAINED),
-                                map_location=torch.device('cpu'))['state_dict']
-        try:
-            msg = model.load_state_dict(state_dict, strict=True)
-        except RuntimeError:
-            # model saved by DataParallel
-            state_dict = {k.partition('module.')[2]: v for k, v in state_dict.items()}
-            msg = model.load_state_dict(state_dict, strict=True)
+                                map_location=torch.device('cpu'))
+        msg = model.load_state_dict(state_dict, strict=True)
         print("=> Initialized from a DirectPose pretrained on COCO dataset")
     return model

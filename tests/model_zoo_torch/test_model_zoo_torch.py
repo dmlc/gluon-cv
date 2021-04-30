@@ -202,6 +202,15 @@ def test_action_recognition_csn_models():
     _test_model_list(models, use_cuda, x, pretrained=False, num_classes=400)
     _test_model_list(models, use_cuda, x, pretrained=True, num_classes=400)
 
+def test_directpose_models():
+    use_cuda = True
+    if torch.cuda.device_count() == 0:
+        use_cuda = False
+
+    models = ['directpose_resnet50_lpf_fpn_coco']
+    x = torch.rand(1, 3, 768, 1280)
+    _test_model_list(models, use_cuda, x, pretrained=True, num_classes=1)
+
 
 if __name__ == '__main__':
     import nose

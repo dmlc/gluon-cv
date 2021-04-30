@@ -22,7 +22,7 @@ def parse_args():
     parser.add_argument("--save-output", type=str, default='visualize_output.png', help='Save visualize result to image')
     parser.add_argument("--verbose", type=int, default=1)
     parser.add_argument("--export-dir", type=str, default='./')
-    parser.add_argument("--model-name", type=str, default='', help="The pre-trained model name")
+    parser.add_argument("--model-name", type=str, default='directpose_resnet50_lpf_fpn_coco', help="The pre-trained model name")
     parser.add_argument("--config-file", type=str, default='./configurations/ms_aa_resnet50_4x_syncbn.yaml',
                         help="The config file for custom model, required if --model-name is not specified")
     parser.add_argument("opts", help="Modify config options using the command-line", default=None, nargs=argparse.REMAINDER)

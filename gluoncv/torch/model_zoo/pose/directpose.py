@@ -205,6 +205,7 @@ class DIRECTPOSEHead(nn.Module):
         for head in head_configs:
             tower = []
             num_convs, use_deformable = head_configs[head]
+            # pylint: disable=no-else-raise
             for i in range(num_convs):
                 if use_deformable and i == num_convs - 1:
                     raise NotImplementedError("Deformable Conv v2 is not supported yet!")
