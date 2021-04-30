@@ -35,13 +35,12 @@ def get_image(img_name='street_small.jpg', img_url=None, img_width=1280, img_hei
         img_path = os.path.join(save_dir, img_name)
         download(img_url, img_path)
         orig_img = Image.open(img_path)
-        # img = orig_img.resize((736, 1280), Image.LANCZOS)
-        img = orig_img.resize((img_width, img_height), Image.LANCZOS)
-        img = np.array(img)[:, :, (2, 1, 0)]
+        orig_img = orig_img.resize((img_width, img_height), Image.LANCZOS)
+        img = np.array(orig_img)[:, :, (0, 1, 2)].astype('uint8')
         return img, orig_img, img_path
 
     def get_transforms():
-        tforms = T.Compose([T.ToTensor(), T.Normalize(mean=[0.406, 0.456, 0.485], std=[0.229, 0.224, 0.225])])
+        tforms = T.Compose([T.ToTensor(), T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
         return tforms
 
     if img_url is None:
@@ -70,16 +69,15 @@ if __name__ == '__main__':
         assert os.path.isfile(args.config_file)
         assert os.path.isfile(cfg.CONFIG.MODEL.PRETRAINED_PATH)
         cfg.merge_from_file(args.config_file)
-        if not args.use_gpu:
-            cfg.CONFIG.MODEL.RESNETS.NORM = "BN"
         net = model_zoo.directpose_resnet_lpf_fpn(cfg).to(device).eval()
         load_model = torch.load(cfg.CONFIG.MODEL.PRETRAINED_PATH, map_location=torch.device('cpu'))
         net.load_state_dict(load_model, strict=False)
     images, orig_image = get_image(
         'soccer.png', img_url='https://github.com/dmlc/web-data/blob/master/gluoncv/pose/soccer.png?raw=true',
         img_width=args.image_width, img_height=args.image_height)
-    predictions = net(images.to(device))[0]
-    print(predictions)
+    with torch.no_grad():
+        predictions = net(images.to(device))[0]
+    print(f"Detected {list(predictions.scores.size())} instances with scores: {predictions.scores}")
     # visualize
     if args.visualize or args.save_output:
         print("Visualizing results...")

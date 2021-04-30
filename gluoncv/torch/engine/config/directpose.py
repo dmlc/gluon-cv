@@ -206,6 +206,12 @@ _C.CONFIG.LOG.LEVEL = 'DEBUG'
 # LOG output file, ends with .txt or .log
 _C.CONFIG.LOG.LOG_FILENAME = 'log.txt'
 
+# RESNET
+_C.CONFIG.MODEL.RESNETS = CN(new_allowed=True)
+_C.CONFIG.MODEL.RESNETS.OUT_FEATURES = ["res3", "res4", "res5"]
+_C.CONFIG.MODEL.RESNETS.DEPTH = 50
+_C.CONFIG.MODEL.RESNETS.NORM = "SyncBN"
+
 # ---------------------------------------------------------------------------- #
 # DLA backbone
 # ---------------------------------------------------------------------------- #

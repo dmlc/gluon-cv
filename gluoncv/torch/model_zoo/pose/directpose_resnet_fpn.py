@@ -11,6 +11,7 @@ import torch.nn.functional as F
 import torch.utils.model_zoo as model_zoo
 
 from ...data.structures import ImageList
+from ...engine.config import get_cfg_defaults
 from ...nn.batch_norm import get_norm
 from ...nn.batch_norm import NaiveSyncBatchNorm
 from ...nn.shape_spec import ShapeSpec
@@ -740,6 +741,9 @@ def directpose_resnet_lpf_fpn(cfg):
     return ResNetFPNDirectPose(backbone, pose_net)
 
 def directpose_resnet50_lpf_fpn_coco(cfg):
+    base_cfg = get_cfg_defaults("directpose")
+    base_cfg.merge_from_other_cfg(cfg)
+    cfg = base_cfg
     depth = 50
     out_features = ["res3", "res4", "res5"]
 
@@ -764,18 +768,30 @@ def directpose_resnet50_lpf_fpn_coco(cfg):
     out_channels = 256
     in_channels_top = out_channels
     top_block = LastLevelP6P7(in_channels_top, out_channels, "p5")
-    try:
-        norm_layer = cfg.CONFIG.MODEL.RESNETS.NORM
-    except AttributeError:
-        norm_layer = "BN"
     backbone = FPN(
         bottom_up=bottom_up,
         in_features=in_features,
         out_channels=out_channels,
-        norm=norm_layer,
+        norm="",
         top_block=top_block,
         fuse_type="sum",
     )
+
+    cfg.CONFIG.MODEL.DIRECTPOSE.TOP_LEVELS = 2
+    cfg.CONFIG.MODEL.DIRECTPOSE.SIZES_OF_INTEREST = [64, 128, 256, 512]
+    cfg.CONFIG.MODEL.DIRECTPOSE.FPN_STRIDES = [8, 16, 32, 64, 128]
+    cfg.CONFIG.MODEL.DIRECTPOSE.IN_FEATURES = ['p3', 'p4', 'p5', 'p6', 'p7']
+    cfg.CONFIG.MODEL.DIRECTPOSE.HM_OFFSET = False
+    cfg.CONFIG.MODEL.DIRECTPOSE.HM_TYPE = 'BinaryLabels'
+    cfg.CONFIG.MODEL.DIRECTPOSE.REFINE_KPT = False
+    cfg.CONFIG.MODEL.DIRECTPOSE.SAMPLE_FEATURE = 'lower'
+    cfg.CONFIG.MODEL.DIRECTPOSE.KPALIGN_GROUPS = 9
+    cfg.CONFIG.MODEL.DIRECTPOSE.SEPERATE_CONV_FEATURE = True
+    cfg.CONFIG.MODEL.DIRECTPOSE.LOSS_ON_LOCATOR = False
+    cfg.CONFIG.MODEL.DIRECTPOSE.KPT_VIS = True
+    cfg.CONFIG.MODEL.DIRECTPOSE.CLOSEKPT_NMS = False
+    cfg.CONFIG.MODEL.DIRECTPOSE.CENTER_BRANCH = 'kpt'
+    cfg.CONFIG.MODEL.DIRECTPOSE.USE_SCALE = False
 
     pose_net = DirectPose(cfg, backbone.output_shape())
 
@@ -784,7 +800,12 @@ def directpose_resnet50_lpf_fpn_coco(cfg):
     if cfg.CONFIG.MODEL.PRETRAINED:
         from ..model_store import get_model_file
         state_dict = torch.load(get_model_file('directpose_resnet50_lpf_fpn_coco', tag=cfg.CONFIG.MODEL.PRETRAINED),
-                                map_location=torch.device('cpu'))
-        msg = model.load_state_dict(state_dict, strict=False)
+                                map_location=torch.device('cpu'))['state_dict']
+        try:
+            msg = model.load_state_dict(state_dict, strict=True)
+        except RuntimeError:
+            # model saved by DataParallel
+            state_dict = {k.partition('module.')[2]: v for k,v in state_dict.items()}
+            msg = model.load_state_dict(state_dict, strict=True)
         print("=> Initialized from a DirectPose pretrained on COCO dataset")
     return model
