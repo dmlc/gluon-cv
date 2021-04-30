@@ -1,4 +1,5 @@
 """A custom nms module for tvm with static shape"""
+# pylint: disable=unused-argument
 from tvm.relay.frontend.pytorch import _op, AttrCvt, get_relay_op
 
 def nms(inputs, input_types):
@@ -7,7 +8,7 @@ def nms(inputs, input_types):
     scores = inputs[1]
     iou_threshold = inputs[2]
     score_index = 0
-    coord_start=1
+    coord_start = 1
     # PyTorch NMS doesn't have parameter top_k and max_output_size
     top_k = max_out_size = -1
 
