@@ -1,4 +1,4 @@
-# pylint: disable=missing-function-docstring
+# pylint: disable=missing-function-docstring, unused-argument
 """
 C2D video action recognition models based on ResNet
 """

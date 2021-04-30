@@ -1,5 +1,6 @@
+"""Custom and derived deformable convolution"""
+# pylint: disable=missing-function-docstring
 import torch
-import math
 from torch import nn
 from torch.nn.modules.utils import _pair
 from torchvision.ops import deform_conv2d
@@ -20,6 +21,11 @@ class _NewEmptyTensorOp(torch.autograd.Function):
 
 
 class DeformConvWithChangeableStride(nn.Module):
+    """A deformable conv layer with dynamic stride.
+
+    See "https://github.com/pytorch/vision/blob/master/torchvision/ops/deform_conv.py" for usage.
+    There are currently some limitations, e.g. deformable_groups must be 1.
+    """
     def __init__(
         self,
         in_channels,

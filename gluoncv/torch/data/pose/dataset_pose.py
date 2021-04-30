@@ -1,4 +1,5 @@
 """Build dataset for pose estimation"""
+# pylint: disable=line-too-long
 import itertools
 import copy
 import logging

@@ -1,3 +1,4 @@
+"""Loss layers for keypoints that can be inserted to modules"""
 import torch
 import torch.nn as nn
 
@@ -8,6 +9,7 @@ def _sigmoid(x):
     return y
 
 class WeightedMSELoss(nn.Module):
+    """Weighted MSE loss layer"""
     def __init__(self):
         super().__init__()
 
@@ -18,6 +20,7 @@ class WeightedMSELoss(nn.Module):
         return loss
 
 class HMFocalLoss(nn.Module):
+    """Heatmap Focal Loss layer"""
     def __init__(self, alpha, beta):
         super(HMFocalLoss, self).__init__()
         self.alpha = alpha

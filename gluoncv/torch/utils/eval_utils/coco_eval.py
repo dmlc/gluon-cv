@@ -1,18 +1,20 @@
 """COCO evaluation utils"""
+# pylint: disable=line-too-long, redefined-builtin
 import contextlib
 import copy
 import io
 import itertools
 import json
 import logging
-import numpy as np
 import os
 import pickle
 from collections import OrderedDict
+
+import numpy as np
 import torch
 import pandas as pd
 
-from .. import comm as comm
+from .. import comm
 from ...data.registry.catalog import MetadataCatalog
 from ...data.registry.mscoco import convert_to_coco_json
 from ...data.structures import Boxes, BoxMode, pairwise_iou
@@ -117,6 +119,7 @@ class COCOEvaluator:
             self._predictions.append(prediction)
 
     def evaluate(self):
+        """Evaluate"""
         if self._distributed:
             comm.synchronize()
             predictions = comm.gather(self._predictions, dst=0)

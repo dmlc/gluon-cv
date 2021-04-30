@@ -1,4 +1,5 @@
 """FCOS object detector"""
+# pylint: disable=all
 import logging
 import math
 from typing import List, Dict
@@ -106,7 +107,7 @@ class FCOS(nn.Module):
                 logits_pred, reg_pred, ctrness_pred,
                 locations, gt_instances, top_feats
             )
-            
+
             if self.yield_proposal:
                 with torch.no_grad():
                     results["proposals"] = self.fcos_outputs.predict_proposals(
@@ -261,8 +262,8 @@ Naming convention:
     reg_targets: refers to the 4-d (left, top, right, bottom) distances that parameterize the ground-truth box.
 
     logits_pred: predicted classification scores in [-inf, +inf];
-    
-    reg_pred: the predicted (left, top, right, bottom), corresponding to reg_targets 
+
+    reg_pred: the predicted (left, top, right, bottom), corresponding to reg_targets
 
     ctrness_pred: predicted centerness scores
 

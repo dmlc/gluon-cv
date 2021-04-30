@@ -197,8 +197,7 @@ class ObjectDetection(BaseTask):
         else:
             if not config.get('dist_ip_addrs', None):
                 ngpus_per_trial = config.get('ngpus_per_trial', gpu_count)
-                if ngpus_per_trial > gpu_count:
-                    ngpus_per_trial = gpu_count
+                ngpus_per_trial = min(ngpus_per_trial, gpu_count)
                 if ngpus_per_trial < 1:
                     self._logger.info('No GPU detected/allowed, using most conservative search space.')
                     default_config = LiteConfig()
@@ -209,8 +208,7 @@ class ObjectDetection(BaseTask):
         # adjust cpu/gpu resources
         if not config.get('dist_ip_addrs', None):
             nthreads_per_trial = config.get('nthreads_per_trial', cpu_count)
-            if nthreads_per_trial > cpu_count:
-                nthreads_per_trial = cpu_count
+            nthreads_per_trial = min(nthreads_per_trial, cpu_count)
             ngpus_per_trial = config.get('ngpus_per_trial', gpu_count)
             if ngpus_per_trial > gpu_count:
                 ngpus_per_trial = gpu_count

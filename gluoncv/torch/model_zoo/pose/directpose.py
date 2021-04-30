@@ -1,4 +1,5 @@
 """Directpose implementation"""
+# pylint: disable=line-too-long, redefined-builtin, missing-class-docstring, unused-variable
 import math
 from typing import List, Dict
 import torch
@@ -150,7 +151,7 @@ class DirectPose(nn.Module):
                 logits_pred, bbox_reg_pred, kpt_reg_pred, ctrness_pred, hms, hms_offset,
                 locations, image_sizes, top_feats, None
             )
-            
+
             return results, {}
 
     def compute_locations(self, features):

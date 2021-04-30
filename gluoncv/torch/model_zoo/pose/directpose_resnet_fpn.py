@@ -1,4 +1,5 @@
 """Directpose based on resnet + FPN backbones"""
+# pylint: disable=line-too-long, redefined-builtin, missing-class-docstring, unused-variable
 # adpated from https://github.com/aim-uofa/AdelaiDet/blob/master/adet/modeling/backbone
 import math
 from abc import ABCMeta, abstractmethod

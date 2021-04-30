@@ -1,11 +1,11 @@
-# Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
+"""Custom BatchNorm implementation"""
+# pylint: disable=unused-argument
 import logging
 import torch
 import torch.distributed as dist
 from torch import nn
 from torch.autograd.function import Function
 from torch.nn import functional as F
-
 from torch.nn import BatchNorm2d
 
 from ..utils.comm import get_world_size
@@ -14,6 +14,7 @@ __all__ = ['get_norm', 'NaiveSyncBatchNorm']
 
 
 class AllReduce(Function):
+    """All reduce used by SyncBatchNorm"""
     @staticmethod
     def forward(ctx, input):
         input_list = [torch.zeros_like(input) for k in range(dist.get_world_size())]

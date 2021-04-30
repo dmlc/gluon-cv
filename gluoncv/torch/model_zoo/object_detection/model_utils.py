@@ -1,3 +1,4 @@
+"""Detection model utils"""
 import torch
 from torch import nn
 
@@ -5,6 +6,7 @@ from ...data.structures import Instances
 from ...utils.utils import retry_if_cuda_oom
 
 def build_top_module(cfg):
+    """Build detection head/top module"""
     top_type = cfg.CONFIG.MODEL.DETECTION_TOP_MODULE.NAME
     if top_type == "conv":
         inp = cfg.CONFIG.MODEL.FPN.OUT_CHANNELS

@@ -38,7 +38,7 @@ class DirectposePipeline:
         self.iter_timer = AverageMeter()
         val_datasets = cfg.CONFIG.DATA.DATASET.VAL
         self.evaluators = [COCOEvaluator(
-            val_dataset, cfg, distributed=cfg.DDP_CONFIG.DISTRIBUTED, 
+            val_dataset, cfg, distributed=cfg.DDP_CONFIG.DISTRIBUTED,
             output_dir=cfg.CONFIG.LOG.EVAL_DIR) for val_dataset in val_datasets]
 
     def train_step(self):
@@ -50,7 +50,7 @@ class DirectposePipeline:
         self.base_iter += 1
         if self.base_iter >= self.max_iter:
             return
-        
+
         data_time = time.perf_counter() - end
 
         loss_dict = self.model(data)
@@ -136,7 +136,7 @@ class DirectposePipeline:
                     # no timing during gpu warm up
                     start_time = time.perf_counter()
                     total_compute_time = 0
-                
+
                 start_compute_time = time.perf_counter()
                 outputs = self.model(inputs)
                 if torch.cuda.is_available():

@@ -1,4 +1,5 @@
 """Visualization utils"""
+# pylint: disable=line-too-long, redefined-builtin, missing-class-docstring, unused-variable
 # adapted from https://github.com/facebookresearch/detectron2/blob/master/detectron2/utils/visualizer.py
 import colorsys
 import logging

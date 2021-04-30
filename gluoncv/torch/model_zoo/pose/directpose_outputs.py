@@ -1,3 +1,5 @@
+"""Directpose outputs"""
+# pylint: disable=line-too-long, redefined-builtin, missing-class-docstring, unused-variable
 import logging
 from typing import List
 import torch
@@ -36,7 +38,7 @@ Naming convention:
 
     logits_pred: predicted classification scores in [-inf, +inf];
 
-    reg_pred: the predicted (left, top, right, bottom), corresponding to reg_targets 
+    reg_pred: the predicted (left, top, right, bottom), corresponding to reg_targets
 
     ctrness_pred: predicted centerness scores
 
@@ -648,7 +650,7 @@ class DirectPoseOutputs(nn.Module):
             # print(nms_input.shape)
             nms_ret = nms(pred_boxes[0], pred_scores[0], self.nms_thresh)
             return pred_ids[0], nms_ret, pred_boxes[0], pred_scores[0], pred_keypoints[0]
-        
+
         boxlists = self.select_over_all_levels(boxlists)
         if self.enable_hm_branch and self.combine_hm_and_kpt:
             boxlists = self.refine_kpt(boxlists, hms, hms_offset, images, topk=40, thresh=0.1)
@@ -1011,7 +1013,7 @@ class DirectPoseOutputs(nn.Module):
                 result = result[keep]
             results.append(result)
         return results
-    
+
     def select_over_all_level(self, boxlist):
         # multiclass nms
         result = ml_nms(boxlist, self.nms_thresh, fixed_size=False)

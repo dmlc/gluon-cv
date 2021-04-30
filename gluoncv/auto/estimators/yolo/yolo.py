@@ -392,7 +392,7 @@ class YOLOv3Estimator(BaseEstimator):
             self.net.reset_class(self.classes,
                                  reuse_weights=[cname for cname in self.classes if cname in self.net.classes])
 
-        with warnings.catch_warnings(record=True) as w:
+        with warnings.catch_warnings(record=True) as _:
             warnings.simplefilter("always")
             self.net.initialize()
             self.async_net.initialize()

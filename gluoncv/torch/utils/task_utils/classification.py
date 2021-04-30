@@ -4,11 +4,9 @@ Utility functions for task
 """
 import os
 import time
-from timeit import default_timer as timer
 import numpy as np
 
 import torch
-from torch.nn import functional as F
 
 from ..utils import AverageMeter, accuracy
 

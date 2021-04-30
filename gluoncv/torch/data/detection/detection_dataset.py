@@ -2,12 +2,12 @@
 import itertools
 import random
 import logging
-import numpy as np
 import operator
 import dill
 import pickle
 from pprint import pformat
 from typing import List, Optional, Union
+import numpy as np
 import torch
 import torch.utils.data as data
 

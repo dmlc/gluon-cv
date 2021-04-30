@@ -1,4 +1,5 @@
 """Dataset implementation for specific task(s)"""
+# pylint: disable=consider-using-generator
 import logging
 import os
 from pathlib import Path
@@ -503,7 +504,7 @@ class ObjectDetectionDataset(pd.DataFrame):
         if isinstance(root, Path):
             root = str(root.expanduser().resolve())
         elif isinstance(root, str):
-            root = os.path.abspath(anno_file, os.path.expanduser(root))
+            root = os.path.abspath(os.path.expanduser(root))
         elif root is None:
             # try to use the default coco structure
             root = os.path.join(os.path.dirname(anno_file), '..')

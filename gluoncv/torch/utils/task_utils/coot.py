@@ -2,10 +2,7 @@
 """
 Utility functions for task
 """
-import os
-import time
 from timeit import default_timer as timer
-import numpy as np
 
 import torch
 from torch.nn import functional as F
@@ -13,7 +10,6 @@ from torch.nn import functional as F
 from .. import coot_utils
 from ..coot_utils import compute_constrastive_loss, compute_cmc_loss
 from ..coot_utils import unpack_data
-from ..utils import AverageMeter, accuracy
 
 def train_coot(config, base_iter,
                model,

@@ -1,4 +1,4 @@
-# pylint: disable=missing-function-docstring, line-too-long
+# pylint: disable=missing-function-docstring, line-too-long, consider-using-with
 """
 Utility functions, misc
 """
@@ -6,10 +6,11 @@ import os
 import sys
 import time
 import functools
-import numpy as np
 import logging
 from contextlib import contextmanager
 from functools import wraps
+
+import numpy as np
 import torch.nn as nn
 import torch
 

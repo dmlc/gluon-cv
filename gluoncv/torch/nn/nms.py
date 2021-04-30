@@ -1,3 +1,4 @@
+"""Modified NMS ops as static/dynamic layers"""
 import numpy as np
 import torch
 from torchvision.ops import boxes as box_ops
@@ -19,8 +20,8 @@ def batched_nms(
         return box_ops.batched_nms(boxes, scores, idxs, iou_threshold)
 
     result_mask = scores.new_zeros(scores.size(), dtype=torch.bool)
-    for id in torch.unique(idxs).cpu().tolist():
-        mask = (idxs == id).nonzero().view(-1)
+    for iid in torch.unique(idxs).cpu().tolist():
+        mask = (idxs == iid).nonzero().view(-1)
         keep = nms(boxes[mask], scores[mask], iou_threshold)
         result_mask[mask[keep]] = True
     keep = result_mask.nonzero().view(-1)
@@ -28,18 +29,17 @@ def batched_nms(
     return keep
 
 
-def ml_nms(boxlist, nms_thresh, max_proposals=-1,
-           score_field="scores", label_field="labels", fixed_size=False):
+def ml_nms(boxlist, nms_thresh, max_proposals=-1, fixed_size=False):
     """
     Performs non-maximum suppression on a boxlist, with scores specified
     in a boxlist field via score_field.
-    
+
     Args:
-        boxlist (data.structures.Boxes): 
-        nms_thresh (float): 
+        boxlist (data.structures.Boxes):
+        nms_thresh (float): the score threshold for nms
         max_proposals (int): if > 0, then only the top max_proposals are kept
             after non-maximum suppression
-        score_field (str): 
+        fixed_size (bool): force output to be static shape
     """
     if nms_thresh <= 0:
         return boxlist
@@ -63,8 +63,10 @@ def ml_nms(boxlist, nms_thresh, max_proposals=-1,
     return boxlist
 
 def oks_iou(g, d, a_g, a_d, sigmas=None, in_vis_thre=None):
+    """Calculate oks IOU score"""
     if not isinstance(sigmas, np.ndarray):
-        sigmas = np.array([.26, .25, .25, .35, .35, .79, .79, .72, .72, .62, .62, 1.07, 1.07, .87, .87, .89, .89]) / 10.0
+        sigmas = np.array([.26, .25, .25, .35, .35, .79, .79, .72, .72,
+                           .62, .62, 1.07, 1.07, .87, .87, .89, .89]) / 10.0
     vars = (sigmas * 2) ** 2
     xg = g[0::3]
     yg = g[1::3]
@@ -84,6 +86,7 @@ def oks_iou(g, d, a_g, a_d, sigmas=None, in_vis_thre=None):
     return ious
 
 def get_close_kpt_num(g, d, dis_thresh = 1):
+    """Calculate number of close keypoints"""
     xg = g[0::3]
     yg = g[1::3]
     close_keypoints_num = np.zeros((d.shape[0]))

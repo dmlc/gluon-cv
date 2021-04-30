@@ -1,3 +1,4 @@
+"""Pytorch communication tools"""
 import functools
 import logging
 import numpy as np
@@ -6,6 +7,7 @@ import torch
 import torch.distributed as dist
 
 def get_world_size():
+    """Get DDP world size"""
     if not dist.is_available():
         return 1
     if not dist.is_initialized():
@@ -270,5 +272,6 @@ def reduce_dict(input_dict, average=True):
             # only main process gets accumulated, so only divide by
             # world_size in this case
             values /= world_size
+        # pylint: disable=unnecessary-comprehension
         reduced_dict = {k: v for k, v in zip(names, values)}
     return reduced_dict

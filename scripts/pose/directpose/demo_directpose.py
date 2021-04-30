@@ -92,5 +92,6 @@ if __name__ == '__main__':
         if args.save_output:
             vis_output.save(args.save_output)
         if args.visualize:
+            raise
             plt.imshow(vis_output.get_image())
             plt.show()

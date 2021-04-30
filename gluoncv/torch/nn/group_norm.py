@@ -1,4 +1,4 @@
-# coding:utf-8
+"""Group Norm implementation"""
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -9,6 +9,7 @@ __all__ = ['GCN', 'NaiveGroupNorm']
 
 
 class Conv2D(nn.Module):
+    """Inline Conv2D for GroupNorm module"""
     def __init__(self, in_channels, out_channels, kernel_size, padding='same',
                  stride=1, dilation=1, groups=1):
         super(Conv2D, self).__init__()
@@ -56,7 +57,7 @@ class Conv2D(nn.Module):
 
 class GCN(nn.Module):
     """
-        Large Kernel Matters -- https://arxiv.org/abs/1703.02719
+    Large Kernel Matters -- https://arxiv.org/abs/1703.02719
     """
     def __init__(self, in_channels, out_channels, k=3):
         super(GCN, self).__init__()

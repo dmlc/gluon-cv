@@ -1,3 +1,4 @@
+"""Internal structure for shape"""
 from collections import namedtuple
 
 

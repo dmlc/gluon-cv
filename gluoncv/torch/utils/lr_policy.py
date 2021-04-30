@@ -1,9 +1,9 @@
-"""
+"""Learning rate policy
 Gradually warm-up(increasing) learning rate for pytorch's optimizer.
 Proposed in 'Accurate, Large Minibatch SGD: Training ImageNet in 1 Hour'.
 Code adapted from https://github.com/ildoonet/pytorch-gradual-warmup-lr
 """
-# pylint: disable=missing-function-docstring, line-too-long, inconsistent-return-statements
+# pylint: disable=missing-function-docstring, line-too-long, inconsistent-return-statements, redefined-builtin
 from typing import List
 import torch
 from torch.optim.lr_scheduler import _LRScheduler

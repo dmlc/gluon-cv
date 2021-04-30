@@ -1,5 +1,5 @@
-# Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
-
+"""The smooth l1 loss layer for detection related targets"""
+# pylint: disable=redefined-builtin
 import torch
 
 
