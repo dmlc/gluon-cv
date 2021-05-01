@@ -25,9 +25,6 @@ except ImportError:
 
 try:
     _require_pytorch_version('1.4.0', '2.0.0')
-    from .torch import data
-    from .torch import model_zoo
-    from .torch import utils
     _found_pytorch = True
 except ImportError:
     pass
