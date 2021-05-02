@@ -102,9 +102,9 @@ def test_model_zoo_tvm_export_directpose():
         ctx = tvm.cpu()
     for model in model_list:
         cfg.CONFIG.MODEL.PRETRAINED = True
-        cfg.CONFIG.MODEL.NAME = args.model_name
+        cfg.CONFIG.MODEL.NAME = model
         cfg.CONFIG.MODEL.TVM_MODE = True
-        net = model_zoo.get_model(cfg)
+        net = model_zoo.get_model(cfg).eval()
 
         y = net(images.to(device))
         with torch.no_grad():
