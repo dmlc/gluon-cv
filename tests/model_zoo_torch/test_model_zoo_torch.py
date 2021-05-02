@@ -45,13 +45,13 @@ def _test_model_list(model_list, use_cuda, x, pretrained, num_classes, **kwargs)
         cfg.CONFIG.MODEL.NAME = model
         cfg.CONFIG.MODEL.PRETRAINED = pretrained
         cfg.CONFIG.DATA.NUM_CLASSES = num_classes
-        net = get_model(cfg)
+        net = get_model(cfg).eval()
 
         if use_cuda:
             net.cuda()
             x = x.cuda()
-
-        net(x)
+        with torch.no_grad():
+            net(x)
 
 
 def test_action_recognition_resnet_models():

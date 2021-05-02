@@ -116,3 +116,8 @@ def test_model_zoo_tvm_export_directpose():
         target_host = "llvm"
         with tvm.transform.PassContext(opt_level=3):
             lib = relay.build(mod, target=target, target_host=target_host, params=params)
+
+if __name__ == '__main__':
+    import nose
+
+    nose.runmodule()
