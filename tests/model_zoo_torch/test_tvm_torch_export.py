@@ -104,9 +104,9 @@ def test_model_zoo_tvm_export_directpose():
         cfg.CONFIG.MODEL.PRETRAINED = True
         cfg.CONFIG.MODEL.NAME = model
         cfg.CONFIG.MODEL.TVM_MODE = True
-        net = model_zoo.get_model(cfg).eval()
+        net = model_zoo.get_model(cfg).to(device).eval()
 
-        y = net(images.to(device))
+        # y = net(images.to(device))
         with torch.no_grad():
             scripted_model = torch.jit.trace(net.forward, images.to(device)).eval()
 
