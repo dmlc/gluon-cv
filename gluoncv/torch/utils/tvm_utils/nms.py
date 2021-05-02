@@ -1,5 +1,6 @@
 """A custom nms module for tvm with static shape"""
 # pylint: disable=unused-argument
+from tvm import relay
 from tvm.relay.frontend.pytorch import _op, AttrCvt, get_relay_op
 
 def nms(inputs, input_types):
