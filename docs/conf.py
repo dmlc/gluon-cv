@@ -104,7 +104,7 @@ sphinx_gallery_conf = {
 
     'within_subsection_order': ExampleTitleSortKey,
     'plot_gallery': True,
-    'download_section_examples': False,
+    # 'download_section_examples': False,
     'reference_url': {
         'gluoncv': None,
     },
