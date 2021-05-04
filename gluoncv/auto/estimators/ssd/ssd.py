@@ -353,7 +353,7 @@ class SSDEstimator(BaseEstimator):
             self._logger.info(
                 f'Using transfer learning from {self._cfg.ssd.transfer}, the other network parameters are ignored.')
             if self._cfg.ssd.syncbn and len(self.ctx) > 1:
-                with warnings.catch_warnings(record=True) as w:
+                with warnings.catch_warnings(record=True) as _:
                     warnings.simplefilter("always")
                     self.net = get_model(self._cfg.ssd.transfer, pretrained=True,
                                          norm_layer=gluon.contrib.nn.SyncBatchNorm,

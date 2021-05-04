@@ -1,4 +1,4 @@
-"""Default setting in training/testing"""
+"""Default setting in training/testing for coot"""
 from yacs.config import CfgNode as CN
 
 
@@ -172,7 +172,3 @@ _C.CONFIG.COOT_MODEL.MODEL_CONFIG.VIDEO_SEQUENCER = CN(new_allowed=True)
 _C.CONFIG.COOT_MODEL.MODEL_CONFIG.TEXT_POOLER = CN(new_allowed=True)
 _C.CONFIG.COOT_MODEL.MODEL_CONFIG.TEXT_SEQUENCER = CN(new_allowed=True)
 _C.CONFIG.COOT_MODEL.MODEL_CONFIG.TEXT_ENCODER = CN(new_allowed=True)
-
-def get_cfg_defaults():
-    """Get a yacs CfgNode object with default values for your project."""
-    return _C.clone()

@@ -15,13 +15,13 @@ def _require_mxnet_version(mx_version, max_mx_version='2.0.0'):
                 "or `pip install -U 'mxnet-cu100{1}'`\
                 ").format(mx.__version__, version_str)
             raise RuntimeError(msg)
-    except ImportError:
+    except ImportError as ex:
         raise ImportError(
             "Unable to import dependency mxnet. "
             "A quick tip is to install via "
             "`pip install 'mxnet-cu100<{}'`. "
             "please refer to https://gluon-cv.mxnet.io/#installation for details.".format(
-                max_mx_version))
+                max_mx_version)) from ex
 
 def _require_pytorch_version(torch_version, max_torch_version='2.0.0'):
     try:
@@ -34,9 +34,9 @@ def _require_pytorch_version(torch_version, max_torch_version='2.0.0'):
                 "Legacy torch=={0} detected, some modules may not work properly. "
                 "torch{1} is required. You can use pip or conda to upgrade".format(torch.__version__, version_str))
             raise RuntimeError(msg)
-    except ImportError:
+    except ImportError as ex:
         raise ImportError(
-            "Unable to import dependency pytorch. Please use pip or conda to install.")
+            "Unable to import dependency pytorch. Please use pip or conda to install.") from ex
 
 def _deprecate_python2():
     if sys.version_info[0] < 3:

@@ -226,7 +226,7 @@ class CenterNet(nn.HybridBlock):
                                   weight_initializer=weight_initializer,
                                   bias_initializer=mx.init.Constant(bias),
                                   in_channels=in_channels))
-            with warnings.catch_warnings(record=True) as w:
+            with warnings.catch_warnings(record=True) as _:
                 warnings.simplefilter("always")
                 ctx = list(orig_hm[0].params.values())[0].list_ctx()
                 hm_head.initialize(ctx=ctx)

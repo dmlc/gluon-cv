@@ -45,13 +45,13 @@ def _test_model_list(model_list, use_cuda, x, pretrained, num_classes, **kwargs)
         cfg.CONFIG.MODEL.NAME = model
         cfg.CONFIG.MODEL.PRETRAINED = pretrained
         cfg.CONFIG.DATA.NUM_CLASSES = num_classes
-        net = get_model(cfg)
+        net = get_model(cfg).eval()
 
         if use_cuda:
             net.cuda()
             x = x.cuda()
-
-        net(x)
+        with torch.no_grad():
+            net(x)
 
 
 def test_action_recognition_resnet_models():
@@ -201,6 +201,15 @@ def test_action_recognition_csn_models():
     x = torch.rand(2, 3, 32, 224, 224)
     _test_model_list(models, use_cuda, x, pretrained=False, num_classes=400)
     _test_model_list(models, use_cuda, x, pretrained=True, num_classes=400)
+
+def test_directpose_models():
+    use_cuda = True
+    if torch.cuda.device_count() == 0:
+        use_cuda = False
+
+    models = ['directpose_resnet50_lpf_fpn_coco']
+    x = torch.rand(1, 3, 768, 1280)
+    _test_model_list(models, use_cuda, x, pretrained=True, num_classes=1)
 
 
 if __name__ == '__main__':

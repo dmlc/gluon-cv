@@ -1,0 +1,77 @@
+DDP_CONFIG:
+  WORLD_SIZE: 1
+  WORLD_RANK: 0
+  GPU_WORLD_SIZE: 8
+  GPU_WORLD_RANK: 0
+  DIST_URL: 'tcp://172.31.23.179:23456'
+  WOLRD_URLS: ['172.31.23.179']
+  AUTO_RANK_MATCH: True
+  DIST_BACKEND: 'nccl'
+  GPU: 0
+  DISTRIBUTED: True
+
+CONFIG:
+  DATA:
+    DETECTION:
+      COMPUTE_PSEUDO_BBOX: True
+      MIN_SIZE_RANGE_TRAIN: (480, 1600)
+      MIN_SIZE_TRAIN: (800,)
+      MAX_SIZE_TRAIN: 2666
+      MAX_SIZE_TEST: 1333
+      MIN_SIZE_TEST: 800
+      HFLIP_TRAIN: True
+    KEYPOINT_ON: True
+    CROP:
+      ENABLED: True
+      TYPE: "absolute"
+      SIZE: [800, 800]
+    DATASET:
+      TRAIN: ("keypoints_coco_2017_train",)
+      VAL: ("keypoints_coco_2017_val",)
+  MODEL:
+    BACKBONE:
+      NAME: "build_directpose_resnet_fpn_backbone"
+      ANTI_ALIAS: True
+      FREEZE_AT: 0
+      LOAD_URL: "https://antialiased-cnns.s3.us-east-2.amazonaws.com/weights_v0.1/resnet50_lpf3-a4e868d2.pth"
+    RESNETS:
+      OUT_FEATURES: ["res3", "res4", "res5"]
+      DEPTH: 50
+      NORM: "SyncBN"
+    FPN:
+      IN_FEATURES: ["res3", "res4", "res5"]
+    DIRECTPOSE:
+      TOP_LEVELS: 2
+      SIZES_OF_INTEREST: [64, 128, 256, 512]
+      FPN_STRIDES: [8, 16, 32, 64, 128]
+      IN_FEATURES: ['p3', 'p4', 'p5', 'p6', 'p7']
+      ENABLE_HM_BRANCH: False   # Enable it during training and disable it during testing
+      HM_OFFSET: False
+      HM_TYPE: 'BinaryLabels'
+      HM_LOSS_WEIGHT: 4.0
+      REFINE_KPT: False
+      SAMPLE_FEATURE: 'lower'
+      KPALIGN_GROUPS: 9
+      SEPERATE_CONV_FEATURE: True
+      LOSS_ON_LOCATOR: False
+      KPT_VIS: True
+      CLOSEKPT_NMS: False
+      CENTER_BRANCH: 'kpt'
+      USE_SCALE: False
+  TRAIN:
+    BATCH_SIZE: 32
+    LR: 0.01
+    ITER_LR_STEPS: (60000, 80000)
+    ITER_NUM: 180000
+    CHECKPOINT_PERIOD: 60000
+    ITER_LR_SCHEDULER_NAME: "WarmupLinearLR"    # ("WarmupLinearLR", "WarmupCosineLR", "WarmupMultiStepLR")
+  VAL:
+    EVAL_PERIOD: 10000
+    KEYPOINT_OKS_SIGMAS: []
+  LOG:
+    BASE_PATH: './logs/DIRECTPOSE_RT_MS_R50_syncbn_3FPN_debug/'
+    LOG_DIR: 'tb_log'
+    SAVE_DIR: 'checkpoints'
+    EVAL_DIR: './logs/DIRECTPOSE_RT_MS_R50_syncbn_3FPN_debug/eval'
+    SAVE_FREQ: 5
+    DISPLAY_FREQ: 20

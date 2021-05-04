@@ -69,8 +69,7 @@ def expand_segment(num_frames, num_target_frames, start_frame, stop_frame):
     """ expand the segment"""
     num_frames_seg = stop_frame - start_frame + 1
     changes = False
-    if num_target_frames > num_frames:
-        num_target_frames = num_frames
+    num_target_frames = min(num_target_frames, num_frames)
     if num_frames_seg < num_target_frames:
         while True:
             if start_frame > 0:

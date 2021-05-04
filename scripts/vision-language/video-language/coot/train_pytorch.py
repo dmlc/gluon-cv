@@ -96,7 +96,7 @@ def main_worker(cfg):
 
         ## ======= Validation step ================
         if epoch % cfg.CONFIG.VAL.FREQ == 0 or epoch == cfg.CONFIG.TRAIN.EPOCH_NUM - 1:
-            vid_metrics, clip_metrics = validate_coot(cfg, 
+            vid_metrics, clip_metrics = validate_coot(cfg,
                 model, val_loader, epoch, criterion_alignment,
                 criterion_cycleconsistency, writer, logger, True)
 
@@ -142,6 +142,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Train Coot model.')
     parser.add_argument('--config-file', type=str, help='path to config file.')
     args = parser.parse_args()
-    cfg = get_cfg_defaults()
+    cfg = get_cfg_defaults(name='coot')
     cfg.merge_from_file(args.config_file)
     main_worker(cfg)
