@@ -274,6 +274,7 @@ class Boxes:
         """
         Scale the box with horizontal and vertical scaling factors
         """
+        # the following two statements are basically rescaling operations without inplace op:
         # self.tensor[:, 0::2] *= scale_x
         # self.tensor[:, 1::2] *= scale_y
         self.tensor = torch.stack([self.tensor[:, 0] * scale_x, self.tensor[:, 1] * scale_y,

@@ -51,6 +51,7 @@ def ml_nms(boxlist, nms_thresh, max_proposals=-1, fixed_size=False):
         keep = keep[: max_proposals]
     if fixed_size:
         boxlist._keep = keep
+        # the following code block is one way to perform a static nms op
         # scores = -scores
         # scores[keep] = -scores[keep]
         # result_mask = torch.zeros(scores.size()).to(scores.device)

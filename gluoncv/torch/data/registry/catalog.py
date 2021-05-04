@@ -207,13 +207,9 @@ class MetadataCatalog:
             # Remove this in the future.
             if hasattr(ret, "dataset_name"):
                 logger = logging.getLogger()
-                logger.warning(
-                    """
-The 'dataset_name' key in metadata is no longer used for
-sharing metadata among splits after D15247032! Add
-metadata to each split (now called dataset) separately!
-                    """
-                )
+                logger.warning("The 'dataset_name' key in metadata is no longer used for " +
+                               "sharing metadata among splits after D15247032! Add " +
+                               "metadata to each split (now called dataset) separately!")
                 parent_meta = MetadataCatalog.get(ret.dataset_name).as_dict()
                 ret.set(**parent_meta)
             return ret
