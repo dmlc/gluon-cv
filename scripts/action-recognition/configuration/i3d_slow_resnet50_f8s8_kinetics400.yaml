@@ -52,4 +52,5 @@ CONFIG:
     LOG_DIR: 'tb_log'
     SAVE_DIR: 'checkpoints'
     EVAL_DIR: './logs/i3d_slow_resnet50_f8s8_kinetics400_warmup/eval'
+    DISPLAY_FREQ: 50
     SAVE_FREQ: 5

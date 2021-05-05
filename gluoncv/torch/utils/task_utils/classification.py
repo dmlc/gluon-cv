@@ -3,12 +3,15 @@
 Utility functions for video action recognition task
 """
 import os
+import logging
 import time
 import numpy as np
 
 import torch
 
 from ..utils import AverageMeter, accuracy
+
+logger = logging.getLogger(__name__)
 
 
 def train_classification(base_iter,
@@ -55,21 +58,22 @@ def train_classification(base_iter,
         batch_time.update(time.time() - end)
         end = time.time()
         if step % cfg.CONFIG.LOG.DISPLAY_FREQ == 0 and cfg.DDP_CONFIG.GPU_WORLD_RANK == 0:
-            print('-------------------------------------------------------')
+            logger.info('-------------------------------------------------------')
             for param in optimizer.param_groups:
                 lr = param['lr']
-            print('lr: ', lr)
+            print_string = 'lr: {lr:.5f}'.format(lr=lr)
+            logger.info(print_string)
             print_string = 'Epoch: [{0}][{1}/{2}]'.format(
                 epoch, step + 1, len(dataloader))
-            print(print_string)
+            logger.info(print_string)
             print_string = 'data_time: {data_time:.3f}, batch time: {batch_time:.3f}'.format(
                 data_time=data_time.val, batch_time=batch_time.val)
-            print(print_string)
+            logger.info(print_string)
             print_string = 'loss: {loss:.5f}'.format(loss=losses.avg)
-            print(print_string)
+            logger.info(print_string)
             print_string = 'Top-1 accuracy: {top1_acc:.2f}%, Top-5 accuracy: {top5_acc:.2f}%'.format(
                 top1_acc=top1.avg, top5_acc=top5.avg)
-            print(print_string)
+            logger.info(print_string)
             iteration = base_iter
             writer.add_scalar('train_loss_iteration', losses.avg, iteration)
             writer.add_scalar('train_top1_acc_iteration', top1.avg, iteration)
@@ -113,18 +117,18 @@ def validation_classification(model, val_dataloader, epoch, criterion, cfg,
             end = time.time()
 
             if step % cfg.CONFIG.LOG.DISPLAY_FREQ == 0 and cfg.DDP_CONFIG.GPU_WORLD_RANK == 0:
-                print('----validation----')
+                logger.info('----validation----')
                 print_string = 'Epoch: [{0}][{1}/{2}]'.format(
                     epoch, step + 1, len(val_dataloader))
-                print(print_string)
+                logger.info(print_string)
                 print_string = 'data_time: {data_time:.3f}, batch time: {batch_time:.3f}'.format(
                     data_time=data_time.val, batch_time=batch_time.val)
-                print(print_string)
+                logger.info(print_string)
                 print_string = 'loss: {loss:.5f}'.format(loss=losses.avg)
-                print(print_string)
+                logger.info(print_string)
                 print_string = 'Top-1 accuracy: {top1_acc:.2f}%, Top-5 accuracy: {top5_acc:.2f}%'.format(
                     top1_acc=top1.avg, top5_acc=top5.avg)
-                print(print_string)
+                logger.info(print_string)
 
         eval_path = cfg.CONFIG.LOG.EVAL_DIR
         if not os.path.exists(eval_path):

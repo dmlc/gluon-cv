@@ -162,4 +162,3 @@ _C.CONFIG.LOG.DISPLAY_FREQ = 1
 _C.CONFIG.LOG.LEVEL = 'DEBUG'
 # LOG output file, ends with .txt or .log
 _C.CONFIG.LOG.LOG_FILENAME = 'log.txt'
-
