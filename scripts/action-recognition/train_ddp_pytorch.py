@@ -95,6 +95,6 @@ if __name__ == '__main__':
     parser.add_argument('--config-file', type=str, help='path to config file.')
     args = parser.parse_args()
 
-    cfg = get_cfg_defaults()
+    cfg = get_cfg_defaults(name='action_recognition')
     cfg.merge_from_file(args.config_file)
     spawn_workers(main_worker, cfg)
