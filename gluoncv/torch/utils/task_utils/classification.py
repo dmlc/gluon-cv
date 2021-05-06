@@ -1,14 +1,17 @@
 # pylint: disable=line-too-long
 """
-Utility functions for task
+Utility functions for video action recognition task
 """
 import os
+import logging
 import time
 import numpy as np
 
 import torch
 
 from ..utils import AverageMeter, accuracy
+
+logger = logging.getLogger(__name__)
 
 
 def train_classification(base_iter,
@@ -37,7 +40,12 @@ def train_classification(base_iter,
 
         outputs = model(train_batch)
         loss = criterion(outputs, train_label)
-        prec1, prec5 = accuracy(outputs.data, train_label, topk=(1, 5))
+        if cfg.CONFIG.DATA.NUM_CLASSES < 5:
+            prec1, prec5 = accuracy(outputs.data, train_label, topk=(1, 1))
+            # Tricky solution for datasets with less than 5 classes, top5 acc is always set to 100%
+            prec5 = 100
+        else:
+            prec1, prec5 = accuracy(outputs.data, train_label, topk=(1, 5))
 
         optimizer.zero_grad()
         loss.backward()
@@ -50,21 +58,22 @@ def train_classification(base_iter,
         batch_time.update(time.time() - end)
         end = time.time()
         if step % cfg.CONFIG.LOG.DISPLAY_FREQ == 0 and cfg.DDP_CONFIG.GPU_WORLD_RANK == 0:
-            print('-------------------------------------------------------')
+            logger.info('-------------------------------------------------------')
             for param in optimizer.param_groups:
                 lr = param['lr']
-            print('lr: ', lr)
+            print_string = 'lr: {lr:.5f}'.format(lr=lr)
+            logger.info(print_string)
             print_string = 'Epoch: [{0}][{1}/{2}]'.format(
                 epoch, step + 1, len(dataloader))
-            print(print_string)
+            logger.info(print_string)
             print_string = 'data_time: {data_time:.3f}, batch time: {batch_time:.3f}'.format(
                 data_time=data_time.val, batch_time=batch_time.val)
-            print(print_string)
+            logger.info(print_string)
             print_string = 'loss: {loss:.5f}'.format(loss=losses.avg)
-            print(print_string)
+            logger.info(print_string)
             print_string = 'Top-1 accuracy: {top1_acc:.2f}%, Top-5 accuracy: {top5_acc:.2f}%'.format(
                 top1_acc=top1.avg, top5_acc=top5.avg)
-            print(print_string)
+            logger.info(print_string)
             iteration = base_iter
             writer.add_scalar('train_loss_iteration', losses.avg, iteration)
             writer.add_scalar('train_top1_acc_iteration', top1.avg, iteration)
@@ -94,7 +103,12 @@ def validation_classification(model, val_dataloader, epoch, criterion, cfg,
             outputs = model(val_batch)
 
             loss = criterion(outputs, val_label)
-            prec1a, prec5a = accuracy(outputs.data, val_label, topk=(1, 5))
+            if cfg.CONFIG.DATA.NUM_CLASSES < 5:
+                prec1a, prec5a = accuracy(outputs.data, val_label, topk=(1, 1))
+                # Tricky solution for datasets with less than 5 classes, top5 acc is always set to 100%
+                prec5a = 100
+            else:
+                prec1a, prec5a = accuracy(outputs.data, val_label, topk=(1, 5))
 
             losses.update(loss.item(), val_batch.size(0))
             top1.update(prec1a.item(), val_batch.size(0))
@@ -103,18 +117,18 @@ def validation_classification(model, val_dataloader, epoch, criterion, cfg,
             end = time.time()
 
             if step % cfg.CONFIG.LOG.DISPLAY_FREQ == 0 and cfg.DDP_CONFIG.GPU_WORLD_RANK == 0:
-                print('----validation----')
+                logger.info('----validation----')
                 print_string = 'Epoch: [{0}][{1}/{2}]'.format(
                     epoch, step + 1, len(val_dataloader))
-                print(print_string)
+                logger.info(print_string)
                 print_string = 'data_time: {data_time:.3f}, batch time: {batch_time:.3f}'.format(
                     data_time=data_time.val, batch_time=batch_time.val)
-                print(print_string)
+                logger.info(print_string)
                 print_string = 'loss: {loss:.5f}'.format(loss=losses.avg)
-                print(print_string)
+                logger.info(print_string)
                 print_string = 'Top-1 accuracy: {top1_acc:.2f}%, Top-5 accuracy: {top5_acc:.2f}%'.format(
                     top1_acc=top1.avg, top5_acc=top5.avg)
-                print(print_string)
+                logger.info(print_string)
 
         eval_path = cfg.CONFIG.LOG.EVAL_DIR
         if not os.path.exists(eval_path):

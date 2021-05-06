@@ -33,14 +33,17 @@ def main_worker(cfg):
     # create dataset and dataloader
     train_loader, val_loader, train_sampler, val_sampler, mg_sampler = build_dataloader(cfg)
 
+    # create optimizer
     optimizer = torch.optim.SGD(model.parameters(),
                                 lr=cfg.CONFIG.TRAIN.LR,
                                 momentum=cfg.CONFIG.TRAIN.MOMENTUM,
                                 weight_decay=cfg.CONFIG.TRAIN.W_DECAY)
 
+    # load a pre-trained checkpoint for finetuning or evaluation
     if cfg.CONFIG.MODEL.LOAD:
         model, _ = load_model(model, optimizer, cfg, load_fc=True)
 
+    # create lr scheduler
     if cfg.CONFIG.TRAIN.LR_POLICY == 'Step':
         scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer,
                                                          milestones=cfg.CONFIG.TRAIN.LR_MILESTONE,
@@ -48,35 +51,41 @@ def main_worker(cfg):
     elif cfg.CONFIG.TRAIN.LR_POLICY == 'Cosine':
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer,
                                                                T_max=cfg.CONFIG.TRAIN.EPOCH_NUM - cfg.CONFIG.TRAIN.WARMUP_EPOCHS,
-                                                               eta_min=0,
+                                                               eta_min=0,    # minimum learning rate
                                                                last_epoch=cfg.CONFIG.TRAIN.RESUME_EPOCH)
     else:
         print('Learning rate schedule %s is not supported yet. Please use Step or Cosine.')
 
     if cfg.CONFIG.TRAIN.USE_WARMUP:
         scheduler_warmup = GradualWarmupScheduler(optimizer,
-                                                  multiplier=(cfg.CONFIG.TRAIN.WARMUP_END_LR / cfg.CONFIG.TRAIN.LR),
+                                                  multiplier=1.0,    # warmup_lr is required to start from 0
                                                   total_epoch=cfg.CONFIG.TRAIN.WARMUP_EPOCHS,
                                                   after_scheduler=scheduler)
+    # create criterion
     criterion = nn.CrossEntropyLoss().cuda()
 
+    # train loop
     base_iter = 0
     for epoch in range(cfg.CONFIG.TRAIN.EPOCH_NUM):
         if cfg.DDP_CONFIG.DISTRIBUTED:
             train_sampler.set_epoch(epoch)
 
+        # train one epoch
         base_iter = train_classification(base_iter, model, train_loader, epoch, criterion, optimizer, cfg, writer=writer)
         if cfg.CONFIG.TRAIN.USE_WARMUP:
             scheduler_warmup.step()
         else:
             scheduler.step()
 
+        # evaluation
         if epoch % cfg.CONFIG.VAL.FREQ == 0 or epoch == cfg.CONFIG.TRAIN.EPOCH_NUM - 1:
             validation_classification(model, val_loader, epoch, criterion, cfg, writer)
 
-        if epoch % cfg.CONFIG.LOG.SAVE_FREQ == 0:
+        # save model
+        if epoch % cfg.CONFIG.LOG.SAVE_FREQ == 0 or epoch == cfg.CONFIG.TRAIN.EPOCH_NUM - 1:
             if cfg.DDP_CONFIG.GPU_WORLD_RANK == 0 or cfg.DDP_CONFIG.DISTRIBUTED == False:
                 save_model(model, optimizer, epoch, cfg)
+
     if writer is not None:
         writer.close()
 
@@ -86,6 +95,6 @@ if __name__ == '__main__':
     parser.add_argument('--config-file', type=str, help='path to config file.')
     args = parser.parse_args()
 
-    cfg = get_cfg_defaults()
+    cfg = get_cfg_defaults(name='action_recognition')
     cfg.merge_from_file(args.config_file)
     spawn_workers(main_worker, cfg)
