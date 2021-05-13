@@ -15,7 +15,7 @@ for f in $EFS/.mxnet/datasets/*; do
     fi
 done
 
-python3 -m pip install sphinx=3.5.4 sphinx-gallery sphinx_rtd_theme matplotlib Image recommonmark scipy mxtheme
+python3 -m pip install sphinx==3.5.4 sphinx-gallery sphinx_rtd_theme matplotlib Image recommonmark scipy mxtheme
 
 export MXNET_CUDNN_AUTOTUNE_DEFAULT=0
 cd docs 
