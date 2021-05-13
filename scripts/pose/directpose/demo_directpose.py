@@ -18,6 +18,7 @@ def parse_args():
     parser.add_argument('--use-gpu', type=int, default=1)
     parser.add_argument("--image-width", type=int, default=1280)
     parser.add_argument("--image-height", type=int, default=736)
+    parser.add_argument("--score-threshold", type=float, default=0.5)
     parser.add_argument("--visualize", type=int, default=1, help="enable visualizer")
     parser.add_argument("--save-output", type=str, default='visualize_output.png', help='Save visualize result to image')
     parser.add_argument("--verbose", type=int, default=1)
@@ -77,6 +78,10 @@ if __name__ == '__main__':
         img_width=args.image_width, img_height=args.image_height)
     with torch.no_grad():
         predictions = net(images.to(device))[0]
+    if args.score_threshold > 0:
+        print(f"Applying score threshold: {args.score_threshold} to detected instances...")
+        valid_indices = predictions.scores > args.score_threshold
+        predictions = predictions[valid_indices]
     print(f"Detected {list(predictions.scores.size())} instances with scores: {predictions.scores}")
     # visualize
     if args.visualize or args.save_output:
