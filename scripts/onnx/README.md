@@ -39,7 +39,7 @@ For those who are interested, below is a guide on how to export the model yourse
 To be notice, current released version of mxnet(1.8.0) does not support many operators. Therefore, in order to export models to onnx, you'll have to either
 
 1. Build the newest version of mxnet from source
-2. Use this [tool](https://github.com/apache/incubator-mxnet/blob/d10b76937b891964381d25ecea60e443a9876df1/tools/onnx/update_onnx.py) to add newly supported operators to your mxnet
+2. Checkout the `installation` section [here](https://github.com/apache/incubator-mxnet/tree/v1.x/python/mxnet/onnx)
 
 There are three main steps to export the model:
 
