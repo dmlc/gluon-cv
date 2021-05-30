@@ -16,9 +16,9 @@ CONFIG:
   TRAIN:
     EPOCH_NUM: 196
     BATCH_SIZE: 8
-    LR: 0.01
+    LR: 0.1
     MOMENTUM: 0.9
-    W_DECAY: 1e-5
+    W_DECAY: 1e-4
     USE_WARMUP: True
     WARMUP_EPOCHS: 34
     LR_POLICY: 'Cosine'
@@ -46,11 +46,13 @@ CONFIG:
   MODEL:
     NAME: 'i3d_slow_resnet50_f8s8_kinetics400'
     PRETRAINED: False
+    LOAD: True
+    PRETRAINED_PATH: '/home/ubuntu/code/gluon-cv/logs/i3d_slow_resnet50_f8s8_kinetics400_warmup_lr01_wd4/2021-05-21-23-22-19/checkpoints/f8_s8_ckpt_epoch195.pth'
 
   LOG:
-    BASE_PATH: './logs/i3d_slow_resnet50_f8s8_kinetics400_warmup'
+    BASE_PATH: './logs/i3d_slow_resnet50_f8s8_kinetics400'
     LOG_DIR: 'tb_log'
     SAVE_DIR: 'checkpoints'
-    EVAL_DIR: './logs/i3d_slow_resnet50_f8s8_kinetics400_warmup/eval'
+    EVAL_DIR: './logs/i3d_slow_resnet50_f8s8_kinetics400/eval'
     DISPLAY_FREQ: 50
     SAVE_FREQ: 5
