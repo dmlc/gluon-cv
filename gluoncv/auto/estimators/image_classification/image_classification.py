@@ -68,8 +68,7 @@ class ImageClassificationEstimator(BaseEstimator):
 
     def _fit(self, train_data, val_data, time_limit=math.inf):
         tic = time.time()
-        self._best_acc = 0
-        self._min_error = float('inf')
+        self._best_acc = -float('inf')
         self.epoch = 0
         self._time_elapsed = 0
         if max(self._cfg.train.start_epoch, self.epoch) >= self._cfg.train.epochs:
@@ -147,7 +146,7 @@ class ImageClassificationEstimator(BaseEstimator):
             min_delta=self._cfg.train.early_stop_min_delta,
             baseline_value=self._cfg.train.early_stop_baseline,
             max_value=self._cfg.train.early_stop_max_value)
-        train_metric_score = -1
+        train_metric_score = -float('inf')
         cp_name = ''
         self._time_elapsed += time.time() - start_tic
         print (L, train_metric)
@@ -156,9 +155,6 @@ class ImageClassificationEstimator(BaseEstimator):
             epoch = self.epoch
             if self._best_acc >= 1.0:
                 self._logger.info('[Epoch {}] Early stopping as acc is reaching 1.0'.format(epoch))
-                break
-            if self._min_error <= 0:
-                self._logger.info('[Epoch {}] Early stopping as error is reaching 0.'.format(epoch))
                 break
             should_stop, stop_message = early_stopper.get_early_stop_advice()
             if should_stop:
@@ -177,7 +173,6 @@ class ImageClassificationEstimator(BaseEstimator):
                 if self._time_elapsed > time_limit:
                     self._logger.warning(f'`time_limit={time_limit}` reached, exit early...')
                     return {'train_acc': train_metric_score, 'valid_acc': self._best_acc, 
-                            'valid_error': self._min_error,
                             'time': self._time_elapsed, 'checkpoint': cp_name}
                 data, label = self.batch_fn(batch, self.ctx)
 
@@ -237,6 +232,8 @@ class ImageClassificationEstimator(BaseEstimator):
 
             post_tic = time.time()
             train_metric_name, train_metric_score = train_metric.get()
+            if train_metric_name == 'rmse':
+                train_metric_score = - train_metric_score
             throughput = int(self.batch_size * i /(time.time() - tic))
             
             self._logger.info('[Epoch %d] training: %s=%f', epoch, train_metric_name, train_metric_score)
@@ -246,12 +243,12 @@ class ImageClassificationEstimator(BaseEstimator):
             if train_metric_name == 'rmse':
                 early_stopper.update(val_score)
                 self._logger.info('[Epoch %d] validation: rmse=%f', epoch, val_score)
-                if val_score < self._min_error:
+                if val_score > self._best_acc:
                     cp_name = os.path.join(self._logdir, _BEST_CHECKPOINT_FILE)
                     self._logger.info('[Epoch %d] Current min error: %f vs previous %f, saved to %s',
-                                      self.epoch, val_score, self._min_error, cp_name)
+                                      self.epoch, val_score, self._best_acc, cp_name)
                     self.save(cp_name)
-                    self._min_error = val_score
+                    self._best_acc = val_score
                 if self._reporter:
                     self._reporter(epoch=epoch, acc_reward=val_score)
             else:
@@ -269,7 +266,6 @@ class ImageClassificationEstimator(BaseEstimator):
                     self._reporter(epoch=epoch, acc_reward=top1_val)
             self._time_elapsed += time.time() - post_tic
         return {'train_acc': train_metric_score, 'valid_acc': self._best_acc,
-                'valid_error': self._min_error,
                 'time': self._time_elapsed, 'checkpoint': cp_name}
 
     def _init_network(self):
@@ -453,7 +449,7 @@ class ImageClassificationEstimator(BaseEstimator):
                 rmse_metric.update(label, outputs)
 
             _, val_score = rmse_metric.get()
-            return val_score
+            return -val_score
         
         else: # accuracy by default
             acc_top1 = mx.metric.Accuracy()
@@ -511,11 +507,14 @@ class ImageClassificationEstimator(BaseEstimator):
                 pred = [self.net(input) for input in batch]
                 for p in pred:
                     for ii in range(p.shape[0]):
-                        ind = nd.topk(p[ii], k=topK).astype('int').asnumpy().flatten()
-                        probs = mx.nd.softmax(p[ii]).asnumpy().flatten()
-                        for k in range(topK):
-                            results.append({'class': self.classes[ind[k]],
-                                            'score': probs[ind[k]], 'id': ind[k], 'image': x[idx]})
+                        if self._problem_type == MULTICLASS or self._problem_type == BINARY:
+                            ind = nd.topk(p[ii], k=topK).astype('int').asnumpy().flatten()
+                            probs = mx.nd.softmax(p[ii]).asnumpy().flatten()
+                            for k in range(topK):
+                                results.append({'class': self.classes[ind[k]],
+                                                'score': probs[ind[k]], 'id': ind[k], 'image': x[idx]})
+                        else:
+                            results.append({'class': p[ii][0].asnumpy().flatten(), 'image': x[idx]})
                         idx += 1
             return pd.DataFrame(results)
         elif not isinstance(x, mx.nd.NDArray):
@@ -524,9 +523,12 @@ class ImageClassificationEstimator(BaseEstimator):
         x = x.as_in_context(self.ctx[ctx_id])
         pred = self.net(x)
         topK = min(5, self.num_class)
-        ind = nd.topk(pred, k=topK)[0].astype('int').asnumpy().flatten()
-        probs = mx.nd.softmax(pred)[0].asnumpy().flatten()
-        df = pd.DataFrame([{'class': self.classes[ind[i]], 'score': probs[ind[i]], 'id': ind[i]} for i in range(topK)])
+        if self._problem_type == MULTICLASS or self._problem_type == BINARY:
+            ind = nd.topk(pred, k=topK)[0].astype('int').asnumpy().flatten()
+            probs = mx.nd.softmax(pred)[0].asnumpy().flatten()
+            df = pd.DataFrame([{'class': self.classes[ind[i]], 'score': probs[ind[i]], 'id': ind[i]} for i in range(topK)])
+        else:
+            df = pd.DataFrame([{'class': pred[0].asnumpy().flatten()}])
         return df
 
     def _get_feature_net(self):
@@ -603,10 +605,16 @@ class ImageClassificationEstimator(BaseEstimator):
                 batch = mx.gluon.utils.split_and_load(batch, ctx_list=self.ctx, even_split=False)
                 pred = [self.net(input) for input in batch]
                 for p in pred:
-                    probs = mx.nd.softmax(p, axis=-1)
+                    if self._problem_type == MULTICLASS or self._problem_type == BINARY:
+                        probs = mx.nd.softmax(p, axis=-1)
+                    else:
+                        probs = p
                     for ii in range(p.shape[0]):
                         prob = probs[ii]
-                        results.append({'image_proba': prob.asnumpy().flatten().tolist(), 'image': x[idx]})
+                        if self._problem_type == MULTICLASS or self._problem_type == BINARY:
+                            results.append({'image_proba': prob.asnumpy().flatten().tolist(), 'image': x[idx]})
+                        elif self._problem_type == REGRESSION:
+                            results.append({'image_proba': prob.asnumpy().flatten().tolist()[0], 'image': x[idx]})
                         idx += 1
             return pd.DataFrame(results)
         elif not isinstance(x, mx.nd.NDArray):
@@ -614,8 +622,15 @@ class ImageClassificationEstimator(BaseEstimator):
         assert len(x.shape) == 4 and x.shape[1] == 3, "Expect input to be (n, 3, h, w), given {}".format(x.shape)
         x = x.as_in_context(self.ctx[ctx_id])
         pred = self.net(x)
-        probs = mx.nd.softmax(pred)[0].asnumpy().flatten().tolist()
-        df = pd.DataFrame([{'image_proba': probs}])
+        if self._problem_type == MULTICLASS or self._problem_type == BINARY:
+            probs = mx.nd.softmax(pred)[0].asnumpy().flatten().tolist()
+        else:
+            probs = pred[0].asnumpy().flatten().tolist()
+        if self._problem_type == MULTICLASS or self._problem_type == BINARY:
+            df = pd.DataFrame([{'image_proba': probs}])
+        elif self._problem_type == REGRESSION:
+            df = pd.DataFrame([{'image_proba': probs[0]}])
+       
         return df
 
 class ImageListDataset(mx.gluon.data.Dataset):
