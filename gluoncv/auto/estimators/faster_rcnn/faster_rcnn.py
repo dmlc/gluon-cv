@@ -347,7 +347,8 @@ class FasterRCNNEstimator(BaseEstimator):
         valid_df = df[df['predict_score'] > 0].reset_index(drop=True)
         return valid_df
 
-    def _init_network(self):
+    def _init_network(self, **kwargs):
+        load_only = kwargs.get('load_only', False)
         if not self.num_class:
             raise ValueError('Unable to create network when `num_class` is unknown. \
                 It should be inferred from dataset or resumed from saved states.')
@@ -400,7 +401,7 @@ class FasterRCNNEstimator(BaseEstimator):
             self._cfg.faster_rcnn.use_fpn = 'fpn' in self._cfg.faster_rcnn.transfer
             with warnings.catch_warnings(record=True) as w:
                 warnings.simplefilter("always")
-                self.net = get_model(self._cfg.faster_rcnn.transfer, pretrained=True,
+                self.net = get_model(self._cfg.faster_rcnn.transfer, pretrained=(not load_only),
                                      per_device_batch_size=self.batch_size // self.num_gpus,
                                      **kwargs)
                 self.net.sampler._max_num_gt = self._cfg.faster_rcnn.max_num_gt
@@ -427,7 +428,7 @@ class FasterRCNNEstimator(BaseEstimator):
                 warnings.simplefilter("always")
                 self.net = get_model('custom_faster_rcnn_fpn', classes=self.classes, transfer=None,
                                      dataset=self._cfg.dataset,
-                                     pretrained_base=self._cfg.train.pretrained_base,
+                                     pretrained_base=self._cfg.train.pretrained_base and not load_only,
                                      base_network_name=self._cfg.faster_rcnn.base_network,
                                      norm_layer=norm_layer, norm_kwargs=norm_kwargs,
                                      sym_norm_layer=sym_norm_layer, sym_norm_kwargs=sym_norm_kwargs,

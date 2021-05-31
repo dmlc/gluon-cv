@@ -238,7 +238,7 @@ class BaseEstimator:
     def _evaluate(self, val_data):
         raise NotImplementedError
 
-    def _init_network(self):
+    def _init_network(self, **kwargs):
         raise NotImplementedError
 
     def _init_trainer(self):
@@ -367,7 +367,7 @@ class BaseEstimator:
         try:
             import mxnet as _
             net_params = state['net']
-            self._init_network()
+            self._init_network(load_only=True)
             with temporary_filename() as tfile:
                 with open(tfile, 'wb') as fo:
                     fo.write(net_params)

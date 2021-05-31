@@ -326,7 +326,8 @@ class YOLOv3Estimator(BaseEstimator):
         valid_df = df[df['predict_score'] > 0].reset_index(drop=True)
         return valid_df
 
-    def _init_network(self):
+    def _init_network(self, **kwargs):
+        load_only = kwargs.get('load_only', False)
         if not self.num_class:
             raise ValueError('Unable to create network when `num_class` is unknown. \
                 It should be inferred from dataset or resumed from saved states.')
@@ -357,7 +358,7 @@ class YOLOv3Estimator(BaseEstimator):
                                          strides=self._cfg.yolo3.strides,
                                          classes=self.classes,
                                          dataset=self._cfg.dataset,
-                                         pretrained_base=True,
+                                         pretrained_base=(not load_only),
                                          norm_layer=gluon.contrib.nn.SyncBatchNorm,
                                          norm_kwargs={'num_devices': len(self.ctx)})
                 self.async_net = custom_yolov3(base_network_name=self._cfg.yolo3.base_network,
@@ -374,7 +375,7 @@ class YOLOv3Estimator(BaseEstimator):
                                          strides=self._cfg.yolo3.strides,
                                          classes=self.classes,
                                          dataset=self._cfg.dataset,
-                                         pretrained_base=True)
+                                         pretrained_base=(not load_only))
                 self.async_net = self.net
         else:
             assert isinstance(self._cfg.yolo3.transfer, str)
@@ -382,12 +383,12 @@ class YOLOv3Estimator(BaseEstimator):
                 f'Using transfer learning from {self._cfg.yolo3.transfer}, the other network parameters are ignored.')
             # use sync bn if specified
             if self._cfg.yolo3.syncbn and len(self.ctx) > 1:
-                self.net = get_model(self._cfg.yolo3.transfer, pretrained=True,
+                self.net = get_model(self._cfg.yolo3.transfer, pretrained=(not load_only),
                                      norm_layer=gluon.contrib.nn.SyncBatchNorm,
                                      norm_kwargs={'num_devices': len(self.ctx)})
-                self.async_net = get_model(self._cfg.yolo3.transfer, pretrained=True)  # used by cpu worker
+                self.async_net = get_model(self._cfg.yolo3.transfer, pretrained=(not load_only))  # used by cpu worker
             else:
-                self.net = get_model(self._cfg.yolo3.transfer, pretrained=True)
+                self.net = get_model(self._cfg.yolo3.transfer, pretrained=(not load_only))
                 self.async_net = self.net
             self.net.reset_class(self.classes,
                                  reuse_weights=[cname for cname in self.classes if cname in self.net.classes])

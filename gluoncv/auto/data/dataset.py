@@ -223,7 +223,7 @@ class ImageClassificationDataset(pd.DataFrame):
 
     @classmethod
     def from_folders(cls, root, train='train', val='val', test='test', exts=('.jpg', '.jpeg', '.png')):
-        """Method for loading splited datasets under root.
+        """Method for loading (already) splited datasets under root.
         like::
             root/train/car/0001.jpg
             root/train/car/xxxa.jpg
@@ -234,6 +234,8 @@ class ImageClassificationDataset(pd.DataFrame):
         will be loaded into three splits, with 3/1/2 images, respectively.
         You can specify the sub-folder names of `train`/`val`/`test` individually. If one particular sub-folder is not
         found, the corresponding returned dataset will be `None`.
+        Note: if your existing dataset isn't split into such format, please use `from_folder` function and apply
+        random splitting using `random_split` function afterwards.
 
         Example:
         >>> train_data, val_data, test_data = ImageClassificationDataset.from_folders('./data', val='validation')
