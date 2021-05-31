@@ -48,16 +48,23 @@ class ImageClassificationDataset(pd.DataFrame):
         The input data.
     classes : list of str, optional
         The class synsets for this dataset, if `None`, it will infer from the data.
+    image_column : str, default is 'image'
+        The name of the column for image paths.
+    label_column : str, default is 'label'
+        The name for the label column, leave it as is if no label column is available. Note that
+        in such case you won't be able to train with this dataset, but can still visualize the images.
 
     """
     # preserved properties that will be copied to a new instance
-    _metadata = ['classes', 'to_mxnet', 'show_images', 'random_split']
+    _metadata = ['classes', 'to_mxnet', 'show_images', 'random_split', 'IMG_COL', 'LABEL_COL']
 
-    def __init__(self, data, classes=None, **kwargs):
+    def __init__(self, data, classes=None, image_column='image', label_column='label', **kwargs):
         root = kwargs.pop('root', None)
         if isinstance(data, str) and data.endswith('csv'):
-            data = self.from_csv(data, root=root)
+            data = self.from_csv(data, root=root, image_column=image_column, label_column=label_column)
         self.classes = classes
+        self.IMG_COL = image_column
+        self.LABEL_COL = label_column
         super().__init__(data, **kwargs)
 
     @property
@@ -127,20 +134,21 @@ class ImageClassificationDataset(pd.DataFrame):
                 indices = list(range(len(self)))
                 np.random.shuffle(indices)
                 indices = indices[:min(nsample, len(indices))]
-        images = [cv2.cvtColor(cv2.resize(cv2.imread(self.at[idx, 'image']), (resize, resize), \
+        images = [cv2.cvtColor(cv2.resize(cv2.imread(self.at[idx, self.IMG_COL]), (resize, resize), \
             interpolation=cv2.INTER_AREA), cv2.COLOR_BGR2RGB) for idx in indices if idx < len(self)]
         titles = None
-        if 'label' in self.columns:
-            titles = [self.classes[int(self.at[idx, 'label'])] + ': ' + str(self.at[idx, 'label']) \
+        if self.LABEL_COL in self.columns:
+            titles = [self.classes[int(self.at[idx, self.LABEL_COL])] + ': ' + str(self.at[idx, self.LABEL_COL]) \
                 for idx in indices if idx < len(self)]
         _show_images(images, cols=ncol, titles=titles, fontsize=fontsize)
 
     def to_mxnet(self):
         """Return a mxnet based iterator that returns ndarray and labels"""
-        return _MXImageClassificationDataset(self)
+        df = self.rename(columns={self.IMG_COL: "image", self.LABEL_COL: "label"}, errors='ignore')
+        return _MXImageClassificationDataset(df)
 
     @classmethod
-    def from_csv(cls, csv_file, root=None):
+    def from_csv(cls, csv_file, root=None, image_column='image', label_column='label'):
         r"""Create from csv file.
 
         Parameters
@@ -149,19 +157,23 @@ class ImageClassificationDataset(pd.DataFrame):
             The path for csv file.
         root : str
             The relative root for image paths stored in csv file.
-
+        image_column : str, default is 'image'
+            The name of the column for image paths.
+        label_column : str, default is 'label'
+            The name for the label column, leave it as is if no label column is available. Note that
+            in such case you won't be able to train with this dataset, but can still visualize the images.
         """
         if is_url(csv_file):
             csv_file = url_data(csv_file, disp_depth=0)
         df = pd.read_csv(csv_file)
-        assert 'image' in df.columns, "`image` column is required, used for accessing the original images"
-        if not 'label' in df.columns:
+        assert image_column in df.columns, f"`{image_column}` column is required, used for accessing the original images"
+        if not label_column in df.columns:
             logger.info('label not in columns, no access to labels of images')
             classes = None
         else:
-            classes = df['label'].unique()
-        df = _absolute_pathify(df, root=root, column='image')
-        return cls(df, classes=classes)
+            classes = df[label_column].unique()
+        df = _absolute_pathify(df, root=root, column=image_column)
+        return cls(df, classes=classes, image_column=image_column, label_column=label_column)
 
     @classmethod
     def from_folder(cls, root, exts=('.jpg', '.jpeg', '.png')):
