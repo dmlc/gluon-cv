@@ -19,7 +19,7 @@ from ....utils import LRSequential, LRScheduler
 from .... import nn
 from .... import loss
 from ..base_estimator import BaseEstimator, set_default
-from .utils import get_data_loader, get_data_rec, smooth
+from .utils import get_data_loader, get_data_rec, smooth, mixup_transform
 from .default import ImageClassificationCfg
 from ...data.dataset import ImageClassificationDataset
 from ..conf import _BEST_CHECKPOINT_FILE
@@ -69,6 +69,7 @@ class ImageClassificationEstimator(BaseEstimator):
     def _fit(self, train_data, val_data, time_limit=math.inf):
         tic = time.time()
         self._best_acc = 0
+        self._min_error = float('inf')
         self.epoch = 0
         self._time_elapsed = 0
         if max(self._cfg.train.start_epoch, self.epoch) >= self._cfg.train.epochs:
@@ -150,10 +151,14 @@ class ImageClassificationEstimator(BaseEstimator):
         cp_name = ''
         self._time_elapsed += time.time() - start_tic
         print (L, train_metric)
+        
         for self.epoch in range(max(self._cfg.train.start_epoch, self.epoch), self._cfg.train.epochs):
             epoch = self.epoch
             if self._best_acc >= 1.0:
                 self._logger.info('[Epoch {}] Early stopping as acc is reaching 1.0'.format(epoch))
+                break
+            if self._min_error <= 0:
+                self._logger.info('[Epoch {}] Early stopping as error is reaching 0.'.format(epoch))
                 break
             should_stop, stop_message = early_stopper.get_early_stop_advice()
             if should_stop:
@@ -171,7 +176,8 @@ class ImageClassificationEstimator(BaseEstimator):
                 btic = time.time()
                 if self._time_elapsed > time_limit:
                     self._logger.warning(f'`time_limit={time_limit}` reached, exit early...')
-                    return {'train_acc': train_metric_score, 'valid_acc': self._best_acc,
+                    return {'train_acc': train_metric_score, 'valid_acc': self._best_acc, 
+                            'valid_error': self._min_error,
                             'time': self._time_elapsed, 'checkpoint': cp_name}
                 data, label = self.batch_fn(batch, self.ctx)
 
@@ -186,7 +192,7 @@ class ImageClassificationEstimator(BaseEstimator):
                         eta = 0.1
                     else:
                         eta = 0.0
-                    label = mixup_transform(label, classes, lam, eta) # mixup_transfrom() is not implemented
+                    label = mixup_transform(label, classes, lam, eta)
 
                 elif self._cfg.train.label_smoothing:
                     hard_label = label
@@ -232,24 +238,38 @@ class ImageClassificationEstimator(BaseEstimator):
             post_tic = time.time()
             train_metric_name, train_metric_score = train_metric.get()
             throughput = int(self.batch_size * i /(time.time() - tic))
-
-            top1_val, top5_val = self._evaluate(val_data)
-            early_stopper.update(top1_val)
-
+            
             self._logger.info('[Epoch %d] training: %s=%f', epoch, train_metric_name, train_metric_score)
             self._logger.info('[Epoch %d] speed: %d samples/sec\ttime cost: %f', epoch, throughput, time.time()-tic)
-            self._logger.info('[Epoch %d] validation: top1=%f top5=%f', epoch, top1_val, top5_val)
+            
+            val_score = self._evaluate(val_data, metric_name=train_metric_name)
+            if train_metric_name == 'rmse':
+                early_stopper.update(val_score)
+                self._logger.info('[Epoch %d] validation: rmse=%f', epoch, val_score)
+                if val_score < self._min_error:
+                    cp_name = os.path.join(self._logdir, _BEST_CHECKPOINT_FILE)
+                    self._logger.info('[Epoch %d] Current min error: %f vs previous %f, saved to %s',
+                                      self.epoch, val_score, self._min_error, cp_name)
+                    self.save(cp_name)
+                    self._min_error = val_score
+                if self._reporter:
+                    self._reporter(epoch=epoch, acc_reward=val_score)
+            else:
+                top1_val, top5_val = val_score
+                early_stopper.update(top1_val)
+                self._logger.info('[Epoch %d] validation: top1=%f top5=%f', epoch, top1_val, top5_val)
 
-            if top1_val > self._best_acc:
-                cp_name = os.path.join(self._logdir, _BEST_CHECKPOINT_FILE)
-                self._logger.info('[Epoch %d] Current best top-1: %f vs previous %f, saved to %s',
-                                  self.epoch, top1_val, self._best_acc, cp_name)
-                self.save(cp_name)
-                self._best_acc = top1_val
-            if self._reporter:
-                self._reporter(epoch=epoch, acc_reward=top1_val)
+                if top1_val > self._best_acc:
+                    cp_name = os.path.join(self._logdir, _BEST_CHECKPOINT_FILE)
+                    self._logger.info('[Epoch %d] Current best top-1: %f vs previous %f, saved to %s',
+                                      self.epoch, top1_val, self._best_acc, cp_name)
+                    self.save(cp_name)
+                    self._best_acc = top1_val
+                if self._reporter:
+                    self._reporter(epoch=epoch, acc_reward=top1_val)
             self._time_elapsed += time.time() - post_tic
         return {'train_acc': train_metric_score, 'valid_acc': self._best_acc,
+                'valid_error': self._min_error,
                 'time': self._time_elapsed, 'checkpoint': cp_name}
 
     def _init_network(self):
@@ -406,11 +426,9 @@ class ImageClassificationEstimator(BaseEstimator):
                     optimizer = mx.optimizer.create(optimizer)
             self.trainer = gluon.Trainer(self.net.collect_params(), optimizer)
 
-    def _evaluate(self, val_data):
+    def _evaluate(self, val_data, metric_name=None):
         """Test on validation dataset."""
-        acc_top1 = mx.metric.Accuracy()
-        acc_top5 = mx.metric.TopKAccuracy(min(5, self.num_class))
-
+        
         if not isinstance(val_data, (gluon.data.DataLoader, mx.io.MXDataIter)):
             if hasattr(val_data, 'to_mxnet'):
                 val_data = val_data.to_mxnet()
@@ -426,15 +444,29 @@ class ImageClassificationEstimator(BaseEstimator):
                 val_data.transform_first(transform_test),
                 batch_size=self._cfg.valid.batch_size, shuffle=False, last_batch='keep',
                 num_workers=self._cfg.valid.num_workers)
-        for _, batch in enumerate(val_data):
-            data, label = self.batch_fn(batch, self.ctx)
-            outputs = [self.net(X.astype(self._cfg.train.dtype, copy=False)) for X in data]
-            acc_top1.update(label, outputs)
-            acc_top5.update(label, outputs)
+            
+        if metric_name == 'rmse':
+            rmse_metric = mx.metric.RMSE()
+            for _, batch in enumerate(val_data):
+                data, label = self.batch_fn(batch, self.ctx)
+                outputs = [self.net(X.astype(self._cfg.train.dtype, copy=False)) for X in data]
+                rmse_metric.update(label, outputs)
 
-        _, top1 = acc_top1.get()
-        _, top5 = acc_top5.get()
-        return top1, top5
+            _, val_score = rmse_metric.get()
+            return val_score
+        
+        else: # accuracy by default
+            acc_top1 = mx.metric.Accuracy()
+            acc_top5 = mx.metric.TopKAccuracy(min(5, self.num_class))
+            for _, batch in enumerate(val_data):
+                data, label = self.batch_fn(batch, self.ctx)
+                outputs = [self.net(X.astype(self._cfg.train.dtype, copy=False)) for X in data]
+                acc_top1.update(label, outputs)
+                acc_top5.update(label, outputs)
+
+            _, top1 = acc_top1.get()
+            _, top5 = acc_top5.get()
+            return top1, top5
 
     def _predict_preprocess(self, x):
         resize = int(math.ceil(self.input_size / self._cfg.train.crop_ratio))
