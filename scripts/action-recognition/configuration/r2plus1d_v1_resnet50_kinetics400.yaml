@@ -5,8 +5,8 @@ DDP_CONFIG:
   WORLD_RANK: 0
   GPU_WORLD_SIZE: 8
   GPU_WORLD_RANK: 0
-  DIST_URL: 'tcp://172.31.72.195:23456'
-  WOLRD_URLS: ['172.31.72.195']
+  DIST_URL: 'tcp://172.31.69.242:23456'
+  WOLRD_URLS: ['172.31.69.242']
   AUTO_RANK_MATCH: True
   DIST_BACKEND: 'nccl'
   GPU: 0
@@ -16,17 +16,16 @@ CONFIG:
   TRAIN:
     EPOCH_NUM: 196
     BATCH_SIZE: 8
-    LR: 0.001
+    LR: 0.1
     MOMENTUM: 0.9
-    W_DECAY: 1e-5
+    W_DECAY: 1e-4
     USE_WARMUP: True
     WARMUP_EPOCHS: 34
     LR_POLICY: 'Cosine'
-    WARMUP_END_LR: 0.1
     RESUME_EPOCH: -1
 
   VAL:
-    FREQ: 2
+    FREQ: 5
     BATCH_SIZE: 8
 
   DATA:
@@ -53,8 +52,9 @@ CONFIG:
     PRETRAINED: False
 
   LOG:
-    BASE_PATH: './logs/r2plus1d_v1_resnet50_kinetics400'
+    BASE_PATH: './logs/r2plus1d_v1_resnet50_kinetics400_05302021'
     LOG_DIR: 'tb_log'
     SAVE_DIR: 'checkpoints'
-    EVAL_DIR: './logs/r2plus1d_v1_resnet50_kinetics400/eval'
-    SAVE_FREQ: 2
+    EVAL_DIR: './logs/r2plus1d_v1_resnet50_kinetics400_05302021/eval'
+    DISPLAY_FREQ: 50
+    SAVE_FREQ: 5
