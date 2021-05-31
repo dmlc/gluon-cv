@@ -72,7 +72,7 @@ if cv2 is None:
     requirements.append('opencv-python')
 
 extra_requirements = {
-    'full': ['tensorboardx', 'decord', 'autogluon.core'],
+    'full': ['tensorboardx', 'decord', 'autogluon.core', 'cython', 'pycocotools'],
     'auto': ['autogluon.core']
 }
 
