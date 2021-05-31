@@ -20,6 +20,7 @@ from autogluon.core.decorator import sample_config
 from autogluon.core.scheduler.resource import get_cpu_count, get_gpu_count
 from autogluon.core.task.base import BaseTask
 from autogluon.core.searcher import RandomSearcher
+from autogluon.core.constants import MULTICLASS, BINARY, REGRESSION
 
 from ..estimators.base_estimator import BaseEstimator
 from ..estimators import ImageClassificationEstimator
@@ -68,6 +69,7 @@ def _train_image_classification(args, reporter):
         task_id = int(args.task_id)
     except:
         task_id = 0
+    problem_type = args.pop('problem_type')
     final_fit = args.pop('final_fit', False)
     # train, val data
     train_data = args.pop('train_data')
@@ -132,7 +134,7 @@ def _train_image_classification(args, reporter):
             args['log_dir'] = trial_log_dir
             custom_net = args.pop('custom_net', None)
             custom_optimizer = args.pop('custom_optimizer', None)
-            estimator = estimator_cls(args, reporter=reporter,
+            estimator = estimator_cls(args, problem_type=problem_type, reporter=reporter,
                                       net=custom_net, optimizer=custom_optimizer)
             # training
             result = estimator.fit(train_data=train_data, val_data=val_data, time_limit=wall_clock_tick-tic)
@@ -174,14 +176,14 @@ class ImageClassification(BaseTask):
     """
     Dataset = ImageClassificationDataset
 
-    def __init__(self, config=None, logger=None):
+    def __init__(self, problem_type=MULTICLASS, config=None, logger=None):
         super(ImageClassification, self).__init__()
         self._fit_summary = {}
         self._logger = logger if logger is not None else logging.getLogger(__name__)
         self._logger.setLevel(logging.INFO)
         self._fit_summary = {}
         self._results = {}
-
+        self._problem_type = problem_type
 
         # cpu and gpu setting
         cpu_count = get_cpu_count()
@@ -337,6 +339,7 @@ class ImageClassification(BaseTask):
         config['val_data'] = val_data
         config['wall_clock_tick'] = wall_clock_tick
         config['log_dir'] = os.path.join(config.get('log_dir', os.getcwd()), str(uuid.uuid4())[:8])
+        config['problem_type'] = self._problem_type
         _train_image_classification.register_args(**config)
 
         start_time = time.time()

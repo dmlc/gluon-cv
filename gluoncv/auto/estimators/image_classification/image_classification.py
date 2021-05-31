@@ -24,6 +24,7 @@ from .default import ImageClassificationCfg
 from ...data.dataset import ImageClassificationDataset
 from ..conf import _BEST_CHECKPOINT_FILE
 from ..utils import EarlyStopperOnPlateau
+from autogluon.core.constants import MULTICLASS, BINARY, REGRESSION
 
 __all__ = ['ImageClassificationEstimator']
 
@@ -45,8 +46,8 @@ class ImageClassificationEstimator(BaseEstimator):
         custom network will be used for training rather than pulling it from model zoo.
     """
     Dataset = ImageClassificationDataset
-    def __init__(self, config, logger=None, reporter=None, net=None, optimizer=None):
-        super(ImageClassificationEstimator, self).__init__(config, logger, reporter=reporter, name=None)
+    def __init__(self, config, problem_type=MULTICLASS, logger=None, reporter=None, net=None, optimizer=None):
+        super(ImageClassificationEstimator, self).__init__(config, problem_type=problem_type, logger=logger, reporter=reporter, name=None)
         self.last_train = None
         self.input_size = self._cfg.train.input_size
         self._feature_net = None
@@ -84,7 +85,7 @@ class ImageClassificationEstimator(BaseEstimator):
         tic = time.time()
         if max(self._cfg.train.start_epoch, self.epoch) >= self._cfg.train.epochs:
             return {'time', self._time_elapsed}
-        if not self.classes or not self.num_class:
+        if self._problem_type != REGRESSION and (not self.classes or not self.num_class):
             raise ValueError('Unable to determine classes of dataset')
 
         num_workers = self._cfg.train.num_workers
@@ -124,11 +125,16 @@ class ImageClassificationEstimator(BaseEstimator):
                                                          sparse_label=sparse_label_loss)
         else:
             L = gluon.loss.SoftmaxCrossEntropyLoss(sparse_label=sparse_label_loss)
-
+        
         if self._cfg.train.mixup:
             train_metric = mx.metric.RMSE()
         else:
             train_metric = mx.metric.Accuracy()
+        
+        if self._problem_type == REGRESSION:
+            train_metric = mx.metric.RMSE()
+            L = gluon.loss.L2Loss()
+            
         if self._cfg.train.mode == 'hybrid':
             self.net.hybridize(static_alloc=True, static_shape=True)
             if self.distillation:
@@ -143,6 +149,7 @@ class ImageClassificationEstimator(BaseEstimator):
         train_metric_score = -1
         cp_name = ''
         self._time_elapsed += time.time() - start_tic
+        print (L, train_metric)
         for self.epoch in range(max(self._cfg.train.start_epoch, self.epoch), self._cfg.train.epochs):
             epoch = self.epoch
             if self._best_acc >= 1.0:
@@ -179,7 +186,7 @@ class ImageClassificationEstimator(BaseEstimator):
                         eta = 0.1
                     else:
                         eta = 0.0
-                    label = mixup_transform(label, classes, lam, eta)
+                    label = mixup_transform(label, classes, lam, eta) # mixup_transfrom() is not implemented
 
                 elif self._cfg.train.label_smoothing:
                     hard_label = label
@@ -246,8 +253,8 @@ class ImageClassificationEstimator(BaseEstimator):
                 'time': self._time_elapsed, 'checkpoint': cp_name}
 
     def _init_network(self):
-        if not self.num_class:
-            raise ValueError('Unable to create network when `num_class` is unknown. \
+        if not self.num_class and self._problem_type != REGRESSION:
+            raise ValueError('This is not a regression problem. Unable to create network when `num_class` is unknown. \
                 It should be inferred from dataset or resumed from saved states.')
         assert len(self.classes) == self.num_class
         # ctx
@@ -303,6 +310,7 @@ class ImageClassificationEstimator(BaseEstimator):
 
         if model_name:
             self.net = get_model(model_name, **kwargs)
+        print (model_name)
         if model_name and self._cfg.img_cls.use_pretrained:
             # reset last fully connected layer
             fc_layer_found = False
@@ -313,14 +321,15 @@ class ImageClassificationEstimator(BaseEstimator):
                     break
             if fc_layer_found:
                 in_channels = list(fc_layer.collect_params().values())[0].shape[1]
+                out_channels = self.num_class if self.num_class >= 2 else 1
                 if isinstance(fc_layer, gluon.nn.Dense):
-                    new_fc_layer = gluon.nn.Dense(self.num_class, in_units=in_channels)
+                    new_fc_layer = gluon.nn.Dense(out_channels, in_units=in_channels)
                 elif isinstance(fc_layer, gluon.nn.Conv2D):
-                    new_fc_layer = gluon.nn.Conv2D(self.num_class, in_channels=in_channels, kernel_size=1)
+                    new_fc_layer = gluon.nn.Conv2D(out_channels, in_channels=in_channels, kernel_size=1)
                 elif isinstance(fc_layer, gluon.nn.HybridSequential):
                     new_fc_layer = gluon.nn.HybridSequential(prefix='output_')
                     with new_fc_layer.name_scope():
-                        new_fc_layer.add(gluon.nn.Conv2D(self.num_class, in_channels=in_channels, kernel_size=1))
+                        new_fc_layer.add(gluon.nn.Conv2D(out_channels, in_channels=in_channels, kernel_size=1))
                         new_fc_layer.add(gluon.nn.Flatten())
                 else:
                     raise TypeError(f'Invalid FC layer type {type(fc_layer)} found, expected (Conv2D, Dense)...')
@@ -335,7 +344,7 @@ class ImageClassificationEstimator(BaseEstimator):
         else:
             self.net.initialize(mx.init.MSRAPrelu(), ctx=self.ctx)
         self.net.cast(self._cfg.train.dtype)
-
+        
         # teacher model for distillation training
         if self._cfg.train.teacher is not None and self._cfg.train.hard_weight < 1.0 and self.num_class == 1000:
             teacher_name = self._cfg.train.teacher
