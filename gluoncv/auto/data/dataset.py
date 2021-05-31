@@ -171,7 +171,7 @@ class ImageClassificationDataset(pd.DataFrame):
             logger.info('label not in columns, no access to labels of images')
             classes = None
         else:
-            classes = df[label_column].unique()
+            classes = df[label_column].unique().tolist()
         df = _absolute_pathify(df, root=root, column=image_column)
         return cls(df, classes=classes, image_column=image_column, label_column=label_column)
 
