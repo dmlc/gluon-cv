@@ -172,7 +172,7 @@ class ImageClassificationEstimator(BaseEstimator):
                 btic = time.time()
                 if self._time_elapsed > time_limit:
                     self._logger.warning(f'`time_limit={time_limit}` reached, exit early...')
-                    return {'train_acc': train_metric_score, 'valid_acc': self._best_acc, 
+                    return {'train_acc': train_metric_score, 'valid_acc': self._best_acc,
                             'time': self._time_elapsed, 'checkpoint': cp_name}
                 data, label = self.batch_fn(batch, self.ctx)
 
@@ -245,7 +245,7 @@ class ImageClassificationEstimator(BaseEstimator):
                 self._logger.info('[Epoch %d] validation: rmse=%f', epoch, val_score)
                 if val_score > self._best_acc:
                     cp_name = os.path.join(self._logdir, _BEST_CHECKPOINT_FILE)
-                    self._logger.info('[Epoch %d] Current min error: %f vs previous %f, saved to %s',
+                    self._logger.info('[Epoch %d] Current best rmse: %f vs previous %f, saved to %s',
                                       self.epoch, val_score, self._best_acc, cp_name)
                     self.save(cp_name)
                     self._best_acc = val_score
@@ -507,7 +507,7 @@ class ImageClassificationEstimator(BaseEstimator):
                 pred = [self.net(input) for input in batch]
                 for p in pred:
                     for ii in range(p.shape[0]):
-                        if self._problem_type == MULTICLASS or self._problem_type == BINARY:
+                        if self._problem_type in [MULTICLASS, BINARY]:
                             ind = nd.topk(p[ii], k=topK).astype('int').asnumpy().flatten()
                             probs = mx.nd.softmax(p[ii]).asnumpy().flatten()
                             for k in range(topK):
@@ -523,7 +523,7 @@ class ImageClassificationEstimator(BaseEstimator):
         x = x.as_in_context(self.ctx[ctx_id])
         pred = self.net(x)
         topK = min(5, self.num_class)
-        if self._problem_type == MULTICLASS or self._problem_type == BINARY:
+        if self._problem_type in [MULTICLASS, BINARY]:
             ind = nd.topk(pred, k=topK)[0].astype('int').asnumpy().flatten()
             probs = mx.nd.softmax(pred)[0].asnumpy().flatten()
             df = pd.DataFrame([{'class': self.classes[ind[i]], 'score': probs[ind[i]], 'id': ind[i]} for i in range(topK)])
@@ -605,13 +605,13 @@ class ImageClassificationEstimator(BaseEstimator):
                 batch = mx.gluon.utils.split_and_load(batch, ctx_list=self.ctx, even_split=False)
                 pred = [self.net(input) for input in batch]
                 for p in pred:
-                    if self._problem_type == MULTICLASS or self._problem_type == BINARY:
+                    if self._problem_type in [MULTICLASS, BINARY]:
                         probs = mx.nd.softmax(p, axis=-1)
                     else:
                         probs = p
                     for ii in range(p.shape[0]):
                         prob = probs[ii]
-                        if self._problem_type == MULTICLASS or self._problem_type == BINARY:
+                        if self._problem_type in [MULTICLASS, BINARY]:
                             results.append({'image_proba': prob.asnumpy().flatten().tolist(), 'image': x[idx]})
                         elif self._problem_type == REGRESSION:
                             results.append({'image_proba': prob.asnumpy().flatten().tolist()[0], 'image': x[idx]})
@@ -622,13 +622,11 @@ class ImageClassificationEstimator(BaseEstimator):
         assert len(x.shape) == 4 and x.shape[1] == 3, "Expect input to be (n, 3, h, w), given {}".format(x.shape)
         x = x.as_in_context(self.ctx[ctx_id])
         pred = self.net(x)
-        if self._problem_type == MULTICLASS or self._problem_type == BINARY:
+        if self._problem_type in [MULTICLASS, BINARY]:
             probs = mx.nd.softmax(pred)[0].asnumpy().flatten().tolist()
-        else:
-            probs = pred[0].asnumpy().flatten().tolist()
-        if self._problem_type == MULTICLASS or self._problem_type == BINARY:
             df = pd.DataFrame([{'image_proba': probs}])
         elif self._problem_type == REGRESSION:
+            probs = pred[0].asnumpy().flatten().tolist()
             df = pd.DataFrame([{'image_proba': probs[0]}])
        
         return df
