@@ -149,8 +149,6 @@ class ImageClassificationEstimator(BaseEstimator):
         train_metric_score = -float('inf')
         cp_name = ''
         self._time_elapsed += time.time() - start_tic
-        print (L, train_metric)
-        
         for self.epoch in range(max(self._cfg.train.start_epoch, self.epoch), self._cfg.train.epochs):
             epoch = self.epoch
             if self._best_acc >= 1.0:
@@ -326,7 +324,6 @@ class ImageClassificationEstimator(BaseEstimator):
 
         if model_name:
             self.net = get_model(model_name, **kwargs)
-        print (model_name)
         if model_name and self._cfg.img_cls.use_pretrained:
             # reset last fully connected layer
             fc_layer_found = False
