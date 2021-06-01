@@ -68,7 +68,10 @@ class BaseEstimator:
 
     """
     def __init__(self, config, problem_type=MULTICLASS, logger=None, reporter=None, name=None):
-        self._problem_type = problem_type
+        if problem_type:
+            self._problem_type = problem_type
+        else:
+            self._problem_type = MULTICLASS
         self._reporter = reporter
         name = name if isinstance(name, str) else self.__class__.__name__
         self._name = name

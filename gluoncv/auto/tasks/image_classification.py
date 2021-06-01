@@ -69,7 +69,7 @@ def _train_image_classification(args, reporter):
         task_id = int(args.task_id)
     except:
         task_id = 0
-    problem_type = args.pop('problem_type')
+    problem_type = args.pop('problem_type', MULTICLASS)
     final_fit = args.pop('final_fit', False)
     # train, val data
     train_data = args.pop('train_data')
