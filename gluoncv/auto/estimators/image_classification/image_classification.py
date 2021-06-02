@@ -268,7 +268,7 @@ class ImageClassificationEstimator(BaseEstimator):
 
     def _init_network(self):
         if not self.num_class and self._problem_type != REGRESSION:
-            raise ValueError('This is not a regression problem. Unable to create network when `num_class` is unknown. \
+            raise ValueError('This is a classification problem and we are not able to create network when `num_class` is unknown. \
                 It should be inferred from dataset or resumed from saved states.')
         assert len(self.classes) == self.num_class
         # ctx
