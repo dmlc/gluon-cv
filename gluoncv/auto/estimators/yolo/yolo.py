@@ -390,9 +390,11 @@ class YOLOv3Estimator(BaseEstimator):
             else:
                 self.net = get_model(self._cfg.yolo3.transfer, pretrained=(not load_only))
                 self.async_net = self.net
-            if not load_only:
-                self.net.reset_class(self.classes,
-                                     reuse_weights=[cname for cname in self.classes if cname in self.net.classes])
+            if load_only:
+                self.net.initialize()
+                self.net(mx.nd.zeros((1, 3, self._cfg.yolo3.data_shape, self._cfg.yolo3.data_shape)))
+            self.net.reset_class(self.classes,
+                                 reuse_weights=[cname for cname in self.classes if cname in self.net.classes])
 
         with warnings.catch_warnings(record=True) as _:
             warnings.simplefilter("always")

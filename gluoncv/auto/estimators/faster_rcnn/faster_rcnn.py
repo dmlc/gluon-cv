@@ -405,9 +405,11 @@ class FasterRCNNEstimator(BaseEstimator):
                                      per_device_batch_size=self.batch_size // self.num_gpus,
                                      **kwargs)
                 self.net.sampler._max_num_gt = self._cfg.faster_rcnn.max_num_gt
-            if not load_only:
-                self.net.reset_class(self.classes,
-                                     reuse_weights=[cname for cname in self.classes if cname in self.net.classes])
+            if load_only:
+                self.net.initialize()
+                self.net(mx.nd.zeros((1, 3, 600, 800)))
+            self.net.reset_class(self.classes,
+                                 reuse_weights=[cname for cname in self.classes if cname in self.net.classes])
         else:
             self._cfg.faster_rcnn.use_fpn = True
             if self._cfg.faster_rcnn.norm_layer == 'syncbn':

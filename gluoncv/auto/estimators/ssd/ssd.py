@@ -360,15 +360,19 @@ class SSDEstimator(BaseEstimator):
                                          norm_layer=gluon.contrib.nn.SyncBatchNorm,
                                          norm_kwargs={'num_devices': len(self.ctx)})
                     self.async_net = get_model(self._cfg.ssd.transfer, pretrained=(not load_only))  # used by cpu worker
-                if not load_only:
-                    self.net.reset_class(self.classes,
-                                         reuse_weights=[cname for cname in self.classes if cname in self.net.classes])
+                if load_only:
+                    self.net.initialize()
+                    self.net(mx.nd.zeros((1, 3, self._cfg.ssd.data_shape, self._cfg.ssd.data_shape)))
+                self.net.reset_class(self.classes,
+                                     reuse_weights=[cname for cname in self.classes if cname in self.net.classes])
             else:
                 self.net = get_model(self._cfg.ssd.transfer, pretrained=(not load_only), norm_layer=gluon.nn.BatchNorm)
                 self.async_net = get_model(self._cfg.ssd.transfer, pretrained=(not load_only), norm_layer=gluon.nn.BatchNorm)
-                if not load_only:
-                    self.net.reset_class(self.classes,
-                                         reuse_weights=[cname for cname in self.classes if cname in self.net.classes])
+                if load_only:
+                    self.net.initialize()
+                    self.net(mx.nd.zeros((1, 3, self._cfg.ssd.data_shape, self._cfg.ssd.data_shape)))
+                self.net.reset_class(self.classes,
+                                     reuse_weights=[cname for cname in self.classes if cname in self.net.classes])
         # elif self._cfg.ssd.custom_model:
         else:
             if self._cfg.ssd.syncbn and len(self.ctx) > 1:
