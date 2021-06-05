@@ -180,7 +180,6 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade --force-reinstall --no-deps .
-          pip install autogluon.core
           pip install boto3
       - name: Test model_zoo_torch on AWS Batch(For push)
         shell: bash -l {0}
@@ -193,7 +192,7 @@ jobs:
                                              --source-ref ${{ env.REF }} \
                                              --work-dir . \
                                              --remote https://github.com/${{ env.REPO }} \
-                                             --command "chmod +x ./.github/workflows/gpu_test.sh && ./.github/workflows/gpu_test.sh gluoncv tests/auto" \
+                                             --command "pip3 install autogluon.core==0.2.0 && chmod +x ./.github/workflows/gpu_test.sh && ./.github/workflows/gpu_test.sh gluoncv tests/auto" \
                                              --wait
       - name: Test model_zoo_torch on AWS Batch(For pull request)
         if: ${{ github.event.workflow_run.event == 'pull_request' }}
