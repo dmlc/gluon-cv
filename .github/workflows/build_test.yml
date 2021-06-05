@@ -1,5 +1,5 @@
 name: Build Test
-on: 
+on:
   workflow_run:
     workflows: ["Unit Test"]
     types:
@@ -180,6 +180,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade --force-reinstall --no-deps .
+          pip install autogluon.core
           pip install boto3
       - name: Test model_zoo_torch on AWS Batch(For push)
         shell: bash -l {0}
