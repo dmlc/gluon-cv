@@ -407,7 +407,9 @@ class FasterRCNNEstimator(BaseEstimator):
                 self.net.sampler._max_num_gt = self._cfg.faster_rcnn.max_num_gt
             if load_only:
                 self.net.initialize()
+                self.net.set_nms(nms_thresh=0)
                 self.net(mx.nd.zeros((1, 3, 600, 800)))
+                self.net.set_nms(nms_thresh=self._cfg.faster_rcnn.nms_thresh)
             self.net.reset_class(self.classes,
                                  reuse_weights=[cname for cname in self.classes if cname in self.net.classes])
         else:

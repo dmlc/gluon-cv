@@ -392,7 +392,9 @@ class YOLOv3Estimator(BaseEstimator):
                 self.async_net = self.net
             if load_only:
                 self.net.initialize()
+                self.net.set_nms(nms_thresh=0)
                 self.net(mx.nd.zeros((1, 3, self._cfg.yolo3.data_shape, self._cfg.yolo3.data_shape)))
+                self.net.set_nms(nms_thresh=0.3)
             self.net.reset_class(self.classes,
                                  reuse_weights=[cname for cname in self.classes if cname in self.net.classes])
 
