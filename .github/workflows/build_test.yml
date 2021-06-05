@@ -192,7 +192,7 @@ jobs:
                                              --source-ref ${{ env.REF }} \
                                              --work-dir . \
                                              --remote https://github.com/${{ env.REPO }} \
-                                             --command "pip3 install autogluon.core==0.2.0 && chmod +x ./.github/workflows/gpu_test.sh && ./.github/workflows/gpu_test.sh gluoncv tests/auto" \
+                                             --command "chmod +x ./.github/workflows/gpu_test.sh && ./.github/workflows/gpu_test.sh gluoncv tests/auto" \
                                              --wait
       - name: Test model_zoo_torch on AWS Batch(For pull request)
         if: ${{ github.event.workflow_run.event == 'pull_request' }}

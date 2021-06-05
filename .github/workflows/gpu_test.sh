@@ -10,7 +10,13 @@ for f in $EFS/.mxnet/models/*.params; do
     ln -s $f ~/.mxnet/models/$(basename "$f")
 done
 
-export MXNET_CUDNN_AUTOTUNE_DEFAULT=0 
-export MPLBACKEND=Agg 
-export KMP_DUPLICATE_LIB_OK=TRUE 
+export MXNET_CUDNN_AUTOTUNE_DEFAULT=0
+export MPLBACKEND=Agg
+export KMP_DUPLICATE_LIB_OK=TRUE
+
+if [[ $TESTS_PATH == *"auto"* ]]; then
+  echo "Installing autogluon.core for auto module"
+  pip3 install autogluon.core==0.2.0
+fi
+
 nosetests --with-timer --timer-ok 5 --timer-warning 20 -x --with-coverage --cover-package $COVER_PACKAGE -v $TESTS_PATH
