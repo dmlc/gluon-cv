@@ -10,15 +10,15 @@ EFS=/mnt/efs
 mkdir -p ~/.mxnet/datasets
 for f in $EFS/.mxnet/datasets/*; do
     if [ -d "$f" ]; then
-        # Will not run if no directories are available 
+        # Will not run if no directories are available
         ln -s $f ~/.mxnet/datasets/$(basename "$f")
     fi
 done
 
-python3 -m pip install sphinx==3.5.4 sphinx-gallery sphinx_rtd_theme matplotlib Image recommonmark scipy mxtheme
+python3 -m pip install sphinx==3.5.4 sphinx-gallery sphinx_rtd_theme matplotlib Image recommonmark scipy mxtheme autogluon.core
 
 export MXNET_CUDNN_AUTOTUNE_DEFAULT=0
-cd docs 
+cd docs
 make html
 COMMAND_EXIT_CODE=$?
 

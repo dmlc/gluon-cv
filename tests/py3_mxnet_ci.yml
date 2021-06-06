@@ -23,5 +23,6 @@ dependencies:
     - opencv-python
     - git+https://github.com/zhanghang1989/detail-api.git#subdirectory=PythonAPI
     - portalocker
-    - autocfg
-    - boto3 
+    - autocfg>=0.0.6
+    - boto3
+    - autogluon.core==0.2.0

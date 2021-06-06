@@ -324,7 +324,8 @@ class SSDEstimator(BaseEstimator):
         valid_df = df[df['predict_score'] > 0].reset_index(drop=True)
         return valid_df
 
-    def _init_network(self):
+    def _init_network(self, **kwargs):
+        load_only = kwargs.get('load_only', False)
         if not self.num_class:
             raise ValueError('Unable to create network when `num_class` is unknown. \
                 It should be inferred from dataset or resumed from saved states.')
@@ -355,15 +356,25 @@ class SSDEstimator(BaseEstimator):
             if self._cfg.ssd.syncbn and len(self.ctx) > 1:
                 with warnings.catch_warnings(record=True) as _:
                     warnings.simplefilter("always")
-                    self.net = get_model(self._cfg.ssd.transfer, pretrained=True,
+                    self.net = get_model(self._cfg.ssd.transfer, pretrained=(not load_only),
                                          norm_layer=gluon.contrib.nn.SyncBatchNorm,
                                          norm_kwargs={'num_devices': len(self.ctx)})
-                    self.async_net = get_model(self._cfg.ssd.transfer, pretrained=True)  # used by cpu worker
+                    self.async_net = get_model(self._cfg.ssd.transfer, pretrained=(not load_only))  # used by cpu worker
+                if load_only:
+                    self.net.initialize()
+                    self.net.set_nms(nms_thresh=0)
+                    self.net(mx.nd.zeros((1, 3, self._cfg.ssd.data_shape, self._cfg.ssd.data_shape)))
+                    self.net.set_nms(nms_thresh=0.3)
                 self.net.reset_class(self.classes,
                                      reuse_weights=[cname for cname in self.classes if cname in self.net.classes])
             else:
-                self.net = get_model(self._cfg.ssd.transfer, pretrained=True, norm_layer=gluon.nn.BatchNorm)
-                self.async_net = get_model(self._cfg.ssd.transfer, pretrained=True, norm_layer=gluon.nn.BatchNorm)
+                self.net = get_model(self._cfg.ssd.transfer, pretrained=(not load_only), norm_layer=gluon.nn.BatchNorm)
+                self.async_net = get_model(self._cfg.ssd.transfer, pretrained=(not load_only), norm_layer=gluon.nn.BatchNorm)
+                if load_only:
+                    self.net.initialize()
+                    self.net.set_nms(nms_thresh=0)
+                    self.net(mx.nd.zeros((1, 3, self._cfg.ssd.data_shape, self._cfg.ssd.data_shape)))
+                    self.net.set_nms(nms_thresh=0.3)
                 self.net.reset_class(self.classes,
                                      reuse_weights=[cname for cname in self.classes if cname in self.net.classes])
         # elif self._cfg.ssd.custom_model:
@@ -379,7 +390,7 @@ class SSDEstimator(BaseEstimator):
                                           steps=self._cfg.ssd.steps,
                                           classes=self.classes,
                                           dataset='auto',
-                                          pretrained_base=True,
+                                          pretrained_base=(not load_only),
                                           norm_layer=gluon.contrib.nn.SyncBatchNorm,
                                           norm_kwargs={'num_devices': len(self.ctx)})
                     self.async_net = custom_ssd(base_network_name=self._cfg.ssd.base_network,
@@ -402,7 +413,7 @@ class SSDEstimator(BaseEstimator):
                                           steps=self._cfg.ssd.steps,
                                           classes=self.classes,
                                           dataset=self._cfg.dataset,
-                                          pretrained_base=True,
+                                          pretrained_base=(not load_only),
                                           norm_layer=gluon.nn.BatchNorm)
                     self.async_net = self.net
 

@@ -1,5 +1,5 @@
 name: Build Test
-on: 
+on:
   workflow_run:
     workflows: ["Unit Test"]
     types:

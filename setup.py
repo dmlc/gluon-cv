@@ -57,15 +57,24 @@ requirements = [
     'portalocker',
     'Pillow',
     'scipy',
-    'tensorboardx',
-    'decord',
-    'opencv-python',
+    #'tensorboardx',
+    #'decord',
+    #'opencv-python',
     'yacs',
     'pandas',
     'pyyaml',
     'autocfg',
-    'autogluon.core'
+    #'autogluon.core'
 ]
+
+# do not duplicate opencv module if already compiled from source
+if cv2 is None:
+    requirements.append('opencv-python')
+
+extra_requirements = {
+    'full': ['tensorboardx', 'decord', 'autogluon.core', 'cython', 'pycocotools'],
+    'auto': ['autogluon.core']
+}
 
 if with_cython:
     import numpy as np
@@ -87,9 +96,6 @@ if with_cython:
 else:
     ext_modules = []
 
-# do not duplicate opencv module if already compiled from source
-if cv2 is None:
-    requirements.append('opencv-python')
 
 setup(
     # Metadata
@@ -106,5 +112,6 @@ setup(
     zip_safe=True,
     include_package_data=True,
     install_requires=requirements,
-    ext_modules=ext_modules
+    ext_modules=ext_modules,
+    extras_require=extra_requirements
 )
