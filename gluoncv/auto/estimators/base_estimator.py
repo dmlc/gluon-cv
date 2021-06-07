@@ -11,7 +11,7 @@ import pandas as pd
 from ...utils import random as _random
 from ...utils.filesystem import temporary_filename
 from .utils import _suggest_load_context
-from autogluon.core.constants import MULTICLASS, BINARY, REGRESSION
+
 
 logging.basicConfig(level=logging.INFO)
 
@@ -67,11 +67,7 @@ class BaseEstimator:
         The configurations.
 
     """
-    def __init__(self, config, problem_type=MULTICLASS, logger=None, reporter=None, name=None):
-        if problem_type:
-            self._problem_type = problem_type
-        else:
-            self._problem_type = MULTICLASS
+    def __init__(self, config, logger=None, reporter=None, name=None):
         self._reporter = reporter
         name = name if isinstance(name, str) else self.__class__.__name__
         self._name = name

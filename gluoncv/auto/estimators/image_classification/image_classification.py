@@ -46,8 +46,11 @@ class ImageClassificationEstimator(BaseEstimator):
         custom network will be used for training rather than pulling it from model zoo.
     """
     Dataset = ImageClassificationDataset
-    def __init__(self, config, problem_type=MULTICLASS, logger=None, reporter=None, net=None, optimizer=None):
-        super(ImageClassificationEstimator, self).__init__(config, problem_type=problem_type, logger=logger, reporter=reporter, name=None)
+    def __init__(self, config, problem_type=None, logger=None, reporter=None, net=None, optimizer=None):
+        super(ImageClassificationEstimator, self).__init__(config, logger=logger, reporter=reporter, name=None)
+        if problem_type == None:
+            problem_type = MULTICLASS
+        self._problem_type = problem_type   
         self.last_train = None
         self.input_size = self._cfg.train.input_size
         self._feature_net = None
@@ -86,7 +89,7 @@ class ImageClassificationEstimator(BaseEstimator):
         if max(self._cfg.train.start_epoch, self.epoch) >= self._cfg.train.epochs:
             return {'time', self._time_elapsed}
         if self._problem_type != REGRESSION and (not self.classes or not self.num_class):
-            raise ValueError('Unable to determine classes of dataset')
+            raise ValueError('This is a classification problem and we are not able to determine classes of dataset')
 
         num_workers = self._cfg.train.num_workers
         if self._cfg.train.use_rec:
