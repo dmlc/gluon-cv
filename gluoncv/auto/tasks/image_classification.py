@@ -176,7 +176,7 @@ class ImageClassification(BaseTask):
     """
     Dataset = ImageClassificationDataset
 
-    def __init__(self, problem_type=None, config=None, logger=None):
+    def __init__(self, config=None, logger=None, problem_type=None):
         super(ImageClassification, self).__init__()
         if problem_type == None:
             problem_type = MULTICLASS
@@ -186,6 +186,7 @@ class ImageClassification(BaseTask):
         self._logger.setLevel(logging.INFO)
         self._fit_summary = {}
         self._results = {}
+
 
         # cpu and gpu setting
         cpu_count = get_cpu_count()

@@ -46,7 +46,7 @@ class ImageClassificationEstimator(BaseEstimator):
         custom network will be used for training rather than pulling it from model zoo.
     """
     Dataset = ImageClassificationDataset
-    def __init__(self, config, problem_type=None, logger=None, reporter=None, net=None, optimizer=None):
+    def __init__(self, config, logger=None, reporter=None, net=None, optimizer=None, problem_type=None):
         super(ImageClassificationEstimator, self).__init__(config, logger=logger, reporter=reporter, name=None)
         if problem_type == None:
             problem_type = MULTICLASS
@@ -128,7 +128,7 @@ class ImageClassificationEstimator(BaseEstimator):
                                                          sparse_label=sparse_label_loss)
         else:
             L = gluon.loss.SoftmaxCrossEntropyLoss(sparse_label=sparse_label_loss)
-        
+
         if self._cfg.train.mixup:
             train_metric = mx.metric.RMSE()
         else:
@@ -360,7 +360,7 @@ class ImageClassificationEstimator(BaseEstimator):
         else:
             self.net.initialize(mx.init.MSRAPrelu(), ctx=self.ctx)
         self.net.cast(self._cfg.train.dtype)
-        
+
         # teacher model for distillation training
         if self._cfg.train.teacher is not None and self._cfg.train.hard_weight < 1.0 and self.num_class == 1000:
             teacher_name = self._cfg.train.teacher
