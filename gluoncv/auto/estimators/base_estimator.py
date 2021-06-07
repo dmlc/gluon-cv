@@ -12,7 +12,6 @@ from ...utils import random as _random
 from ...utils.filesystem import temporary_filename
 from .utils import _suggest_load_context
 
-
 logging.basicConfig(level=logging.INFO)
 
 def set_default(cfg):

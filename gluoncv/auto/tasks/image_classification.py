@@ -176,14 +176,16 @@ class ImageClassification(BaseTask):
     """
     Dataset = ImageClassificationDataset
 
-    def __init__(self, problem_type=MULTICLASS, config=None, logger=None):
+    def __init__(self, problem_type=None, config=None, logger=None):
         super(ImageClassification, self).__init__()
+        if problem_type == None:
+            problem_type = MULTICLASS
+        self._problem_type = problem_type
         self._fit_summary = {}
         self._logger = logger if logger is not None else logging.getLogger(__name__)
         self._logger.setLevel(logging.INFO)
         self._fit_summary = {}
         self._results = {}
-        self._problem_type = problem_type
 
         # cpu and gpu setting
         cpu_count = get_cpu_count()
