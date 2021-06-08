@@ -48,6 +48,8 @@ Select your preferences and run the install command.
 
      - Requires `pip >= 9. <https://pip.pypa.io/en/stable/installing/>`_.
 
+     - Note that you can install the extra optional requirements all together by replacing "pip install gluoncv" with "pip install gluoncv[full]".
+
      .. container:: nightly
 
         - Nightly build provides latest features for enthusiasts.

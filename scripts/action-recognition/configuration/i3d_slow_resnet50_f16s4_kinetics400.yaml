@@ -16,17 +16,16 @@ CONFIG:
   TRAIN:
     EPOCH_NUM: 196
     BATCH_SIZE: 8
-    LR: 0.01
+    LR: 0.1
     MOMENTUM: 0.9
-    W_DECAY: 1e-5
+    W_DECAY: 1e-4
     USE_WARMUP: True
     WARMUP_EPOCHS: 34
     LR_POLICY: 'Cosine'
-    WARMUP_END_LR: 0.1
     RESUME_EPOCH: -1
 
   VAL:
-    FREQ: 2
+    FREQ: 5
     BATCH_SIZE: 8
 
   DATA:
@@ -53,4 +52,5 @@ CONFIG:
     LOG_DIR: 'tb_log'
     SAVE_DIR: 'checkpoints'
     EVAL_DIR: './logs/i3d_slow_resnet50_f16s4_kinetics400/eval'
-    SAVE_FREQ: 2
+    DISPLAY_FREQ: 50
+    SAVE_FREQ: 5

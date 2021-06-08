@@ -278,7 +278,8 @@ class ImageClassificationEstimator(BaseEstimator):
             return {'train_acc': train_metric_score, 'valid_acc': self._best_acc,
                     'time': self._time_elapsed, 'checkpoint': cp_name}
 
-    def _init_network(self):
+    def _init_network(self, **kwargs):
+        load_only = kwargs.get('load_only', False)
         if not self.num_class and self._problem_type != REGRESSION:
             raise ValueError('This is a classification problem and we are not able to create network when `num_class` is unknown. \
                 It should be inferred from dataset or resumed from saved states.')
@@ -320,7 +321,8 @@ class ImageClassificationEstimator(BaseEstimator):
         if input_size != self.input_size:
             self._logger.info(f'Change input size to {self.input_size}, given model type: {model_name}')
 
-        if self._cfg.img_cls.use_pretrained:
+        use_pretrained = not load_only and self._cfg.img_cls.use_pretrained
+        if use_pretrained:
             kwargs = {'ctx': self.ctx, 'pretrained': True, 'classes': 1000 if 'cifar' not in model_name else 10}
         else:
             kwargs = {'ctx': self.ctx, 'pretrained': False, 'classes': self.num_class}
@@ -336,7 +338,7 @@ class ImageClassificationEstimator(BaseEstimator):
 
         if model_name:
             self.net = get_model(model_name, **kwargs)
-        if model_name and self._cfg.img_cls.use_pretrained:
+        if model_name and use_pretrained:
             # reset last fully connected layer
             fc_layer_found = False
             for fc_name in ('output', 'fc'):
@@ -371,7 +373,7 @@ class ImageClassificationEstimator(BaseEstimator):
         self.net.cast(self._cfg.train.dtype)
 
         # teacher model for distillation training
-        if self._cfg.train.teacher is not None and self._cfg.train.hard_weight < 1.0 and self.num_class == 1000:
+        if not load_only and self._cfg.train.teacher is not None and self._cfg.train.hard_weight < 1.0 and self.num_class == 1000:
             teacher_name = self._cfg.train.teacher
             self.teacher = get_model(teacher_name, pretrained=True, classes=self.num_class, ctx=self.ctx)
             self.teacher.cast(self._cfg.train.dtype)

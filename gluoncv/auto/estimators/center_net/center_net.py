@@ -295,7 +295,8 @@ class CenterNetEstimator(BaseEstimator):
             eval_metric.update(det_bboxes, det_ids, det_scores, gt_bboxes, gt_ids, gt_difficults)
         return eval_metric.get()
 
-    def _init_network(self):
+    def _init_network(self, **kwargs):
+        load_only = kwargs.get('load_only', False)
         if not self.num_class:
             raise ValueError('Unable to create network when `num_class` is unknown. \
                 It should be inferred from dataset or resumed from saved states.')
@@ -317,7 +318,10 @@ class CenterNetEstimator(BaseEstimator):
             assert isinstance(self._cfg.center_net.transfer, str)
             self._logger.info('Using transfer learning from %s, ignoring some of the network configs',
                               self._cfg.center_net.transfer)
-            net = get_model(self._cfg.center_net.transfer, pretrained=True)
+            net = get_model(self._cfg.center_net.transfer, pretrained=(not load_only))
+            if load_only:
+                net.initialize()
+                net(mx.nd.zeros((1, 3, self._cfg.center_net.data_shape[0], self._cfg.center_net.data_shape[1])))
             net.reset_class(self.classes, reuse_weights=[cname for cname in self.classes if cname in net.classes])
         else:
             net_name = '_'.join(('center_net', self._cfg.center_net.base_network, self.dataset))
@@ -327,7 +331,7 @@ class CenterNetEstimator(BaseEstimator):
                 ('wh', {'num_output': self._cfg.center_net.heads.wh_outputs}),
                 ('reg', {'num_output': self._cfg.center_net.heads.reg_outputs})])
             base_network = get_base_network(self._cfg.center_net.base_network,
-                                            pretrained=self._cfg.train.pretrained_base)
+                                            pretrained=self._cfg.train.pretrained_base and not load_only)
             net = get_center_net(self._cfg.center_net.base_network,
                                  self.dataset,
                                  base_network=base_network,
