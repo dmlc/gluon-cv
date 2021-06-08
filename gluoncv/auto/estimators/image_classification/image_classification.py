@@ -616,10 +616,7 @@ class ImageClassificationEstimator(BaseEstimator):
                 batch = mx.gluon.utils.split_and_load(batch, ctx_list=self.ctx, even_split=False)
                 pred = [self.net(input) for input in batch]
                 for p in pred:
-                    if self._problem_type in [MULTICLASS, BINARY]:
-                        probs = mx.nd.softmax(p, axis=-1)
-                    else:
-                        probs = p
+                    probs = mx.nd.softmax(p, axis=-1)
                     for ii in range(p.shape[0]):
                         prob = probs[ii]
                         results.append({'image_proba': prob.asnumpy().flatten().tolist(), 'image': x[idx]})
