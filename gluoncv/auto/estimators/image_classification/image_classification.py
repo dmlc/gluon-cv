@@ -629,7 +629,6 @@ class ImageClassificationEstimator(BaseEstimator):
         pred = self.net(x)
         probs = mx.nd.softmax(pred)[0].asnumpy().flatten().tolist()
         df = pd.DataFrame([{'image_proba': probs}])
-       
         return df
 
 class ImageListDataset(mx.gluon.data.Dataset):
