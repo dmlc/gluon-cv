@@ -20,7 +20,13 @@ from autogluon.core.decorator import sample_config
 from autogluon.core.scheduler.resource import get_cpu_count, get_gpu_count
 from autogluon.core.task.base import BaseTask
 from autogluon.core.searcher import RandomSearcher
-from autogluon.core.constants import MULTICLASS, BINARY, REGRESSION
+from ...utils.filesystem import try_import
+problem_type_constants = try_import(package='autogluon.core.constants', 
+                                    fromlist=['MULTICLASS', 'BINARY', 'REGRESSION'],
+                                    message='Failed to import problem type constants from autogluon.core.')
+MULTICLASS = problem_type_constants.MULTICLASS
+BINARY = problem_type_constants.BINARY
+REGRESSION = problem_type_constants.REGRESSION
 
 from ..estimators.base_estimator import BaseEstimator
 from ..estimators import ImageClassificationEstimator
@@ -178,7 +184,7 @@ class ImageClassification(BaseTask):
 
     def __init__(self, config=None, logger=None, problem_type=None):
         super(ImageClassification, self).__init__()
-        if problem_type == None:
+        if problem_type is None:
             problem_type = MULTICLASS
         self._problem_type = problem_type
         self._fit_summary = {}
@@ -403,3 +409,8 @@ class ImageClassification(BaseTask):
         # make sure not accidentally loading e.g. classification model
         assert isinstance(obj, ImageClassificationEstimator)
         return obj
+
+    
+class ImagePrediction(ImageClassification):
+    pass
+

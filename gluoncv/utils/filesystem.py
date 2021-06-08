@@ -21,7 +21,7 @@ def makedirs(path):
         if exc.errno != errno.EEXIST:
             raise
 
-def try_import(package, message=None):
+def try_import(package, fromlist=[], message=None):
     """Try import specified package, with custom message support.
 
     Parameters
@@ -38,7 +38,7 @@ def try_import(package, message=None):
 
     """
     try:
-        return __import__(package)
+        return __import__(package, fromlist=fromlist)
     except ImportError as e:
         if not message:
             raise e
