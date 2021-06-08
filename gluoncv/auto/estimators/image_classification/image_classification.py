@@ -21,7 +21,7 @@ from .... import loss
 from ..base_estimator import BaseEstimator, set_default
 from .utils import get_data_loader, get_data_rec, smooth, mixup_transform
 from .default import ImageClassificationCfg
-from ...data.dataset import ImageClassificationDataset, ImagePredictionDataset
+from ...data.dataset import ImageClassificationDataset
 from ..conf import _BEST_CHECKPOINT_FILE
 from ..utils import EarlyStopperOnPlateau
 from ....utils.filesystem import try_import
@@ -51,8 +51,7 @@ class ImageClassificationEstimator(BaseEstimator):
         The custom network. If defined, the model name in config will be ignored so your
         custom network will be used for training rather than pulling it from model zoo.
     """
-#     Dataset = ImageClassificationDataset
-    Dataset = ImagePredictionDataset
+    Dataset = ImageClassificationDataset
     def __init__(self, config, logger=None, reporter=None, net=None, optimizer=None, problem_type=None):
         super(ImageClassificationEstimator, self).__init__(config, logger=logger, reporter=reporter, name=None)
         if problem_type is None:
@@ -272,7 +271,7 @@ class ImageClassificationEstimator(BaseEstimator):
                 if self._reporter:
                     self._reporter(epoch=epoch, acc_reward=top1_val)
             self._time_elapsed += time.time() - post_tic
-        if train_metric_name == 'rmse':
+        if train_metric_name == 'rmse': # TODO: fix ImageClassification(BaseTask)._fit_summary()
             return {'train_score': train_metric_score, 'valid_score': -self._best_acc,
                     'time': self._time_elapsed, 'checkpoint': cp_name}
         else: # accuracy by default:
@@ -431,7 +430,10 @@ class ImageClassificationEstimator(BaseEstimator):
                 except TypeError:
                     optimizer = mx.optimizer.create(optimizer)
             self.trainer = gluon.Trainer(self.net.collect_params(), optimizer)
-
+    
+    def evaluate(self, val_data, metric_name=None):
+        return self._evaluate(val_data, metric_name=metric_name)
+    
     def _evaluate(self, val_data, metric_name=None):
         """Test on validation dataset."""
         

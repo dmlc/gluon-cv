@@ -55,9 +55,13 @@ class ImageClassificationDataset(pd.DataFrame):
 
     def __init__(self, data, classes=None, **kwargs):
         root = kwargs.pop('root', None)
+        no_class = kwargs.pop('no_class', False)
         if isinstance(data, str) and data.endswith('csv'):
             data = self.from_csv(data, root=root)
-        self.classes = classes
+        if no_class:
+            self.classes = []
+        else:
+            self.classes = classes
         super().__init__(data, **kwargs)
 
     @property
@@ -131,8 +135,11 @@ class ImageClassificationDataset(pd.DataFrame):
             interpolation=cv2.INTER_AREA), cv2.COLOR_BGR2RGB) for idx in indices if idx < len(self)]
         titles = None
         if 'label' in self.columns:
-            titles = [self.classes[int(self.at[idx, 'label'])] + ': ' + str(self.at[idx, 'label']) \
-                for idx in indices if idx < len(self)]
+            if self.classes:
+                titles = [self.classes[int(self.at[idx, 'label'])] + ': ' + str(self.at[idx, 'label']) \
+                    for idx in indices if idx < len(self)]
+            else:
+                titles = [str(self.at[idx, 'label']) for idx in indices if idx < len(self)]
         _show_images(images, cols=ncol, titles=titles, fontsize=fontsize)
 
     def to_mxnet(self):
@@ -140,7 +147,7 @@ class ImageClassificationDataset(pd.DataFrame):
         return _MXImageClassificationDataset(self)
 
     @classmethod
-    def from_csv(cls, csv_file, root=None):
+    def from_csv(cls, csv_file, root=None, no_class=False):
         r"""Create from csv file.
 
         Parameters
@@ -161,10 +168,10 @@ class ImageClassificationDataset(pd.DataFrame):
         else:
             classes = df['label'].unique()
         df = _absolute_pathify(df, root=root, column='image')
-        return cls(df, classes=classes)
+        return cls(df, classes=classes, no_class=no_class)
 
     @classmethod
-    def from_folder(cls, root, exts=('.jpg', '.jpeg', '.png')):
+    def from_folder(cls, root, exts=('.jpg', '.jpeg', '.png'), no_class=False):
         r"""A dataset for loading image files stored in a folder structure.
         like::
             root/car/0001.jpg
@@ -207,10 +214,10 @@ class ImageClassificationDataset(pd.DataFrame):
                     continue
                 items['image'].append(filename)
                 items['label'].append(label)
-        return cls(items, classes=synsets)
+        return cls(items, classes=synsets, no_class=no_class)
 
     @classmethod
-    def from_folders(cls, root, train='train', val='val', test='test', exts=('.jpg', '.jpeg', '.png')):
+    def from_folders(cls, root, train='train', val='val', test='test', exts=('.jpg', '.jpeg', '.png'), no_class=False):
         """Method for loading splited datasets under root.
         like::
             root/train/car/0001.jpg
@@ -261,15 +268,15 @@ class ImageClassificationDataset(pd.DataFrame):
         train_data, val_data, test_data = empty, empty, empty
         # train
         if os.path.isdir(train_root):
-            train_data = cls.from_folder(train_root, exts=exts)
+            train_data = cls.from_folder(train_root, exts=exts, no_class=no_class)
         else:
             raise ValueError('Train split does not exist: {}'.format(train))
         # val
         if os.path.isdir(val_root):
-            val_data = cls.from_folder(val_root, exts=exts)
+            val_data = cls.from_folder(val_root, exts=exts, no_class=no_class)
         # test
         if os.path.isdir(test_root):
-            test_data = cls.from_folder(test_root, exts=exts)
+            test_data = cls.from_folder(test_root, exts=exts, no_class=no_class)
 
         # check synsets, val/test synsets can be subsets(order matters!) or exact matches of train synset
         if len(val_data) and not _check_synsets(train_data.classes, val_data.classes):
@@ -280,7 +287,7 @@ class ImageClassificationDataset(pd.DataFrame):
         return train_data, val_data, test_data
 
     @classmethod
-    def from_name_func(cls, im_list, fn, root=None):
+    def from_name_func(cls, im_list, fn, root=None, no_class=False):
         """Short summary.
 
         Parameters
@@ -319,7 +326,7 @@ class ImageClassificationDataset(pd.DataFrame):
             if label not in synsets:
                 synsets.append(label)
             items['label'].append(synsets.index(label))  # int label id
-        return cls(items, classes=synsets)
+        return cls(items, classes=synsets, no_class=no_class)
 
     @classmethod
     def from_name_re(cls, im_list, fn, root=None):
@@ -330,73 +337,6 @@ class ImageClassificationDataset(pd.DataFrame):
     def from_label_func(cls, label_list, fn):
         # create from a function parsed from labels
         raise NotImplementedError
-
-
-class ImagePredictionDataset(ImageClassificationDataset):
-    """Inherit from ImageClassification.
-    """
-
-    @property
-    def _constructor(self):
-        return ImagePredictionDataset
-
-    def show_images_for_regression(self, indices=None, nsample=16, ncol=4, shuffle=True, resize=224, fontsize=20):
-        r"""Display images in dataset.
-
-        Parameters
-        ----------
-        indices : iterable of int, optional
-            The image indices to be displayed, if `None`, will generate `nsample` indices.
-            If `shuffle` == `True`(default), the indices are random numbers.
-        nsample : int, optional
-            The number of samples to be displayed.
-        ncol : int, optional
-            The column size of ploted image matrix.
-        shuffle : bool, optional
-            If `shuffle` is False, will always sample from the begining.
-        resize : int, optional
-            The image will be resized to (resize, resize) for better visual experience.
-        fontsize : int, optional
-            The fontsize for the title
-        """
-        if indices is None:
-            if not shuffle:
-                indices = range(nsample)
-            else:
-                indices = list(range(len(self)))
-                np.random.shuffle(indices)
-                indices = indices[:min(nsample, len(indices))]
-        images = [cv2.cvtColor(cv2.resize(cv2.imread(self.at[idx, 'image']), (resize, resize), \
-            interpolation=cv2.INTER_AREA), cv2.COLOR_BGR2RGB) for idx in indices if idx < len(self)]
-        titles = None
-        if 'label' in self.columns:
-            titles = [str(self.at[idx, 'label']) for idx in indices if idx < len(self)]
-        _show_images(images, cols=ncol, titles=titles, fontsize=fontsize)
-
-
-    @classmethod
-    def from_csv_for_regression(cls, csv_file, root=None):
-        r"""Create from csv file.
-
-        Parameters
-        ----------
-        csv_file : str
-            The path for csv file.
-        root : str
-            The relative root for image paths stored in csv file.
-
-        """
-        if is_url(csv_file):
-            csv_file = url_data(csv_file, disp_depth=0)
-        df = pd.read_csv(csv_file)
-        assert 'image' in df.columns, "`image` column is required, used for accessing the original images"
-        if not 'label' in df.columns:
-            logger.info('label not in columns, no access to labels of images')
-            classes = None
-        else:
-            classes = []
-        df = _absolute_pathify(df, root=root, column='image')
-        return cls(df, classes=classes)
 
 
 class _MXImageClassificationDataset(MXDataset):

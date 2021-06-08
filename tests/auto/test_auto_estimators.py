@@ -17,15 +17,32 @@
 # specific language governing permissions and limitations
 # under the License.
 """Test auto estimators"""
-from gluoncv.auto.tasks import ImageClassification
+from gluoncv.auto.tasks import ImageClassification, ImagePrediction
 from gluoncv.auto.tasks import ObjectDetection
 from autogluon.core.scheduler.resource import get_cpu_count, get_gpu_count
 
 IMAGE_CLASS_DATASET, _, IMAGE_CLASS_TEST = ImageClassification.Dataset.from_folders(
     'https://autogluon.s3.amazonaws.com/datasets/shopee-iet.zip')
+IMAGE_REGRESS_DATASET, _, IMAGE_REGRESS_TEST = ImagePrediction.Dataset.from_folders(
+    'https://autogluon.s3.amazonaws.com/datasets/shopee-iet.zip', no_class=True)
 OBJECT_DETCTION_DATASET = ObjectDetection.Dataset.from_voc('https://autogluon.s3.amazonaws.com/datasets/tiny_motorbike.zip')
 OBJECT_DETECTION_TRAIN, OBJECT_DETECTION_VAL, OBJECT_DETECTION_TEST = OBJECT_DETCTION_DATASET.random_split(val_size=0.1, test_size=0.1)
 
+def test_image_regression_estimator():
+    from gluoncv.auto.estimators import ImageClassificationEstimator
+    est = ImageClassificationEstimator({'train': {'epochs': 3, 'batch_size': 8}, 'gpus': list(range(get_gpu_count()))},
+                                      problem_type='regression')
+    res = est.fit(IMAGE_REGRESS_DATASET)
+    assert res.get('valid_score', 3) < 3
+    test_result = est.predict(IMAGE_REGRESS_TEST)
+    test_result = est.predict(IMAGE_REGRESS_TEST, with_proba=True)
+    est.predict(IMAGE_REGRESS_TEST.iloc[0]['image'])
+    evaluate_result = est.evaluate(IMAGE_REGRESS_TEST, metric_name='rmse')
+    feature = est.predict_feature(IMAGE_REGRESS_TEST)
+    est.predict_feature(IMAGE_REGRESS_TEST.iloc[0]['image'])
+    # test save/load
+    _save_load_test(est, 'img_regression.pkl')
+    
 def test_image_classification_estimator():
     from gluoncv.auto.estimators import ImageClassificationEstimator
     est = ImageClassificationEstimator({'train': {'epochs': 1, 'batch_size': 8}, 'gpus': list(range(get_gpu_count()))})
