@@ -88,7 +88,7 @@ class GeneralDetector:
         self.ctx = mx.gpu(gpu_id)
 
         self.net = get_net(classes=COCODetection.CLASSES,
-                           ctx=mx.gpu(0),
+                           ctx=self.ctx,
                            model_name=model_name,
                            use_pretrained=use_pretrained,
                            param_path=param_path)
