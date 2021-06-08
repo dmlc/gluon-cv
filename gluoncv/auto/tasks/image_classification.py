@@ -413,4 +413,3 @@ class ImageClassification(BaseTask):
     
 class ImagePrediction(ImageClassification):
     pass
-

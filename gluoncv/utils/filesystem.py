@@ -21,7 +21,7 @@ def makedirs(path):
         if exc.errno != errno.EEXIST:
             raise
 
-def try_import(package, fromlist=[], message=None):
+def try_import(package, fromlist=None, message=None):
     """Try import specified package, with custom message support.
 
     Parameters
