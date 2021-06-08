@@ -35,7 +35,7 @@ from ..data.dataset import ImageClassificationDataset
 from ..estimators.conf import _BEST_CHECKPOINT_FILE
 
 
-__all__ = ['ImageClassification']
+__all__ = ['ImageClassification', 'ImagePrediction']
 
 @dataclass
 class LiteConfig:
