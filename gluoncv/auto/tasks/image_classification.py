@@ -31,7 +31,7 @@ REGRESSION = problem_type_constants.REGRESSION
 from ..estimators.base_estimator import BaseEstimator
 from ..estimators import ImageClassificationEstimator
 from .utils import config_to_nested
-from ..data.dataset import ImageClassificationDataset
+from ..data.dataset import ImageClassificationDataset, ImagePredictionDataset
 from ..estimators.conf import _BEST_CHECKPOINT_FILE
 
 
@@ -412,4 +412,4 @@ class ImageClassification(BaseTask):
 
     
 class ImagePrediction(ImageClassification):
-    pass
+    Dataset = ImagePredictionDataset

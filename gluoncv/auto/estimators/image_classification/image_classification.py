@@ -21,7 +21,7 @@ from .... import loss
 from ..base_estimator import BaseEstimator, set_default
 from .utils import get_data_loader, get_data_rec, smooth, mixup_transform
 from .default import ImageClassificationCfg
-from ...data.dataset import ImageClassificationDataset
+from ...data.dataset import ImageClassificationDataset, ImagePredictionDataset
 from ..conf import _BEST_CHECKPOINT_FILE
 from ..utils import EarlyStopperOnPlateau
 from ....utils.filesystem import try_import
@@ -51,7 +51,8 @@ class ImageClassificationEstimator(BaseEstimator):
         The custom network. If defined, the model name in config will be ignored so your
         custom network will be used for training rather than pulling it from model zoo.
     """
-    Dataset = ImageClassificationDataset
+#     Dataset = ImageClassificationDataset
+    Dataset = ImagePredictionDataset
     def __init__(self, config, logger=None, reporter=None, net=None, optimizer=None, problem_type=None):
         super(ImageClassificationEstimator, self).__init__(config, logger=logger, reporter=reporter, name=None)
         if problem_type is None:

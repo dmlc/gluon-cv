@@ -332,6 +332,73 @@ class ImageClassificationDataset(pd.DataFrame):
         raise NotImplementedError
 
 
+class ImagePredictionDataset(ImageClassificationDataset):
+    """Inherit from ImageClassification.
+    """
+
+    @property
+    def _constructor(self):
+        return ImagePredictionDataset
+
+    def show_images_for_regression(self, indices=None, nsample=16, ncol=4, shuffle=True, resize=224, fontsize=20):
+        r"""Display images in dataset.
+
+        Parameters
+        ----------
+        indices : iterable of int, optional
+            The image indices to be displayed, if `None`, will generate `nsample` indices.
+            If `shuffle` == `True`(default), the indices are random numbers.
+        nsample : int, optional
+            The number of samples to be displayed.
+        ncol : int, optional
+            The column size of ploted image matrix.
+        shuffle : bool, optional
+            If `shuffle` is False, will always sample from the begining.
+        resize : int, optional
+            The image will be resized to (resize, resize) for better visual experience.
+        fontsize : int, optional
+            The fontsize for the title
+        """
+        if indices is None:
+            if not shuffle:
+                indices = range(nsample)
+            else:
+                indices = list(range(len(self)))
+                np.random.shuffle(indices)
+                indices = indices[:min(nsample, len(indices))]
+        images = [cv2.cvtColor(cv2.resize(cv2.imread(self.at[idx, 'image']), (resize, resize), \
+            interpolation=cv2.INTER_AREA), cv2.COLOR_BGR2RGB) for idx in indices if idx < len(self)]
+        titles = None
+        if 'label' in self.columns:
+            titles = [str(self.at[idx, 'label']) for idx in indices if idx < len(self)]
+        _show_images(images, cols=ncol, titles=titles, fontsize=fontsize)
+
+
+    @classmethod
+    def from_csv_for_regression(cls, csv_file, root=None):
+        r"""Create from csv file.
+
+        Parameters
+        ----------
+        csv_file : str
+            The path for csv file.
+        root : str
+            The relative root for image paths stored in csv file.
+
+        """
+        if is_url(csv_file):
+            csv_file = url_data(csv_file, disp_depth=0)
+        df = pd.read_csv(csv_file)
+        assert 'image' in df.columns, "`image` column is required, used for accessing the original images"
+        if not 'label' in df.columns:
+            logger.info('label not in columns, no access to labels of images')
+            classes = None
+        else:
+            classes = []
+        df = _absolute_pathify(df, root=root, column='image')
+        return cls(df, classes=classes)
+
+
 class _MXImageClassificationDataset(MXDataset):
     """Internal wrapper read entries in pd.DataFrame as images/labels.
 
