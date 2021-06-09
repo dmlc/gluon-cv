@@ -29,6 +29,9 @@ class SSD:
     # custom_model = True
     # whether apply transfer learning from pre-trained models, if True, override other net structures
     transfer : Union[str, None] = 'ssd_512_resnet50_v1_coco'
+    # NMS settings
+    nms_thresh : Union[float, int] = 0.45
+    nms_topk : int = 400
 
 
 @dataclass

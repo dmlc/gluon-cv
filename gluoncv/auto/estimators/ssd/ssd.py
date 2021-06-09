@@ -255,7 +255,7 @@ class SSDEstimator(BaseEstimator):
             eval_metric = VOCMApMetric(iou_thresh=self._cfg.valid.iou_thresh, class_names=self.classes)
         else:
             raise ValueError(f'Invalid metric type: {self._cfg.valid.metric}')
-        self.net.set_nms(nms_thresh=0.45, nms_topk=400)
+        self.net.set_nms(nms_thresh=self._cfg.ssd.nms_thresh, nms_topk=self._cfg.ssd.nms_topk)
         self.net.collect_params().reset_ctx(self.ctx)
         self.net.hybridize(static_alloc=True, static_shape=True)
         for batch in val_data:
@@ -364,7 +364,7 @@ class SSDEstimator(BaseEstimator):
                     self.net.initialize()
                     self.net.set_nms(nms_thresh=0)
                     self.net(mx.nd.zeros((1, 3, self._cfg.ssd.data_shape, self._cfg.ssd.data_shape)))
-                    self.net.set_nms(nms_thresh=0.3)
+                    self.net.set_nms(nms_thresh=self._cfg.ssd.nms_thresh, nms_topk=self._cfg.ssd.nms_topk)
                 self.net.reset_class(self.classes,
                                      reuse_weights=[cname for cname in self.classes if cname in self.net.classes])
             else:
@@ -374,7 +374,7 @@ class SSDEstimator(BaseEstimator):
                     self.net.initialize()
                     self.net.set_nms(nms_thresh=0)
                     self.net(mx.nd.zeros((1, 3, self._cfg.ssd.data_shape, self._cfg.ssd.data_shape)))
-                    self.net.set_nms(nms_thresh=0.3)
+                    self.net.set_nms(nms_thresh=self._cfg.ssd.nms_thresh, nms_topk=self._cfg.ssd.nms_topk)
                 self.net.reset_class(self.classes,
                                      reuse_weights=[cname for cname in self.classes if cname in self.net.classes])
         # elif self._cfg.ssd.custom_model:

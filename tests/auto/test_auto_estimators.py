@@ -85,7 +85,9 @@ def test_ssd_estimator():
         est.predict(pil_image)
     evaluate_result = est.evaluate(OBJECT_DETECTION_VAL)
     # test save/load
-    _save_load_test(est, 'ssd.pkl')
+    est2 = _save_load_test(est, 'ssd.pkl')
+    evaluate_result2 = est2.evaluate(OBJECT_DETECTION_VAL)
+    assert evaluate_result == evaluate_result2, f'{evaluate_result} != \n {evaluate_result2}'
 
 def test_yolo3_estimator():
     from gluoncv.auto.estimators import YOLOv3Estimator
@@ -98,7 +100,9 @@ def test_yolo3_estimator():
         est.predict(pil_image)
     evaluate_result = est.evaluate(OBJECT_DETECTION_VAL)
     # test save/load
-    _save_load_test(est, 'yolo3.pkl')
+    est2 = _save_load_test(est, 'yolo3.pkl')
+    evaluate_result2 = est2.evaluate(OBJECT_DETECTION_VAL)
+    assert evaluate_result == evaluate_result2, f'{evaluate_result} != \n {evaluate_result2}'
 
 def test_frcnn_estimator():
     from gluoncv.auto.estimators import FasterRCNNEstimator
@@ -120,6 +124,7 @@ def _save_load_test(est, filename):
     est._cfg.gpus = list(range(16))  # invalid cfg, check if load can restore succesfully
     est.save(filename)
     est2 = est.__class__.load(filename)
+    return est2
 
 if __name__ == '__main__':
     import nose
