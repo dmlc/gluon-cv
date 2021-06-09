@@ -256,7 +256,7 @@ class YOLOv3Estimator(BaseEstimator):
             raise ValueError(f'Invalid metric type: {self._cfg.valid.metric}')
         self.net.collect_params().reset_ctx(self.ctx)
         # set nms threshold and topk constraint
-        self.net.set_nms(nms_thresh=0.45, nms_topk=400)
+        self.net.set_nms(nms_thresh=self._cfg.yolo3.nms_thresh, nms_topk=self._cfg.yolo3.nms_topk)
         mx.nd.waitall()
         self.net.hybridize()
         for batch in val_data:
@@ -394,7 +394,7 @@ class YOLOv3Estimator(BaseEstimator):
                 self.net.initialize()
                 self.net.set_nms(nms_thresh=0)
                 self.net(mx.nd.zeros((1, 3, self._cfg.yolo3.data_shape, self._cfg.yolo3.data_shape)))
-                self.net.set_nms(nms_thresh=0.3)
+                self.net.set_nms(nms_thresh=self._cfg.yolo3.nms_thresh, nms_topk=self._cfg.yolo3.nms_topk)
             self.net.reset_class(self.classes,
                                  reuse_weights=[cname for cname in self.classes if cname in self.net.classes])
 
