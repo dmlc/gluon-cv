@@ -525,7 +525,7 @@ class ImageClassificationEstimator(BaseEstimator):
                             ind = nd.topk(p[ii], k=topK).astype('int').asnumpy().flatten()
                             probs = mx.nd.softmax(p[ii]).asnumpy().flatten()
                             results.extend([{'class': self.classes[ind[k]],
-                                            'score': probs[ind[k]], 'id': ind[k], 'image': x[idx]}
+                                             'score': probs[ind[k]], 'id': ind[k], 'image': x[idx]}
                                             for k in range(topK)])
                         else:
                             results.append({'prediction': p[ii].asnumpy().flatten()[0], 'image': x[idx]})
