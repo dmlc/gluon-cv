@@ -25,7 +25,7 @@ from ...data.dataset import ImageClassificationDataset
 from ..conf import _BEST_CHECKPOINT_FILE
 from ..utils import EarlyStopperOnPlateau
 from ....utils.filesystem import try_import
-problem_type_constants = try_import(package='autogluon.core.constants', 
+problem_type_constants = try_import(package='autogluon.core.constants',
                                     fromlist=['MULTICLASS', 'BINARY', 'REGRESSION'],
                                     message='Failed to import problem type constants from autogluon.core.')
 MULTICLASS = problem_type_constants.MULTICLASS
@@ -56,7 +56,7 @@ class ImageClassificationEstimator(BaseEstimator):
         super(ImageClassificationEstimator, self).__init__(config, logger=logger, reporter=reporter, name=None)
         if problem_type is None:
             problem_type = MULTICLASS
-        self._problem_type = problem_type   
+        self._problem_type = problem_type
         self.last_train = None
         self.input_size = self._cfg.train.input_size
         self._feature_net = None
@@ -139,11 +139,11 @@ class ImageClassificationEstimator(BaseEstimator):
             train_metric = mx.metric.RMSE()
         else:
             train_metric = mx.metric.Accuracy()
-        
+
         if self._problem_type == REGRESSION:
             train_metric = mx.metric.RMSE()
             L = gluon.loss.L2Loss()
-            
+
         if self._cfg.train.mode == 'hybrid':
             self.net.hybridize(static_alloc=True, static_shape=True)
             if self.distillation:
@@ -241,10 +241,10 @@ class ImageClassificationEstimator(BaseEstimator):
             post_tic = time.time()
             train_metric_name, train_metric_score = train_metric.get()
             throughput = int(self.batch_size * i /(time.time() - tic))
-            
+
             self._logger.info('[Epoch %d] training: %s=%f', epoch, train_metric_name, train_metric_score)
             self._logger.info('[Epoch %d] speed: %d samples/sec\ttime cost: %f', epoch, throughput, time.time()-tic)
-            
+
             val_score = self._evaluate(val_data, metric_name=train_metric_name)
             if train_metric_name == 'rmse':
                 early_stopper.update(-val_score)
@@ -432,13 +432,13 @@ class ImageClassificationEstimator(BaseEstimator):
                 except TypeError:
                     optimizer = mx.optimizer.create(optimizer)
             self.trainer = gluon.Trainer(self.net.collect_params(), optimizer)
-    
+
     def evaluate(self, val_data, metric_name=None):
         return self._evaluate(val_data, metric_name=metric_name)
-    
+
     def _evaluate(self, val_data, metric_name=None):
         """Test on validation dataset."""
-        
+
         if not isinstance(val_data, (gluon.data.DataLoader, mx.io.MXDataIter)):
             if hasattr(val_data, 'to_mxnet'):
                 val_data = val_data.to_mxnet()
@@ -454,7 +454,7 @@ class ImageClassificationEstimator(BaseEstimator):
                 val_data.transform_first(transform_test),
                 batch_size=self._cfg.valid.batch_size, shuffle=False, last_batch='keep',
                 num_workers=self._cfg.valid.num_workers)
-            
+
         if metric_name == 'rmse':
             rmse_metric = mx.metric.RMSE()
             for _, batch in enumerate(val_data):
@@ -464,7 +464,7 @@ class ImageClassificationEstimator(BaseEstimator):
 
             _, val_score = rmse_metric.get()
             return val_score
-        
+
         else: # accuracy by default
             acc_top1 = mx.metric.Accuracy()
             acc_top5 = mx.metric.TopKAccuracy(min(5, self.num_class))
@@ -524,9 +524,9 @@ class ImageClassificationEstimator(BaseEstimator):
                         if self._problem_type in [MULTICLASS, BINARY]:
                             ind = nd.topk(p[ii], k=topK).astype('int').asnumpy().flatten()
                             probs = mx.nd.softmax(p[ii]).asnumpy().flatten()
-                            for k in range(topK):
-                                results.append({'class': self.classes[ind[k]],
-                                                'score': probs[ind[k]], 'id': ind[k], 'image': x[idx]})
+                            results.extend([{'class': self.classes[ind[k]],
+                                            'score': probs[ind[k]], 'id': ind[k], 'image': x[idx]}
+                                            for k in range(topK)])
                         else:
                             results.append({'prediction': p[ii].asnumpy().flatten()[0], 'image': x[idx]})
                         idx += 1

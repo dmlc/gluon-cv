@@ -21,18 +21,19 @@ from autogluon.core.scheduler.resource import get_cpu_count, get_gpu_count
 from autogluon.core.task.base import BaseTask
 from autogluon.core.searcher import RandomSearcher
 from ...utils.filesystem import try_import
-problem_type_constants = try_import(package='autogluon.core.constants', 
-                                    fromlist=['MULTICLASS', 'BINARY', 'REGRESSION'],
-                                    message='Failed to import problem type constants from autogluon.core.')
-MULTICLASS = problem_type_constants.MULTICLASS
-BINARY = problem_type_constants.BINARY
-REGRESSION = problem_type_constants.REGRESSION
 
 from ..estimators.base_estimator import BaseEstimator
 from ..estimators import ImageClassificationEstimator
 from .utils import config_to_nested
 from ..data.dataset import ImageClassificationDataset
 from ..estimators.conf import _BEST_CHECKPOINT_FILE
+
+problem_type_constants = try_import(package='autogluon.core.constants',
+                                    fromlist=['MULTICLASS', 'BINARY', 'REGRESSION'],
+                                    message='Failed to import problem type constants from autogluon.core.')
+MULTICLASS = problem_type_constants.MULTICLASS
+BINARY = problem_type_constants.BINARY
+REGRESSION = problem_type_constants.REGRESSION
 
 
 __all__ = ['ImageClassification', 'ImagePrediction']
@@ -410,6 +411,6 @@ class ImageClassification(BaseTask):
         assert isinstance(obj, ImageClassificationEstimator)
         return obj
 
-    
+
 class ImagePrediction(ImageClassification):
     pass
