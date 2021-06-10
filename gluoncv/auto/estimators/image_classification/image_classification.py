@@ -322,10 +322,13 @@ class ImageClassificationEstimator(BaseEstimator):
             self._logger.info(f'Change input size to {self.input_size}, given model type: {model_name}')
 
         use_pretrained = not load_only and self._cfg.img_cls.use_pretrained
+        if self._problem_type == REGRESSION:
+            self.num_class = 0
+        out_channels = max(self.num_class, 1)
         if use_pretrained:
             kwargs = {'ctx': self.ctx, 'pretrained': True, 'classes': 1000 if 'cifar' not in model_name else 10}
         else:
-            kwargs = {'ctx': self.ctx, 'pretrained': False, 'classes': self.num_class}
+            kwargs = {'ctx': self.ctx, 'pretrained': False, 'classes': out_channels}
         if self._cfg.img_cls.use_gn:
             kwargs['norm_layer'] = nn.GroupNorm
         if model_name.startswith('vgg'):
@@ -348,7 +351,6 @@ class ImageClassificationEstimator(BaseEstimator):
                     break
             if fc_layer_found:
                 in_channels = list(fc_layer.collect_params().values())[0].shape[1]
-                out_channels = self.num_class if self.num_class >= 2 else 1
                 if isinstance(fc_layer, gluon.nn.Dense):
                     new_fc_layer = gluon.nn.Dense(out_channels, in_units=in_channels)
                 elif isinstance(fc_layer, gluon.nn.Conv2D):

@@ -406,9 +406,6 @@ def get_model(name, **kwargs):
         err_str = '"%s" is not among the following model list:\n\t' % (name)
         err_str += '%s' % ('\n\t'.join(sorted(_models.keys())))
         raise ValueError(err_str)
-    num_classes = kwargs['classes']
-    if num_classes < 2:
-        kwargs.update({'classes': 1})
     net = _models[name](**kwargs)
     return net
 
