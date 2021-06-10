@@ -60,9 +60,13 @@ class ImageClassificationDataset(pd.DataFrame):
 
     def __init__(self, data, classes=None, image_column='image', label_column='label', **kwargs):
         root = kwargs.pop('root', None)
+        no_class = kwargs.pop('no_class', False)
         if isinstance(data, str) and data.endswith('csv'):
-            data = self.from_csv(data, root=root, image_column=image_column, label_column=label_column)
-        self.classes = classes
+            data = self.from_csv(data, root=root, image_column=image_column, label_column=label_column, no_class=no_class)
+        if no_class:
+            self.classes = []
+        else:
+            self.classes = classes
         self.IMG_COL = image_column
         self.LABEL_COL = label_column
         super().__init__(data, **kwargs)
@@ -138,8 +142,11 @@ class ImageClassificationDataset(pd.DataFrame):
             interpolation=cv2.INTER_AREA), cv2.COLOR_BGR2RGB) for idx in indices if idx < len(self)]
         titles = None
         if self.LABEL_COL in self.columns:
-            titles = [self.classes[int(self.at[idx, self.LABEL_COL])] + ': ' + str(self.at[idx, self.LABEL_COL]) \
-                for idx in indices if idx < len(self)]
+            if self.classes:
+                titles = [self.classes[int(self.at[idx, self.LABEL_COL])] + ': ' + str(self.at[idx, self.LABEL_COL]) \
+                    for idx in indices if idx < len(self)]
+            else:
+                titles = [str(self.at[idx, self.LABEL_COL]) for idx in indices if idx < len(self)]
         _show_images(images, cols=ncol, titles=titles, fontsize=fontsize)
 
     def to_mxnet(self):
@@ -148,7 +155,7 @@ class ImageClassificationDataset(pd.DataFrame):
         return _MXImageClassificationDataset(df)
 
     @classmethod
-    def from_csv(cls, csv_file, root=None, image_column='image', label_column='label'):
+    def from_csv(cls, csv_file, root=None, image_column='image', label_column='label', no_class=False):
         r"""Create from csv file.
 
         Parameters
@@ -173,10 +180,10 @@ class ImageClassificationDataset(pd.DataFrame):
         else:
             classes = df[label_column].unique().tolist()
         df = _absolute_pathify(df, root=root, column=image_column)
-        return cls(df, classes=classes, image_column=image_column, label_column=label_column)
+        return cls(df, classes=classes, image_column=image_column, label_column=label_column, no_class=no_class)
 
     @classmethod
-    def from_folder(cls, root, exts=('.jpg', '.jpeg', '.png')):
+    def from_folder(cls, root, exts=('.jpg', '.jpeg', '.png'), no_class=False):
         r"""A dataset for loading image files stored in a folder structure.
         like::
             root/car/0001.jpg
@@ -219,10 +226,10 @@ class ImageClassificationDataset(pd.DataFrame):
                     continue
                 items['image'].append(filename)
                 items['label'].append(label)
-        return cls(items, classes=synsets)
+        return cls(items, classes=synsets, no_class=no_class)
 
     @classmethod
-    def from_folders(cls, root, train='train', val='val', test='test', exts=('.jpg', '.jpeg', '.png')):
+    def from_folders(cls, root, train='train', val='val', test='test', exts=('.jpg', '.jpeg', '.png'), no_class=False):
         """Method for loading (already) splited datasets under root.
         like::
             root/train/car/0001.jpg
@@ -275,15 +282,15 @@ class ImageClassificationDataset(pd.DataFrame):
         train_data, val_data, test_data = empty, empty, empty
         # train
         if os.path.isdir(train_root):
-            train_data = cls.from_folder(train_root, exts=exts)
+            train_data = cls.from_folder(train_root, exts=exts, no_class=no_class)
         else:
             raise ValueError('Train split does not exist: {}'.format(train))
         # val
         if os.path.isdir(val_root):
-            val_data = cls.from_folder(val_root, exts=exts)
+            val_data = cls.from_folder(val_root, exts=exts, no_class=no_class)
         # test
         if os.path.isdir(test_root):
-            test_data = cls.from_folder(test_root, exts=exts)
+            test_data = cls.from_folder(test_root, exts=exts, no_class=no_class)
 
         # check synsets, val/test synsets can be subsets(order matters!) or exact matches of train synset
         if len(val_data) and not _check_synsets(train_data.classes, val_data.classes):
@@ -294,7 +301,7 @@ class ImageClassificationDataset(pd.DataFrame):
         return train_data, val_data, test_data
 
     @classmethod
-    def from_name_func(cls, im_list, fn, root=None):
+    def from_name_func(cls, im_list, fn, root=None, no_class=False):
         """Short summary.
 
         Parameters
@@ -333,7 +340,7 @@ class ImageClassificationDataset(pd.DataFrame):
             if label not in synsets:
                 synsets.append(label)
             items['label'].append(synsets.index(label))  # int label id
-        return cls(items, classes=synsets)
+        return cls(items, classes=synsets, no_class=no_class)
 
     @classmethod
     def from_name_re(cls, im_list, fn, root=None):

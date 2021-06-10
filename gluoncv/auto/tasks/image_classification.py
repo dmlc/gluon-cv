@@ -20,6 +20,7 @@ from autogluon.core.decorator import sample_config
 from autogluon.core.scheduler.resource import get_cpu_count, get_gpu_count
 from autogluon.core.task.base import BaseTask
 from autogluon.core.searcher import RandomSearcher
+from ...utils.filesystem import try_import
 
 from ..estimators.base_estimator import BaseEstimator
 from ..estimators import ImageClassificationEstimator
@@ -27,8 +28,15 @@ from .utils import config_to_nested
 from ..data.dataset import ImageClassificationDataset
 from ..estimators.conf import _BEST_CHECKPOINT_FILE
 
+problem_type_constants = try_import(package='autogluon.core.constants',
+                                    fromlist=['MULTICLASS', 'BINARY', 'REGRESSION'],
+                                    message='Failed to import problem type constants from autogluon.core.')
+MULTICLASS = problem_type_constants.MULTICLASS
+BINARY = problem_type_constants.BINARY
+REGRESSION = problem_type_constants.REGRESSION
 
-__all__ = ['ImageClassification']
+
+__all__ = ['ImageClassification', 'ImagePrediction']
 
 @dataclass
 class LiteConfig:
@@ -68,6 +76,7 @@ def _train_image_classification(args, reporter):
         task_id = int(args.task_id)
     except:
         task_id = 0
+    problem_type = args.pop('problem_type', MULTICLASS)
     final_fit = args.pop('final_fit', False)
     # train, val data
     train_data = args.pop('train_data')
@@ -132,7 +141,7 @@ def _train_image_classification(args, reporter):
             args['log_dir'] = trial_log_dir
             custom_net = args.pop('custom_net', None)
             custom_optimizer = args.pop('custom_optimizer', None)
-            estimator = estimator_cls(args, reporter=reporter,
+            estimator = estimator_cls(args, problem_type=problem_type, reporter=reporter,
                                       net=custom_net, optimizer=custom_optimizer)
             # training
             result = estimator.fit(train_data=train_data, val_data=val_data, time_limit=wall_clock_tick-tic)
@@ -174,8 +183,11 @@ class ImageClassification(BaseTask):
     """
     Dataset = ImageClassificationDataset
 
-    def __init__(self, config=None, logger=None):
+    def __init__(self, config=None, logger=None, problem_type=None):
         super(ImageClassification, self).__init__()
+        if problem_type is None:
+            problem_type = MULTICLASS
+        self._problem_type = problem_type
         self._fit_summary = {}
         self._logger = logger if logger is not None else logging.getLogger(__name__)
         self._logger.setLevel(logging.INFO)
@@ -337,6 +349,7 @@ class ImageClassification(BaseTask):
         config['val_data'] = val_data
         config['wall_clock_tick'] = wall_clock_tick
         config['log_dir'] = os.path.join(config.get('log_dir', os.getcwd()), str(uuid.uuid4())[:8])
+        config['problem_type'] = self._problem_type
         _train_image_classification.register_args(**config)
 
         start_time = time.time()
@@ -397,3 +410,7 @@ class ImageClassification(BaseTask):
         # make sure not accidentally loading e.g. classification model
         assert isinstance(obj, ImageClassificationEstimator)
         return obj
+
+
+class ImagePrediction(ImageClassification):
+    pass

@@ -19,11 +19,18 @@ from ....utils import LRSequential, LRScheduler
 from .... import nn
 from .... import loss
 from ..base_estimator import BaseEstimator, set_default
-from .utils import get_data_loader, get_data_rec, smooth
+from .utils import get_data_loader, get_data_rec, smooth, mixup_transform
 from .default import ImageClassificationCfg
 from ...data.dataset import ImageClassificationDataset
 from ..conf import _BEST_CHECKPOINT_FILE
 from ..utils import EarlyStopperOnPlateau
+from ....utils.filesystem import try_import
+problem_type_constants = try_import(package='autogluon.core.constants',
+                                    fromlist=['MULTICLASS', 'BINARY', 'REGRESSION'],
+                                    message='Failed to import problem type constants from autogluon.core.')
+MULTICLASS = problem_type_constants.MULTICLASS
+BINARY = problem_type_constants.BINARY
+REGRESSION = problem_type_constants.REGRESSION
 
 __all__ = ['ImageClassificationEstimator']
 
@@ -45,8 +52,11 @@ class ImageClassificationEstimator(BaseEstimator):
         custom network will be used for training rather than pulling it from model zoo.
     """
     Dataset = ImageClassificationDataset
-    def __init__(self, config, logger=None, reporter=None, net=None, optimizer=None):
-        super(ImageClassificationEstimator, self).__init__(config, logger, reporter=reporter, name=None)
+    def __init__(self, config, logger=None, reporter=None, net=None, optimizer=None, problem_type=None):
+        super(ImageClassificationEstimator, self).__init__(config, logger=logger, reporter=reporter, name=None)
+        if problem_type is None:
+            problem_type = MULTICLASS
+        self._problem_type = problem_type
         self.last_train = None
         self.input_size = self._cfg.train.input_size
         self._feature_net = None
@@ -67,7 +77,7 @@ class ImageClassificationEstimator(BaseEstimator):
 
     def _fit(self, train_data, val_data, time_limit=math.inf):
         tic = time.time()
-        self._best_acc = 0
+        self._best_acc = -float('inf')
         self.epoch = 0
         self._time_elapsed = 0
         if max(self._cfg.train.start_epoch, self.epoch) >= self._cfg.train.epochs:
@@ -84,8 +94,8 @@ class ImageClassificationEstimator(BaseEstimator):
         tic = time.time()
         if max(self._cfg.train.start_epoch, self.epoch) >= self._cfg.train.epochs:
             return {'time', self._time_elapsed}
-        if not self.classes or not self.num_class:
-            raise ValueError('Unable to determine classes of dataset')
+        if self._problem_type != REGRESSION and (not self.classes or not self.num_class):
+            raise ValueError('This is a classification problem and we are not able to determine classes of dataset')
 
         num_workers = self._cfg.train.num_workers
         if self._cfg.train.use_rec:
@@ -129,6 +139,11 @@ class ImageClassificationEstimator(BaseEstimator):
             train_metric = mx.metric.RMSE()
         else:
             train_metric = mx.metric.Accuracy()
+
+        if self._problem_type == REGRESSION:
+            train_metric = mx.metric.RMSE()
+            L = gluon.loss.L2Loss()
+
         if self._cfg.train.mode == 'hybrid':
             self.net.hybridize(static_alloc=True, static_shape=True)
             if self.distillation:
@@ -140,7 +155,8 @@ class ImageClassificationEstimator(BaseEstimator):
             min_delta=self._cfg.train.early_stop_min_delta,
             baseline_value=self._cfg.train.early_stop_baseline,
             max_value=self._cfg.train.early_stop_max_value)
-        train_metric_score = -1
+        train_metric_name, train_metric_score = train_metric.get()
+        train_metric_score = -float('inf')
         cp_name = ''
         self._time_elapsed += time.time() - start_tic
         for self.epoch in range(max(self._cfg.train.start_epoch, self.epoch), self._cfg.train.epochs):
@@ -226,29 +242,46 @@ class ImageClassificationEstimator(BaseEstimator):
             train_metric_name, train_metric_score = train_metric.get()
             throughput = int(self.batch_size * i /(time.time() - tic))
 
-            top1_val, top5_val = self._evaluate(val_data)
-            early_stopper.update(top1_val)
-
             self._logger.info('[Epoch %d] training: %s=%f', epoch, train_metric_name, train_metric_score)
             self._logger.info('[Epoch %d] speed: %d samples/sec\ttime cost: %f', epoch, throughput, time.time()-tic)
-            self._logger.info('[Epoch %d] validation: top1=%f top5=%f', epoch, top1_val, top5_val)
 
-            if top1_val > self._best_acc:
-                cp_name = os.path.join(self._logdir, _BEST_CHECKPOINT_FILE)
-                self._logger.info('[Epoch %d] Current best top-1: %f vs previous %f, saved to %s',
-                                  self.epoch, top1_val, self._best_acc, cp_name)
-                self.save(cp_name)
-                self._best_acc = top1_val
-            if self._reporter:
-                self._reporter(epoch=epoch, acc_reward=top1_val)
+            val_score = self._evaluate(val_data, metric_name=train_metric_name)
+            if train_metric_name == 'rmse':
+                early_stopper.update(-val_score)
+                self._logger.info('[Epoch %d] validation: rmse=%f', epoch, val_score)
+                if -val_score > self._best_acc:
+                    cp_name = os.path.join(self._logdir, _BEST_CHECKPOINT_FILE)
+                    self._logger.info('[Epoch %d] Current best rmse: %f vs previous %f, saved to %s',
+                                      self.epoch, val_score, -self._best_acc, cp_name)
+                    self.save(cp_name)
+                    self._best_acc = -val_score
+                if self._reporter:
+                    self._reporter(epoch=epoch, acc_reward=-val_score)
+            else:
+                top1_val, top5_val = val_score
+                early_stopper.update(top1_val)
+                self._logger.info('[Epoch %d] validation: top1=%f top5=%f', epoch, top1_val, top5_val)
+
+                if top1_val > self._best_acc:
+                    cp_name = os.path.join(self._logdir, _BEST_CHECKPOINT_FILE)
+                    self._logger.info('[Epoch %d] Current best top-1: %f vs previous %f, saved to %s',
+                                      self.epoch, top1_val, self._best_acc, cp_name)
+                    self.save(cp_name)
+                    self._best_acc = top1_val
+                if self._reporter:
+                    self._reporter(epoch=epoch, acc_reward=top1_val)
             self._time_elapsed += time.time() - post_tic
-        return {'train_acc': train_metric_score, 'valid_acc': self._best_acc,
-                'time': self._time_elapsed, 'checkpoint': cp_name}
+        if train_metric_name == 'rmse': # TODO: fix ImageClassification(BaseTask)._fit_summary()
+            return {'train_score': train_metric_score, 'valid_score': -self._best_acc,
+                    'time': self._time_elapsed, 'checkpoint': cp_name}
+        else: # accuracy by default:
+            return {'train_acc': train_metric_score, 'valid_acc': self._best_acc,
+                    'time': self._time_elapsed, 'checkpoint': cp_name}
 
     def _init_network(self, **kwargs):
         load_only = kwargs.get('load_only', False)
-        if not self.num_class:
-            raise ValueError('Unable to create network when `num_class` is unknown. \
+        if not self.num_class and self._problem_type != REGRESSION:
+            raise ValueError('This is a classification problem and we are not able to create network when `num_class` is unknown. \
                 It should be inferred from dataset or resumed from saved states.')
         assert len(self.classes) == self.num_class
         # ctx
@@ -289,10 +322,13 @@ class ImageClassificationEstimator(BaseEstimator):
             self._logger.info(f'Change input size to {self.input_size}, given model type: {model_name}')
 
         use_pretrained = not load_only and self._cfg.img_cls.use_pretrained
+        if self._problem_type == REGRESSION:
+            self.num_class = 0
+        out_channels = max(self.num_class, 1)
         if use_pretrained:
             kwargs = {'ctx': self.ctx, 'pretrained': True, 'classes': 1000 if 'cifar' not in model_name else 10}
         else:
-            kwargs = {'ctx': self.ctx, 'pretrained': False, 'classes': self.num_class}
+            kwargs = {'ctx': self.ctx, 'pretrained': False, 'classes': out_channels}
         if self._cfg.img_cls.use_gn:
             kwargs['norm_layer'] = nn.GroupNorm
         if model_name.startswith('vgg'):
@@ -316,13 +352,13 @@ class ImageClassificationEstimator(BaseEstimator):
             if fc_layer_found:
                 in_channels = list(fc_layer.collect_params().values())[0].shape[1]
                 if isinstance(fc_layer, gluon.nn.Dense):
-                    new_fc_layer = gluon.nn.Dense(self.num_class, in_units=in_channels)
+                    new_fc_layer = gluon.nn.Dense(out_channels, in_units=in_channels)
                 elif isinstance(fc_layer, gluon.nn.Conv2D):
-                    new_fc_layer = gluon.nn.Conv2D(self.num_class, in_channels=in_channels, kernel_size=1)
+                    new_fc_layer = gluon.nn.Conv2D(out_channels, in_channels=in_channels, kernel_size=1)
                 elif isinstance(fc_layer, gluon.nn.HybridSequential):
                     new_fc_layer = gluon.nn.HybridSequential(prefix='output_')
                     with new_fc_layer.name_scope():
-                        new_fc_layer.add(gluon.nn.Conv2D(self.num_class, in_channels=in_channels, kernel_size=1))
+                        new_fc_layer.add(gluon.nn.Conv2D(out_channels, in_channels=in_channels, kernel_size=1))
                         new_fc_layer.add(gluon.nn.Flatten())
                 else:
                     raise TypeError(f'Invalid FC layer type {type(fc_layer)} found, expected (Conv2D, Dense)...')
@@ -399,10 +435,11 @@ class ImageClassificationEstimator(BaseEstimator):
                     optimizer = mx.optimizer.create(optimizer)
             self.trainer = gluon.Trainer(self.net.collect_params(), optimizer)
 
-    def _evaluate(self, val_data):
+    def evaluate(self, val_data, metric_name=None):
+        return self._evaluate(val_data, metric_name=metric_name)
+
+    def _evaluate(self, val_data, metric_name=None):
         """Test on validation dataset."""
-        acc_top1 = mx.metric.Accuracy()
-        acc_top5 = mx.metric.TopKAccuracy(min(5, self.num_class))
 
         if not isinstance(val_data, (gluon.data.DataLoader, mx.io.MXDataIter)):
             if hasattr(val_data, 'to_mxnet'):
@@ -419,15 +456,29 @@ class ImageClassificationEstimator(BaseEstimator):
                 val_data.transform_first(transform_test),
                 batch_size=self._cfg.valid.batch_size, shuffle=False, last_batch='keep',
                 num_workers=self._cfg.valid.num_workers)
-        for _, batch in enumerate(val_data):
-            data, label = self.batch_fn(batch, self.ctx)
-            outputs = [self.net(X.astype(self._cfg.train.dtype, copy=False)) for X in data]
-            acc_top1.update(label, outputs)
-            acc_top5.update(label, outputs)
 
-        _, top1 = acc_top1.get()
-        _, top5 = acc_top5.get()
-        return top1, top5
+        if metric_name == 'rmse':
+            rmse_metric = mx.metric.RMSE()
+            for _, batch in enumerate(val_data):
+                data, label = self.batch_fn(batch, self.ctx)
+                outputs = [self.net(X.astype(self._cfg.train.dtype, copy=False)) for X in data]
+                rmse_metric.update(label, outputs)
+
+            _, val_score = rmse_metric.get()
+            return val_score
+
+        else: # accuracy by default
+            acc_top1 = mx.metric.Accuracy()
+            acc_top5 = mx.metric.TopKAccuracy(min(5, self.num_class))
+            for _, batch in enumerate(val_data):
+                data, label = self.batch_fn(batch, self.ctx)
+                outputs = [self.net(X.astype(self._cfg.train.dtype, copy=False)) for X in data]
+                acc_top1.update(label, outputs)
+                acc_top5.update(label, outputs)
+
+            _, top1 = acc_top1.get()
+            _, top5 = acc_top5.get()
+            return top1, top5
 
     def _predict_preprocess(self, x):
         resize = int(math.ceil(self.input_size / self._cfg.train.crop_ratio))
@@ -452,7 +503,7 @@ class ImageClassificationEstimator(BaseEstimator):
         return x
 
     def _predict(self, x, ctx_id=0, with_proba=False):
-        if with_proba:
+        if with_proba and self._problem_type in [MULTICLASS, BINARY]:
             return self._predict_proba(x, ctx_id=ctx_id)
         x = self._predict_preprocess(x)
         if isinstance(x, pd.DataFrame):
@@ -472,11 +523,14 @@ class ImageClassificationEstimator(BaseEstimator):
                 pred = [self.net(input) for input in batch]
                 for p in pred:
                     for ii in range(p.shape[0]):
-                        ind = nd.topk(p[ii], k=topK).astype('int').asnumpy().flatten()
-                        probs = mx.nd.softmax(p[ii]).asnumpy().flatten()
-                        for k in range(topK):
-                            results.append({'class': self.classes[ind[k]],
-                                            'score': probs[ind[k]], 'id': ind[k], 'image': x[idx]})
+                        if self._problem_type in [MULTICLASS, BINARY]:
+                            ind = nd.topk(p[ii], k=topK).astype('int').asnumpy().flatten()
+                            probs = mx.nd.softmax(p[ii]).asnumpy().flatten()
+                            results.extend([{'class': self.classes[ind[k]],
+                                             'score': probs[ind[k]], 'id': ind[k], 'image': x[idx]}
+                                            for k in range(topK)])
+                        else:
+                            results.append({'prediction': p[ii].asnumpy().flatten()[0], 'image': x[idx]})
                         idx += 1
             return pd.DataFrame(results)
         elif not isinstance(x, mx.nd.NDArray):
@@ -485,9 +539,12 @@ class ImageClassificationEstimator(BaseEstimator):
         x = x.as_in_context(self.ctx[ctx_id])
         pred = self.net(x)
         topK = min(5, self.num_class)
-        ind = nd.topk(pred, k=topK)[0].astype('int').asnumpy().flatten()
-        probs = mx.nd.softmax(pred)[0].asnumpy().flatten()
-        df = pd.DataFrame([{'class': self.classes[ind[i]], 'score': probs[ind[i]], 'id': ind[i]} for i in range(topK)])
+        if self._problem_type in [MULTICLASS, BINARY]:
+            ind = nd.topk(pred, k=topK)[0].astype('int').asnumpy().flatten()
+            probs = mx.nd.softmax(pred)[0].asnumpy().flatten()
+            df = pd.DataFrame([{'class': self.classes[ind[i]], 'score': probs[ind[i]], 'id': ind[i]} for i in range(topK)])
+        else:
+            df = pd.DataFrame([{'prediction': pred.asnumpy().flatten()[0]}])
         return df
 
     def _get_feature_net(self):
@@ -548,6 +605,8 @@ class ImageClassificationEstimator(BaseEstimator):
         return df
 
     def _predict_proba(self, x, ctx_id=0):
+        if self._problem_type not in [MULTICLASS, BINARY]:
+            raise AssertionError('predict_proba is only supported for classification problems. Please use predict instead.')
         x = self._predict_preprocess(x)
         if isinstance(x, pd.DataFrame):
             assert 'image' in x.columns, "Expect column `image` for input images"
