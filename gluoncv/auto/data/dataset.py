@@ -56,7 +56,7 @@ class ImageClassificationDataset(pd.DataFrame):
 
     """
     # preserved properties that will be copied to a new instance
-    _metadata = ['classes', 'to_mxnet', 'show_images', 'random_split', 'IMG_COL', 'LABEL_COL']
+    _metadata = ['classes', 'IMG_COL', 'LABEL_COL']
 
     def __init__(self, data, classes=None, image_column='image', label_column='label', **kwargs):
         root = kwargs.pop('root', None)
@@ -398,8 +398,7 @@ class ObjectDetectionDataset(pd.DataFrame):
 
     """
     # preserved properties that will be copied to a new instance
-    _metadata = ['dataset_type', 'classes', 'pack', 'unpack', 'is_packed',
-                 'to_mxnet', 'color_map', 'show_images', 'random_split']
+    _metadata = ['dataset_type', 'classes', 'color_map']
 
     def __init__(self, data, dataset_type=None, classes=None, **kwargs):
         # dataset_type will be used to determine metrics, if None then auto resolve at runtime
