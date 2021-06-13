@@ -43,7 +43,7 @@ def test_image_regression_estimator():
     est.predict_feature(IMAGE_REGRESS_TEST.iloc[0]['image'])
     # test save/load
     _save_load_test(est, 'img_regression.pkl')
-    
+
 def test_image_classification_estimator():
     from gluoncv.auto.estimators import ImageClassificationEstimator
     est = ImageClassificationEstimator({'train': {'epochs': 1, 'batch_size': 8}, 'gpus': list(range(get_gpu_count()))})
@@ -104,7 +104,7 @@ def test_ssd_estimator():
     # test save/load
     est2 = _save_load_test(est, 'ssd.pkl')
     evaluate_result2 = est2.evaluate(OBJECT_DETECTION_VAL)
-    assert evaluate_result == evaluate_result2, f'{evaluate_result} != \n {evaluate_result2}'
+    np.testing.assert_array_equal(evaluate_result, evaluate_result2, err_msg=f'{evaluate_result} != \n {evaluate_result2}')
 
 def test_yolo3_estimator():
     from gluoncv.auto.estimators import YOLOv3Estimator
@@ -119,7 +119,7 @@ def test_yolo3_estimator():
     # test save/load
     est2 = _save_load_test(est, 'yolo3.pkl')
     evaluate_result2 = est2.evaluate(OBJECT_DETECTION_VAL)
-    assert evaluate_result == evaluate_result2, f'{evaluate_result} != \n {evaluate_result2}'
+    np.testing.assert_array_equal(evaluate_result, evaluate_result2, err_msg=f'{evaluate_result} != \n {evaluate_result2}')
 
 def test_frcnn_estimator():
     from gluoncv.auto.estimators import FasterRCNNEstimator
