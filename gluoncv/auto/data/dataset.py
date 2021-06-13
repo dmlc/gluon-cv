@@ -607,7 +607,7 @@ class ObjectDetectionDataset(pd.DataFrame):
     def to_mxnet(self):
         """Return a mxnet based iterator that returns ndarray and labels"""
         df = self.reset_index(drop=True)
-        return _MXObjectDetectionDataset(self)
+        return _MXObjectDetectionDataset(df)
 
     def random_split(self, test_size=0.1, val_size=0, random_state=None):
         r"""Randomly split the dataset into train/val/test sets.
