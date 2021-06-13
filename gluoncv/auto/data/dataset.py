@@ -152,6 +152,7 @@ class ImageClassificationDataset(pd.DataFrame):
     def to_mxnet(self):
         """Return a mxnet based iterator that returns ndarray and labels"""
         df = self.rename(columns={self.IMG_COL: "image", self.LABEL_COL: "label"}, errors='ignore')
+        df = df.reset_index(drop=True)
         return _MXImageClassificationDataset(df)
 
     @classmethod
@@ -605,6 +606,7 @@ class ObjectDetectionDataset(pd.DataFrame):
 
     def to_mxnet(self):
         """Return a mxnet based iterator that returns ndarray and labels"""
+        df = self.reset_index(drop=True)
         return _MXObjectDetectionDataset(self)
 
     def random_split(self, test_size=0.1, val_size=0, random_state=None):
