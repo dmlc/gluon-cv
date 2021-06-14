@@ -56,7 +56,7 @@ class ImageClassificationDataset(pd.DataFrame):
 
     """
     # preserved properties that will be copied to a new instance
-    _metadata = ['classes', 'to_mxnet', 'show_images', 'random_split', 'IMG_COL', 'LABEL_COL']
+    _metadata = ['classes', 'IMG_COL', 'LABEL_COL']
 
     def __init__(self, data, classes=None, image_column='image', label_column='label', **kwargs):
         root = kwargs.pop('root', None)
@@ -131,27 +131,29 @@ class ImageClassificationDataset(pd.DataFrame):
         fontsize : int, optional
             The fontsize for the title
         """
+        df = self.reset_index(drop=True)
         if indices is None:
             if not shuffle:
                 indices = range(nsample)
             else:
-                indices = list(range(len(self)))
+                indices = list(range(len(df)))
                 np.random.shuffle(indices)
                 indices = indices[:min(nsample, len(indices))]
-        images = [cv2.cvtColor(cv2.resize(cv2.imread(self.at[idx, self.IMG_COL]), (resize, resize), \
-            interpolation=cv2.INTER_AREA), cv2.COLOR_BGR2RGB) for idx in indices if idx < len(self)]
+        images = [cv2.cvtColor(cv2.resize(cv2.imread(df.at[idx, df.IMG_COL]), (resize, resize), \
+            interpolation=cv2.INTER_AREA), cv2.COLOR_BGR2RGB) for idx in indices if idx < len(df)]
         titles = None
-        if self.LABEL_COL in self.columns:
-            if self.classes:
-                titles = [self.classes[int(self.at[idx, self.LABEL_COL])] + ': ' + str(self.at[idx, self.LABEL_COL]) \
-                    for idx in indices if idx < len(self)]
+        if df.LABEL_COL in df.columns:
+            if df.classes:
+                titles = [df.classes[int(df.at[idx, df.LABEL_COL])] + ': ' + str(df.at[idx, df.LABEL_COL]) \
+                    for idx in indices if idx < len(df)]
             else:
-                titles = [str(self.at[idx, self.LABEL_COL]) for idx in indices if idx < len(self)]
+                titles = [str(df.at[idx, df.LABEL_COL]) for idx in indices if idx < len(df)]
         _show_images(images, cols=ncol, titles=titles, fontsize=fontsize)
 
     def to_mxnet(self):
         """Return a mxnet based iterator that returns ndarray and labels"""
         df = self.rename(columns={self.IMG_COL: "image", self.LABEL_COL: "label"}, errors='ignore')
+        df = df.reset_index(drop=True)
         return _MXImageClassificationDataset(df)
 
     @classmethod
@@ -398,8 +400,7 @@ class ObjectDetectionDataset(pd.DataFrame):
 
     """
     # preserved properties that will be copied to a new instance
-    _metadata = ['dataset_type', 'classes', 'pack', 'unpack', 'is_packed',
-                 'to_mxnet', 'color_map', 'show_images', 'random_split']
+    _metadata = ['dataset_type', 'classes', 'color_map']
 
     def __init__(self, data, dataset_type=None, classes=None, **kwargs):
         # dataset_type will be used to determine metrics, if None then auto resolve at runtime
@@ -606,7 +607,8 @@ class ObjectDetectionDataset(pd.DataFrame):
 
     def to_mxnet(self):
         """Return a mxnet based iterator that returns ndarray and labels"""
-        return _MXObjectDetectionDataset(self)
+        df = self.reset_index(drop=True)
+        return _MXObjectDetectionDataset(df)
 
     def random_split(self, test_size=0.1, val_size=0, random_state=None):
         r"""Randomly split the dataset into train/val/test sets.
@@ -661,6 +663,7 @@ class ObjectDetectionDataset(pd.DataFrame):
             The fontsize for title
         """
         df = self.pack()
+        df = df.reset_index(drop=True)
         if indices is None:
             if not shuffle:
                 indices = range(nsample)

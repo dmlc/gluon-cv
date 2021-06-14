@@ -391,7 +391,9 @@ class YOLOv3Estimator(BaseEstimator):
                 self.net = get_model(self._cfg.yolo3.transfer, pretrained=(not load_only))
                 self.async_net = self.net
             if load_only:
-                self.net.initialize()
+                with warnings.catch_warnings(record=True) as w:
+                    warnings.simplefilter("always")
+                    self.net.initialize()
                 self.net.set_nms(nms_thresh=0)
                 self.net(mx.nd.zeros((1, 3, self._cfg.yolo3.data_shape, self._cfg.yolo3.data_shape)))
                 self.net.set_nms(nms_thresh=self._cfg.yolo3.nms_thresh, nms_topk=self._cfg.yolo3.nms_topk)

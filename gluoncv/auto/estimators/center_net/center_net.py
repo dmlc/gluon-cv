@@ -320,7 +320,9 @@ class CenterNetEstimator(BaseEstimator):
                               self._cfg.center_net.transfer)
             net = get_model(self._cfg.center_net.transfer, pretrained=(not load_only))
             if load_only:
-                net.initialize()
+                with warnings.catch_warnings(record=True) as w:
+                    warnings.simplefilter("always")
+                    net.initialize()
                 net(mx.nd.zeros((1, 3, self._cfg.center_net.data_shape[0], self._cfg.center_net.data_shape[1])))
             net.reset_class(self.classes, reuse_weights=[cname for cname in self.classes if cname in net.classes])
         else:
