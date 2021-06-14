@@ -131,22 +131,23 @@ class ImageClassificationDataset(pd.DataFrame):
         fontsize : int, optional
             The fontsize for the title
         """
+        df = self.reset_index(drop=True)
         if indices is None:
             if not shuffle:
                 indices = range(nsample)
             else:
-                indices = list(range(len(self)))
+                indices = list(range(len(df)))
                 np.random.shuffle(indices)
                 indices = indices[:min(nsample, len(indices))]
-        images = [cv2.cvtColor(cv2.resize(cv2.imread(self.at[idx, self.IMG_COL]), (resize, resize), \
-            interpolation=cv2.INTER_AREA), cv2.COLOR_BGR2RGB) for idx in indices if idx < len(self)]
+        images = [cv2.cvtColor(cv2.resize(cv2.imread(df.at[idx, df.IMG_COL]), (resize, resize), \
+            interpolation=cv2.INTER_AREA), cv2.COLOR_BGR2RGB) for idx in indices if idx < len(df)]
         titles = None
-        if self.LABEL_COL in self.columns:
-            if self.classes:
-                titles = [self.classes[int(self.at[idx, self.LABEL_COL])] + ': ' + str(self.at[idx, self.LABEL_COL]) \
-                    for idx in indices if idx < len(self)]
+        if df.LABEL_COL in df.columns:
+            if df.classes:
+                titles = [df.classes[int(df.at[idx, df.LABEL_COL])] + ': ' + str(df.at[idx, df.LABEL_COL]) \
+                    for idx in indices if idx < len(df)]
             else:
-                titles = [str(self.at[idx, self.LABEL_COL]) for idx in indices if idx < len(self)]
+                titles = [str(df.at[idx, df.LABEL_COL]) for idx in indices if idx < len(df)]
         _show_images(images, cols=ncol, titles=titles, fontsize=fontsize)
 
     def to_mxnet(self):
@@ -662,6 +663,7 @@ class ObjectDetectionDataset(pd.DataFrame):
             The fontsize for title
         """
         df = self.pack()
+        df = df.reset_index(drop=True)
         if indices is None:
             if not shuffle:
                 indices = range(nsample)
