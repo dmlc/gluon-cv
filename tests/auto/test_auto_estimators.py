@@ -18,6 +18,7 @@
 # under the License.
 """Test auto estimators"""
 from PIL import Image
+import numpy as np
 from gluoncv.auto.tasks import ImageClassification, ImagePrediction
 from gluoncv.auto.tasks import ObjectDetection
 from autogluon.core.scheduler.resource import get_cpu_count, get_gpu_count

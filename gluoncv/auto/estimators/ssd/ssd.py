@@ -361,7 +361,9 @@ class SSDEstimator(BaseEstimator):
                                          norm_kwargs={'num_devices': len(self.ctx)})
                     self.async_net = get_model(self._cfg.ssd.transfer, pretrained=(not load_only))  # used by cpu worker
                 if load_only:
-                    self.net.initialize()
+                    with warnings.catch_warnings(record=True) as w:
+                        warnings.simplefilter("always")
+                        self.net.initialize()
                     self.net.set_nms(nms_thresh=0)
                     self.net(mx.nd.zeros((1, 3, self._cfg.ssd.data_shape, self._cfg.ssd.data_shape)))
                     self.net.set_nms(nms_thresh=self._cfg.ssd.nms_thresh, nms_topk=self._cfg.ssd.nms_topk)
@@ -371,7 +373,9 @@ class SSDEstimator(BaseEstimator):
                 self.net = get_model(self._cfg.ssd.transfer, pretrained=(not load_only), norm_layer=gluon.nn.BatchNorm)
                 self.async_net = get_model(self._cfg.ssd.transfer, pretrained=(not load_only), norm_layer=gluon.nn.BatchNorm)
                 if load_only:
-                    self.net.initialize()
+                    with warnings.catch_warnings(record=True) as w:
+                        warnings.simplefilter("always")
+                        self.net.initialize()
                     self.net.set_nms(nms_thresh=0)
                     self.net(mx.nd.zeros((1, 3, self._cfg.ssd.data_shape, self._cfg.ssd.data_shape)))
                     self.net.set_nms(nms_thresh=self._cfg.ssd.nms_thresh, nms_topk=self._cfg.ssd.nms_topk)
