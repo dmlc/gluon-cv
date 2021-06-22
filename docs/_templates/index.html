@@ -13,6 +13,9 @@
   <!-- Compressed Styles -->
   <link href="_static/css/slides.min.css?41331" rel="stylesheet" type="text/css">
 
+  <!-- Demo Styles -->
+  <link href="_static/css/demo.css" rel="stylesheet" type="text/css">
+
   <!-- Custom Styles -->
   <!-- <link href="_static/css/custom.css" rel="stylesheet" type="text/css"> -->
 
@@ -21,6 +24,14 @@
 
   <!-- Compressed Scripts -->
   <script src="_static/js/slides.min.js?41331" type="text/javascript"></script>
+
+  <!-- Demo Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
+  <script src="_static/js/labels.js"></script>
+  <script src="_static/js/model.js"></script>
+  <script src="_static/js/preprocessor.js"></script>
+  <script src="_static/js/postprocessor.js"></script>
+  <script src="_static/js/main.js"></script>
 
   <!-- Custom Scripts -->
   <!-- <script src="_static/js/custom.js" type="text/javascript"></script> -->
@@ -241,6 +252,7 @@
       <div class="center">
         <ul class="menu uppercase">
           <li><a href="#">Tour</a></li>
+          <li><a href="#demo">Demo</a></li>
           <li><a href="install.html">Get Started</a></li>
           <li><a href="model_zoo/index.html">Model Zoo</a></li>
           <li><a href="tutorials/index.html">Tutorials</a></li>
@@ -344,6 +356,40 @@
       </div>
     </div>
   </div>
+
+  <!-- Demo -->
+  <section class="slide fade-6 kenBurns" id="demo">
+    <div class="content">
+      <div class="container">
+        <div class="wrap">
+          <div class="fix-12-12">
+            <h1 class="huge ae-1 margin-bottom-2">Quick Demo</h1>
+            <div class="tab">
+              <button class="tablinks" id="classification_tab" onclick="on_classification()">Classification</button>
+              <button class="tablinks" id="object_detection_tab" onclick="on_obj_detection()">Object Detection</button>
+            </div>
+            <div class="video_container">
+                <video class="display" id="local_video_stream" width="720" height="480" autoPlay playinline></video>
+            </div>
+            <div class="canvas_container">
+                <canvas class="display" id="result_canvas" width="720" height="480"></canvas>
+            </div>
+            <div class="clr"></div>
+            <p id="camera_prompt">Select Camera</p>
+            <select id="camera_select" onchange="get_camera()">
+                <option></option>
+            </select>
+            <div class="clr"></div>
+            <div style="text-align: center;">
+                <button type="button" id="predict_button" onclick="predict()">Predict</button>
+                <p id="classification_result" hidden>Classification Result:</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="background" style="background-image:url(_static/assets/img/background/img-06.jpg)"></div>
+  </section>
 
   <!-- Slide 2 (#14) -->
   <section class="slide fade-6 kenBurns fromRight" data-name="slide-2">
