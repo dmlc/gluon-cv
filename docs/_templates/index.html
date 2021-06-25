@@ -13,9 +13,6 @@
   <!-- Compressed Styles -->
   <link href="_static/css/slides.min.css?41331" rel="stylesheet" type="text/css">
 
-  <!-- Demo Styles -->
-  <link href="_static/css/demo.css" rel="stylesheet" type="text/css">
-
   <!-- Custom Styles -->
   <!-- <link href="_static/css/custom.css" rel="stylesheet" type="text/css"> -->
 
@@ -24,14 +21,6 @@
 
   <!-- Compressed Scripts -->
   <script src="_static/js/slides.min.js?41331" type="text/javascript"></script>
-
-  <!-- Demo Scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
-  <script src="_static/js/labels.js"></script>
-  <script src="_static/js/model.js"></script>
-  <script src="_static/js/preprocessor.js"></script>
-  <script src="_static/js/postprocessor.js"></script>
-  <script src="_static/js/main.js"></script>
 
   <!-- Custom Scripts -->
   <!-- <script src="_static/js/custom.js" type="text/javascript"></script> -->
@@ -364,26 +353,7 @@
         <div class="wrap">
           <div class="fix-12-12">
             <h1 class="huge ae-1 margin-bottom-2">Quick Demo</h1>
-            <div class="tab">
-              <button class="tablinks" id="classification_tab" onclick="on_classification()">Classification</button>
-              <button class="tablinks" id="object_detection_tab" onclick="on_obj_detection()">Object Detection</button>
-            </div>
-            <div class="video_container">
-                <video class="display" id="local_video_stream" width="720" height="480" autoPlay playinline></video>
-            </div>
-            <div class="canvas_container">
-                <canvas class="display" id="result_canvas" width="720" height="480"></canvas>
-            </div>
-            <div class="clr"></div>
-            <p id="camera_prompt">Select Camera</p>
-            <select id="camera_select" onchange="get_camera()">
-                <option></option>
-            </select>
-            <div class="clr"></div>
-            <div style="text-align: center;">
-                <button type="button" id="predict_button" onclick="predict()">Predict</button>
-                <p id="classification_result" hidden>Classification Result:</p>
-            </div>
+            <a class="button blue gredient ae-7" href="demo.html">Check it out</a>
           </div>
         </div>
       </div>

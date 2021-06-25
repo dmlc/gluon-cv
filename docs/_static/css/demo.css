@@ -76,3 +76,16 @@
     background-color: red;
     color: white;
 }
+
+#classification_left, #classification_right {
+    display: inline-block;
+}
+
+.classification_label {
+    margin: 10px;
+}
+
+.classification_prob {
+    display: inline-block;
+    margin: 5px;
+}

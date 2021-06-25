@@ -18,28 +18,71 @@ var current_stream;
 var model_path;
 var task;
 var model;
-var session;
+var classification_session;
+var detection_session;
 var postprocessor;
 const preprocessor = new Preprocessor();
 
+function block_ui_on_loading() {
+    const predict_button = document.getElementById('predict_button');
+    const classification_tab = document.getElementById('classification_tab');
+    const object_detection_tab = document.getElementById('object_detection_tab');
+    predict_button.innerHTML = 'Loading';
+    predict_button.disabled = true;
+    classification_tab.disabled = true;
+    object_detection_tab.disabled = true;
+}
+
+function unblock_ui_on_loading() {
+    const predict_button = document.getElementById('predict_button');
+    const classification_tab = document.getElementById('classification_tab');
+    const object_detection_tab = document.getElementById('object_detection_tab');
+    predict_button.innerHTML = 'Predict';
+    predict_button.disabled = false;
+    classification_tab.disabled = false;
+    object_detection_tab.disabled = false;
+}
+
 async function on_classification() {
     if (task == tasks.CLASSIFICATION) { return; }
-    // if (processor.did_load) { processor.clear(); }
-    model_path = '_static/models/resnet18_v1.onnx';
+    processor.clear();
+    block_ui_on_loading();
+    model_path = 'https://apache-mxnet.s3-us-west-2.amazonaws.com/onnx/models/gluoncv-mobilenetv3_large-ad683fdc.onnx';
+    // model_path = 'https://damp-mountain-14992.herokuapp.com/https://apache-mxnet.s3-us-west-2.amazonaws.com/onnx/models/gluoncv-mobilenetv3_large-ad683fdc.onnx';
+    // model_path = '_static/models/mobilenetv3_large.onnx' //local test only
     task = tasks.CLASSIFICATION;
     model = new Model(model_path, 224, 224, task, image_net_labels);
     postprocessor = new Postprocessor(model.task);
-    session = await ort.InferenceSession.create(model.path);
+    // the website won't cache the model for some reason, resulting redownload each time
+    if (classification_session === undefined) {
+        await ort.InferenceSession.create(model.path).then((session) => {
+            classification_session = session;
+            unblock_ui_on_loading();
+        });
+    } else {
+        unblock_ui_on_loading();
+    }
 }
 
 async function on_obj_detection() {
     if (task == tasks.OBJECT_DETECTION) { return; }
-    // if (processor.did_load) { processor.clear(); }
-    model_path = '_static/models/yolo3_mobilenet1.0_voc.onnx';
+    processor.clear();
+    block_ui_on_loading();
+    model_path = 'https://apache-mxnet.s3-us-west-2.amazonaws.com/onnx/models/gluoncv-yolo3_mobilenet1.0_voc-49165600.onnx';
+    // model_path = 'https://damp-mountain-14992.herokuapp.com/https://apache-mxnet.s3-us-west-2.amazonaws.com/onnx/models/gluoncv-yolo3_mobilenet1.0_voc-49165600.onnx';
+    // model_path = '_static/models/yolo3_mobilenet1.0_voc.onnx' //local test only
     task = tasks.OBJECT_DETECTION;
     model = new Model(model_path, 512, 512, task, voc_detection_labels);
     postprocessor = new Postprocessor(model.task);
-    session = await ort.InferenceSession.create(model.path);
+    // the website won't cache the model for some reason, resulting redownload each time
+    if (detection_session === undefined) {
+        await ort.InferenceSession.create(model.path).then((session) => {
+            detection_session = session;
+            unblock_ui_on_loading();
+        });
+    } else {
+        unblock_ui_on_loading();
+    }
 }
 
 function predict() {
@@ -58,6 +101,29 @@ var processor = {
         this.did_load = true;
     },
 
+    show_classification_result: function(label, prob) {
+        var classification_left_element = document.getElementById('classification_left');
+        var classification_right_element = document.getElementById('classification_right');
+
+        var label_element = document.createElement('p');
+        label_element.innerHTML = label;
+        label_element.className = 'classification_label';
+        classification_left_element.appendChild(label_element);
+
+        var div = document.createElement('div');
+        var prob_bar_element = document.createElement('progress');
+        prob_bar_element.className = 'classification_prob_bar';
+        prob_bar_element.value = prob;
+        prob_bar_element.max = '100';
+        var prob_element = document.createElement('p');
+        prob_element.innerHTML = prob + '%';
+        prob_element.className = 'classification_prob';
+
+        div.appendChild(prob_bar_element);
+        div.appendChild(prob_element);
+        classification_right_element.appendChild(div);
+    },
+
     draw_bbox(label, score, bbox, color) {
         [xmin, ymin, width, height] = bbox;
         this.canvas_ctx.strokeStyle = color;
@@ -73,16 +139,17 @@ var processor = {
     },
 
     visualize: function(processed_result) {
-        var classification_result_element = document.getElementById('classification_result');
-        classification_result_element.hidden = true;
+        var classification_results_element = document.getElementById('classification_results');
+        classification_results_element.style.visibility = 'hidden';
         switch (model.task) {
             case tasks.CLASSIFICATION:
-                var classification_result_element = document.getElementById('classification_result');
-                classification_result_element.hidden = false;
-                results = [];
-                results.push(`Top ${processed_result.length} classification results are`);
-                processed_result.map((r) => results.push(r.name));
-                classification_result_element.innerHTML = results.join('<br>');
+                var classification_results_element = document.getElementById('classification_results');
+                var classification_left_element = document.getElementById('classification_left');
+                var classification_right_element = document.getElementById('classification_right');
+                classification_left_element.innerHTML = '';
+                classification_right_element.innerHTML = '';
+                classification_results_element.style.visibility = 'visible';
+                processed_result.map((r) => this.show_classification_result(r.label, r.prob));
                 break;
             case tasks.OBJECT_DETECTION:
                 [classes, scores, bboxes, color_maps] = processed_result;
@@ -108,15 +175,17 @@ var processor = {
         var rgb_frame_f32 = preprocessor.remove_alpha_channel(rgba_frame_f32, frame_length);
 
         const image_tensor = new ort.Tensor('float32', rgb_frame_f32, [1,model.input_width,model.input_height,3]);
-        const result = await session.run({data: image_tensor});
-        var data = undefined;
+        var result;
+        var data;
         // extract the data from result and visualize
         switch (model.task) {
             case tasks.CLASSIFICATION:
+                result = await classification_session.run({data: image_tensor});
                 data = Object.keys(result).map((key) => result[key])[0].data;
                 this.visualize(postprocessor.process(data, { k:5 }));
                 break;
             case tasks.OBJECT_DETECTION:
+                result = await detection_session.run({data: image_tensor});
                 data = Object.keys(result).map((key) => result[key].data);
                 this.visualize(postprocessor.process(data, { 
                                                 video_width: this.video_width, 
@@ -137,7 +206,14 @@ var processor = {
     },
 
     clear: function() {
-        this.canvas_ctx.clearRect(0, 0, this.video_width, this.video_height);
+        if (this.canvas_ctx) {
+            this.canvas_ctx.clearRect(0, 0, this.video_width, this.video_height);
+            this.canvas_ctx.rect(0, 0, this.video_width, this.video_height);
+            this.canvas_ctx.fillStyle = 'black';
+            this.canvas_ctx.fill();
+        }
+        var classification_results_element = document.getElementById('classification_results');
+        classification_results_element.style.visibility = 'hidden';
     }
 };
 
@@ -164,7 +240,7 @@ function prepare_devices() {
 }
 
 function get_camera() {
-    if (typeof current_stream !== 'undefined') {
+    if (typeof current_stream !== undefined) {
         stop_current_stream();
     } 
     const camera_select = document.getElementById('camera_select');
@@ -179,6 +255,9 @@ function get_camera() {
         local_video_stream.srcObject = stream;
         processor.do_load();
         current_stream = stream;
+    })
+    .then(()=> {
+        document.getElementById('video_container').style.visibility = 'visible';
     })
     .catch(handle_get_user_media_error);
 }
