@@ -68,11 +68,11 @@ async function on_obj_detection() {
     if (task == tasks.OBJECT_DETECTION) { return; }
     processor.clear();
     block_ui_on_loading();
-    model_path = 'https://apache-mxnet.s3-us-west-2.amazonaws.com/onnx/models/gluoncv-yolo3_mobilenet1.0_voc-49165600.onnx';
-    // model_path = 'https://damp-mountain-14992.herokuapp.com/https://apache-mxnet.s3-us-west-2.amazonaws.com/onnx/models/gluoncv-yolo3_mobilenet1.0_voc-49165600.onnx';
+    model_path = 'https://apache-mxnet.s3-us-west-2.amazonaws.com/onnx/models/gluoncv-yolo3_mobilenet1.0_coco-115299e3.onnx';
+    // model_path = 'https://damp-mountain-14992.herokuapp.com/https://apache-mxnet.s3-us-west-2.amazonaws.com/onnx/models/gluoncv-yolo3_mobilenet1.0_coco-115299e3.onnx';
     // model_path = '_static/models/yolo3_mobilenet1.0_voc.onnx' //local test only
     task = tasks.OBJECT_DETECTION;
-    model = new Model(model_path, 512, 512, task, voc_detection_labels);
+    model = new Model(model_path, 512, 512, task, coco_detection_labels);
     postprocessor = new Postprocessor(model.task);
     // the website won't cache the model for some reason, resulting redownload each time
     if (detection_session === undefined) {

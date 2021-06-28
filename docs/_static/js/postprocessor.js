@@ -93,7 +93,7 @@ class Postprocessor {
 
         for (var i = 0; i < num_result; i++) {
             if (scores[i] < threshold) { continue; }
-            if (class_ids[i] < threshold) { continue; }
+            if (class_ids[i] < 0) { continue; }
             const bbox = [
                             Math.round(bboxes[i*4+0]), 
                             Math.round(bboxes[i*4+1]), 
