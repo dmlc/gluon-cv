@@ -259,6 +259,22 @@ class BaseEstimator:
             pass
         return valid_gpus
 
+    #FIXME: better design than a duplicate function?
+    def _torch_validate_gpus(self, gpu_ids):
+        """validate if requested gpus are actually available"""
+        valid_gpus = []
+        try:
+            import torch
+            for gid in gpu_ids:
+                try:
+                    _ = torch.zeros(1, device=f'cuda:{gpu_ids}')
+                    valid_gpus.append(gid)
+                except:
+                    pass
+        except ImportError:
+            pass
+        return valid_gpus
+
     def reset_ctx(self, ctx=None):
         """Reset model context.
 
