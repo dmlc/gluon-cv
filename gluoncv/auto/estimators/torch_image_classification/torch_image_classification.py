@@ -156,6 +156,10 @@ class TorchImageClassificationEstimator(BaseEstimator):
                 self.model = NativeDDP(self.model, device_ids=[self.local_rank])  # can use device str in Torch >= 1.1
             # NOTE: EMA model does not need to be wrapped by DDP
 
+        # TODO: read in dataset and load in dataloader
+
+        # TODO: train
+
     def _init_network(self, **kwargs):
         if not self.num_class and self._problem_type != REGRESSION:
             raise ValueError('This is a classification problem and we are not able to create network when `num_class` is unknown. \
