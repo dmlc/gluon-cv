@@ -56,20 +56,20 @@ class TorchImageClassificationEstimator(BaseEstimator):
 
         # resolve AMP arguments based on PyTorch / Apex availability
         self.use_amp = None
-        if _cfg.misc.amp:
+        if self._cfg.misc.amp:
             # `amp` chooses native amp before apex (APEX ver not actively maintained)
-            if _cfg.misc.native_amp and has_native_amp:
+            if self._cfg.misc.native_amp and has_native_amp:
                 self.use_amp = 'native'
-            elif _cfg.misc.apex_amp and has_apex:
+            elif self._cfg.misc.apex_amp and has_apex:
                 self.use_amp = 'apex'
-            elif _cfg.misc.apex_amp or _cfg.misc.native_amp:
+            elif self._cfg.misc.apex_amp or self._cfg.misc.native_amp:
                 self._logger.warning(f'Neither APEX or native Torch AMP is available, using float32. \
                                        Install NVIDA apex or upgrade to PyTorch 1.6')
 
         if model is not None:
             assert isinstance(model, nn), f"given custom network {type(model)}, `torch.nn` expected"
             try:
-                net.to('cpu')
+                self.model.to('cpu')
             except ValueError:
                 pass
         self._custom_model = model
