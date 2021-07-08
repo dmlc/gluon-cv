@@ -1,6 +1,6 @@
 """Default configs for torch image classification"""
 # pylint: disable=bad-whitespace,missing-class-docstring
-from typing import Union, Tuple, List
+from typing import Union, Tuple
 from autocfg import dataclass, field
 
 @dataclass
@@ -10,8 +10,7 @@ class ModelCfg:
     initial_checkpoint: str = ''  # Initialize model from this checkpoint
     resume: str = ''  # Resume full model and optimizer state from checkpoint
     no_resume_opt: bool = False  # prevent resume of optimizer state when resuming model
-    global_pool_type: Union(str, None) = None  # Global pool type, one of (fast, avg, max, avgmax, avgmaxc). Model default if None
-    
+    global_pool_type: Union[str, None] = None  # Global pool type, one of (fast, avg, max, avgmax, avgmaxc). Model default if None
 
 @dataclass
 class DatasetCfg:
@@ -19,11 +18,11 @@ class DatasetCfg:
     dataset: str = ''  # dataset type (default: ImageFolder/ImageTar if empty)
     train_split: str = 'train'  # dataset train split
     val_split: str = 'validation'  # dataset validation split
-    img_size: Union(int, None) = None  # Image patch size (default: None => model default)
-    input_size: Union(Tuple[int, int, int], None) = None  # Input all image dimensions (d h w, e.g. --input-size 3 224 224), uses model default if empty
-    crop_pct: Union(float, None) = None  # Input image center crop percent (for validation only)
-    mean: Union(Tuple[float, ...], None) = None  # Override mean pixel value of dataset
-    std : Union(Tuple[float, ...], None) = None  # Override std deviation of of dataset
+    img_size: Union[int, None] = None  # Image patch size (default: None => model default)
+    input_size: Union[Tuple[int, int, int], None] = None  # Input all image dimensions (d h w, e.g. --input-size 3 224 224), uses model default if empty
+    crop_pct: Union[float, None] = None  # Input image center crop percent (for validation only)
+    mean: Union[Tuple[float, ...], None] = None  # Override mean pixel value of dataset
+    std : Union[Tuple[float, ...], None] = None  # Override std deviation of of dataset
     interpolation: str = ''  # Image resize interpolation type (overrides model)
     batch_size: int = 32
     validation_batch_size_multiplier: int = 1  # ratio of validation batch size to training batch size (default: 1)
@@ -31,18 +30,18 @@ class DatasetCfg:
 @dataclass
 class OptimizerCfg:
     opt: str = 'sgd'
-    opt_eps: Union(float, None) = None  # Optimizer Epsilon (default: None, use opt default)
-    opt_betas: Union(Tuple[float, ...], None) = None  # Optimizer Betas (default: None, use opt default)
+    opt_eps: Union[float, None] = None  # Optimizer Epsilon (default: None, use opt default)
+    opt_betas: Union[Tuple[float, ...], None] = None  # Optimizer Betas (default: None, use opt default)
     momentum: float = 0.9
     weight_decay: float = 0.0001
-    clip_grad: Union(float, None) = None  # Clip gradient norm (default: None, no clipping)
+    clip_grad: Union[float, None] = None  # Clip gradient norm (default: None, no clipping)
     clip_mode: str = 'norm'  # Gradient clipping mode. One of ("norm", "value", "agc")
 
 @dataclass
 class TrainCfg:
     sched: str = 'step'  # LR scheduler
     lr: float = 0.01
-    lr_noise: Union(Tuple[float, ...], None) = None  # learning rate noise on/off epoch percentages
+    lr_noise: Union[Tuple[float, ...], None] = None  # learning rate noise on/off epoch percentages
     lr_noise_pct: float = 0.67  # learning rate noise limit percent
     lr_noise_std: float = 1.0  # learning rate noise std-dev
     lr_cycle_mul: float = 1.0  # learning rate cycle len multiplier
@@ -51,11 +50,7 @@ class TrainCfg:
     min_lr: float = 1e-5
     epochs: int = 200
     epoch_repeats: float = 0.  # epoch repeat multiplier (number of times to repeat dataset epoch per train epoch)
-    start_epoch: Union(int, None) = None  # manual epoch number (useful on restarts)
-    decay_epochs: float = 30  # epoch interval to decay LR
-    warmup_epochs: int = 3  # epochs to warmup LR, if scheduler supports
-    cooldown_epochs: int = 10  # epochs to cooldown LR at min_lr, after cyclic schedule ends
-    patience_epochs: int = 10  # patience epochs for Plateau LR scheduler
+    start_epoch: Union[int, None] = None  # manual epoch number (useful on restarts)
     decay_rate: float = 0.1
     bn_momentum: Union[float, None] = None  # BatchNorm momentum override
     bn_eps: Union[float, None] = None  # BatchNorm epsilon override
@@ -66,15 +61,15 @@ class TrainCfg:
 @dataclass
 class AugmentationCfg:
     no_aug: bool = False  # Disable all training augmentation, override other train aug args
-    scale: List[float] = [0.08, 1.0]  # Random resize scale
-    ratio: List[float] = [3./4., 4./3.]  # Random resize aspect ratio (default: 0.75 1.33
+    scale: Tuple[float, float] = (0.08, 1.0)  # Random resize scale
+    ratio: Tuple[float, float] = (3./4., 4./3.) # Random resize aspect ratio (default: 0.75 1.33
     hflip: float = 0.5  # Horizontal flip training aug probability
     vflip: float = 0.5 # Vertical flip training aug probability
     color_jitter: float = 0.4
     aa: Union[str, None] = None  # Use AutoAugment policy. "v0" or "original
     aug_splits: int = 0  # Number of augmentation splits (default: 0, valid: 0 or >=2)
     jsd: bool = False  # 'Enable Jensen-Shannon Divergence + CE loss. Use with `aug_splits`
-    reprob: float = 0  # Random erase prob
+    reprob: float = 0.  # Random erase prob
     remode: str = 'const'  # Random erase mode
     recount: int = 1  # Random erase count
     resplit: bool = False  # Do not random erase first (clean) augmentation split
@@ -106,7 +101,7 @@ class MiscCfg:
     num_workers: int = 4  # how many training processes to use
     save_images: bool = False  # save images of input bathes every log interval for debugging
     amp: bool = False  # use NVIDIA Apex AMP or Native AMP for mixed precision training
-    apex_amp: bool = False,  # Use NVIDIA Apex AMP mixed precision
+    apex_amp: bool = False  # Use NVIDIA Apex AMP mixed precision
     native_amp: bool = False  # Use Native Torch AMP mixed precision
     channels_last: bool = False  # Use channels_last memory layout
     pin_mem: bool = False  # Pin CPU memory in DataLoader for more efficient (sometimes) transfer to GPU
