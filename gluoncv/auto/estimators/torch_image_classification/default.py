@@ -18,23 +18,11 @@ class ModelCfg:
 class DatasetCfg:
     data_dir: str = ''  # path to dataset
     dataset: str = ''  # dataset type (default: ImageFolder/ImageTar if empty)
-<<<<<<< HEAD
-    train_split: str = 'train'  # dataset train split
-    val_split: str = 'validation'  # dataset validation split
     img_size: Union[int, None] = None  # Image patch size (default: None => model default)
     input_size: Union[Tuple[int, int, int], None] = None  # Input all image dimensions (d h w, e.g. --input-size 3 224 224), uses model default if empty
     crop_pct: Union[float, None] = None  # Input image center crop percent (for validation only)
     mean: Union[Tuple[float, ...], None] = None  # Override mean pixel value of dataset
     std : Union[Tuple[float, ...], None] = None  # Override std deviation of of dataset
-=======
-    # train_split: str = 'train'  # dataset train split
-    # val_split: str = 'validation'  # dataset validation split
-    img_size: Union(int, None) = None  # Image patch size (default: None => model default)
-    input_size: Union(Tuple[int, int, int], None) = None  # Input all image dimensions (d h w, e.g. --input-size 3 224 224), uses model default if empty
-    crop_pct: Union(float, None) = None  # Input image center crop percent (for validation only)
-    mean: Union(Tuple[float, ...], None) = None  # Override mean pixel value of dataset
-    std : Union(Tuple[float, ...], None) = None  # Override std deviation of of dataset
->>>>>>> train and validate
     interpolation: str = ''  # Image resize interpolation type (overrides model)
     batch_size: int = 32
     validation_batch_size_multiplier: int = 1  # ratio of validation batch size to training batch size (default: 1)
@@ -61,16 +49,8 @@ class TrainCfg:
     warmup_lr: float = 0.0001
     min_lr: float = 1e-5
     epochs: int = 200
-<<<<<<< HEAD
     epoch_repeats: float = 0.  # epoch repeat multiplier (number of times to repeat dataset epoch per train epoch)
     start_epoch: Union[int, None] = None  # manual epoch number (useful on restarts)
-=======
-    start_epoch: Union(int, None) = None  # manual epoch number (useful on restarts)
-    decay_epochs: float = 30  # epoch interval to decay LR
-    warmup_epochs: int = 3  # epochs to warmup LR, if scheduler supports
-    cooldown_epochs: int = 10  # epochs to cooldown LR at min_lr, after cyclic schedule ends
-    patience_epochs: int = 10  # patience epochs for Plateau LR scheduler
->>>>>>> train and validate
     decay_rate: float = 0.1
     bn_momentum: Union[float, None] = None  # BatchNorm momentum override
     bn_eps: Union[float, None] = None  # BatchNorm epsilon override
