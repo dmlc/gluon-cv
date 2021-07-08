@@ -415,6 +415,7 @@ class _TorchImageClassificationDataset(TorchDataset):
         self._dataset = dataset
         self.classes = self._dataset.classes
         self._imread = Image.open
+        self.transform = None
 
     def __len__(self):
         return self._dataset.shape[0]
@@ -425,6 +426,8 @@ class _TorchImageClassificationDataset(TorchDataset):
         label = None
         if self._has_label:
             label = self._dataset['label'][idx]
+        else:
+            label = torch.tensor(-1, dtype=torch.long)
         return img, label
 
 

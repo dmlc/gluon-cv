@@ -3,6 +3,8 @@
 from typing import Union, Tuple
 from autocfg import dataclass, field
 
+# TODO: remove wandb
+
 @dataclass
 class ModelCfg:
     model: str = 'resnet101'
@@ -16,6 +18,7 @@ class ModelCfg:
 class DatasetCfg:
     data_dir: str = ''  # path to dataset
     dataset: str = ''  # dataset type (default: ImageFolder/ImageTar if empty)
+<<<<<<< HEAD
     train_split: str = 'train'  # dataset train split
     val_split: str = 'validation'  # dataset validation split
     img_size: Union[int, None] = None  # Image patch size (default: None => model default)
@@ -23,6 +26,15 @@ class DatasetCfg:
     crop_pct: Union[float, None] = None  # Input image center crop percent (for validation only)
     mean: Union[Tuple[float, ...], None] = None  # Override mean pixel value of dataset
     std : Union[Tuple[float, ...], None] = None  # Override std deviation of of dataset
+=======
+    # train_split: str = 'train'  # dataset train split
+    # val_split: str = 'validation'  # dataset validation split
+    img_size: Union(int, None) = None  # Image patch size (default: None => model default)
+    input_size: Union(Tuple[int, int, int], None) = None  # Input all image dimensions (d h w, e.g. --input-size 3 224 224), uses model default if empty
+    crop_pct: Union(float, None) = None  # Input image center crop percent (for validation only)
+    mean: Union(Tuple[float, ...], None) = None  # Override mean pixel value of dataset
+    std : Union(Tuple[float, ...], None) = None  # Override std deviation of of dataset
+>>>>>>> train and validate
     interpolation: str = ''  # Image resize interpolation type (overrides model)
     batch_size: int = 32
     validation_batch_size_multiplier: int = 1  # ratio of validation batch size to training batch size (default: 1)
@@ -49,13 +61,20 @@ class TrainCfg:
     warmup_lr: float = 0.0001
     min_lr: float = 1e-5
     epochs: int = 200
+<<<<<<< HEAD
     epoch_repeats: float = 0.  # epoch repeat multiplier (number of times to repeat dataset epoch per train epoch)
     start_epoch: Union[int, None] = None  # manual epoch number (useful on restarts)
+=======
+    start_epoch: Union(int, None) = None  # manual epoch number (useful on restarts)
+    decay_epochs: float = 30  # epoch interval to decay LR
+    warmup_epochs: int = 3  # epochs to warmup LR, if scheduler supports
+    cooldown_epochs: int = 10  # epochs to cooldown LR at min_lr, after cyclic schedule ends
+    patience_epochs: int = 10  # patience epochs for Plateau LR scheduler
+>>>>>>> train and validate
     decay_rate: float = 0.1
     bn_momentum: Union[float, None] = None  # BatchNorm momentum override
     bn_eps: Union[float, None] = None  # BatchNorm epsilon override
     sync_bn: bool = False  # Enable NVIDIA Apex or Torch synchronized BatchNorm
-    dist_bn: str = ''  # Distribute BatchNorm stats between nodes after each epoch ("broadcast", "reduce", or "")
     split_bn: bool = False  # Enable separate BN layers per augmentation split
 
 @dataclass
@@ -66,7 +85,7 @@ class AugmentationCfg:
     hflip: float = 0.5  # Horizontal flip training aug probability
     vflip: float = 0.5 # Vertical flip training aug probability
     color_jitter: float = 0.4
-    aa: Union[str, None] = None  # Use AutoAugment policy. "v0" or "original
+    auto_augment: Union[str, None] = None  # Use AutoAugment policy. "v0" or "original
     aug_splits: int = 0  # Number of augmentation splits (default: 0, valid: 0 or >=2)
     jsd: bool = False  # 'Enable Jensen-Shannon Divergence + CE loss. Use with `aug_splits`
     reprob: float = 0.  # Random erase prob
@@ -103,13 +122,11 @@ class MiscCfg:
     amp: bool = False  # use NVIDIA Apex AMP or Native AMP for mixed precision training
     apex_amp: bool = False  # Use NVIDIA Apex AMP mixed precision
     native_amp: bool = False  # Use Native Torch AMP mixed precision
-    channels_last: bool = False  # Use channels_last memory layout
     pin_mem: bool = False  # Pin CPU memory in DataLoader for more efficient (sometimes) transfer to GPU
-    no_prefetcher: bool = False  # disable fast prefetcher
+    prefetcher: bool = True  # use fast prefetcher
     output: Union[str, None] = None  # path to output folder (default: none, current dir)
     eval_metric: str = 'top1'  # 'Best metric (default: "top1")
     tta: int = 0  # Test/inference time augmentation (oversampling) factor. 0=None
-    local_rank: int = 0 
     use_multi_epochs_loader: bool = False  # use the multi-epochs-loader to save time at the beginning of every epoch
     torchscript: bool = False  #convert model torchscript for inference
 
