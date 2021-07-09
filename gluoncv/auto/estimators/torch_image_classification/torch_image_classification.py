@@ -141,7 +141,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
 
         # setup exponential moving average of model weights, SWA could be used here too
         self._model_ema = None
-        if self._model_ema_cfg.model_ema is not None:
+        if self._model_ema_cfg.model_ema:
             # Important to create EMA model after cuda(), DP wrapper, and AMP but before SyncBN and DDP wrapper
             self._model_ema = ModelEmaV2(
                 self.model, decay=self._model_ema_cfg.model_ema_decay, device='cpu' if self._model_ema_cfg.model_ema_force_cpu else None)
@@ -253,13 +253,13 @@ class TorchImageClassificationEstimator(BaseEstimator):
         self._time_elapsed += time.time() - start_tic
         for epoch in range(max(self.start_epoch, self.epoch), self._train_cfg.epochs):
             train_metrics = self.train_one_epoch(
-                epoch, model, train_loader, self._optimizer, train_loss_fn,
+                epoch, self.model, train_loader, self._optimizer, train_loss_fn,
                 lr_scheduler=self._lr_scheduler, saver=saver, output_dir=self._logdir,
                 amp_autocast=self._amp_autocast, loss_scaler=self._loss_scaler, model_ema=self._model_ema, mixup_fn=self._mixup_fn)
             post_tic = time.time()
 
             # TODO: evaluation function takes different parameters than mxnet one
-            eval_metrics = self.validate(model, val_loader, validate_loss_fn, amp_autocast=self._amp_autocast)
+            eval_metrics = self.validate(self.model, val_loader, validate_loss_fn, amp_autocast=self._amp_autocast)
 
             if self._model_ema is not None and not self._model_ema_cfg.model_ema_force_cpu:
                 ema_eval_metrics = self.validate(
@@ -411,7 +411,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
                     target = target[0:target.size(0):reduce_factor]
 
                 loss = loss_fn(output, target)
-                acc1, acc5 = accuracy(output, target, topk=(1, 5))
+                acc1, acc5 = accuracy(output, target, topk=(1, min(5, self.num_class)))
 
                 reduced_loss = loss.data
 
@@ -423,7 +423,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
                 top5_m.update(acc5.item(), output.size(0))
 
                 batch_time_m.update(time.time() - b_tic)
-                if last_batch or batch_idx % self._misc_cfglog_interval == 0:
+                if last_batch or batch_idx % self._misc_cfg.log_interval == 0:
                     log_name = 'Test' + log_suffix
                     self._logger.info(
                         '{0}: [{1:>4d}/{2}]  '
