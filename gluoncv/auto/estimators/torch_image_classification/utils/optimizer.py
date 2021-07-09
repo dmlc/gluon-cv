@@ -8,6 +8,4 @@ def optimizer_kwargs(cfg):
         kwargs['eps'] = cfg.optimizer.opt_eps
     if cfg.optimizer.opt_betas is not None:
         kwargs['betas'] = cfg.optimizer.opt_betas
-    if cfg.optimizer.opt_args is not None:
-        kwargs.update(cfg.optimizer.opt_args)
     return kwargs

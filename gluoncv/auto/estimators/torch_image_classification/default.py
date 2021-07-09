@@ -21,17 +21,16 @@ class DatasetCfg:
     img_size: Union[int, None] = None  # Image patch size (default: None => model default)
     input_size: Union[Tuple[int, int, int], None] = None  # Input all image dimensions (d h w, e.g. --input-size 3 224 224), uses model default if empty
     crop_pct: Union[float, None] = None  # Input image center crop percent (for validation only)
-    mean: Union[Tuple[float, ...], None] = None  # Override mean pixel value of dataset
-    std : Union[Tuple[float, ...], None] = None  # Override std deviation of of dataset
+    mean: Union[Tuple, None] = None  # Override mean pixel value of dataset
+    std : Union[Tuple, None] = None  # Override std deviation of of dataset
     interpolation: str = ''  # Image resize interpolation type (overrides model)
-    batch_size: int = 32
     validation_batch_size_multiplier: int = 1  # ratio of validation batch size to training batch size (default: 1)
 
 @dataclass
 class OptimizerCfg:
     opt: str = 'sgd'
     opt_eps: Union[float, None] = None  # Optimizer Epsilon (default: None, use opt default)
-    opt_betas: Union[Tuple[float, ...], None] = None  # Optimizer Betas (default: None, use opt default)
+    opt_betas: Union[Tuple, None] = None  # Optimizer Betas (default: None, use opt default)
     momentum: float = 0.9
     weight_decay: float = 0.0001
     clip_grad: Union[float, None] = None  # Clip gradient norm (default: None, no clipping)
@@ -39,9 +38,10 @@ class OptimizerCfg:
 
 @dataclass
 class TrainCfg:
+    batch_size: int = 32
     sched: str = 'step'  # LR scheduler
     lr: float = 0.01
-    lr_noise: Union[Tuple[float, ...], None] = None  # learning rate noise on/off epoch percentages
+    lr_noise: Union[Tuple, None] = None  # learning rate noise on/off epoch percentages
     lr_noise_pct: float = 0.67  # learning rate noise limit percent
     lr_noise_std: float = 1.0  # learning rate noise std-dev
     lr_cycle_mul: float = 1.0  # learning rate cycle len multiplier
@@ -50,7 +50,11 @@ class TrainCfg:
     min_lr: float = 1e-5
     epochs: int = 200
     epoch_repeats: float = 0.  # epoch repeat multiplier (number of times to repeat dataset epoch per train epoch)
-    start_epoch: Union[int, None] = None  # manual epoch number (useful on restarts)
+    start_epoch: int = 0  # manual epoch number (useful on restarts)
+    decay_epochs: int = 30  # epoch interval to decay LR
+    warmup_epochs: int = 3  # epochs to warmup LR, if scheduler supports
+    cooldown_epochs: int = 10  # epochs to cooldown LR at min_lr, after cyclic schedule ends
+    patience_epochs: int = 10  # patience epochs for Plateau LR scheduler
     decay_rate: float = 0.1
     bn_momentum: Union[float, None] = None  # BatchNorm momentum override
     bn_eps: Union[float, None] = None  # BatchNorm epsilon override
@@ -74,7 +78,7 @@ class AugmentationCfg:
     resplit: bool = False  # Do not random erase first (clean) augmentation split
     mixup: float = 0.0  # mixup alpha, mixup enabled if > 0
     cut_mix: float = 0.0  # cutmix alpha, cutmix enabled if > 0
-    cutmix_minmax: Union[Tuple[float, ...], None] = None  # cutmix min/max ratio, overrides alpha and enables cutmix if set
+    cutmix_minmax: Union[Tuple, None] = None  # cutmix min/max ratio, overrides alpha and enables cutmix if set
     mixup_prob: float = 1.0  # Probability of performing mixup or cutmix when either/both is enabled
     mixup_switch_prob: float = 0.5  # Probability of switching to cutmix when both mixup and cutmix enabled
     mixup_mode: str = 'batch'  # How to apply mixup/cutmix params. Per "batch", "pair", or "elem"

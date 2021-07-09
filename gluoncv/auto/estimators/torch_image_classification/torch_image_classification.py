@@ -93,8 +93,9 @@ class TorchImageClassificationEstimator(BaseEstimator):
         tic = time.time()
         self._best_acc = -float('inf')
         self.epoch = 0
+        self.start_epoch = self._train_cfg.start_epoch
         self._time_elapsed = 0
-        if max(self._train_cfg.start_epoch, self.epoch) >= self._train_cfg.epochs:
+        if max(self.start_epoch, self.epoch) >= self._train_cfg.epochs:
             return {'time', self._time_elapsed}
         if not isinstance(train_data, pd.DataFrame):
             self.last_train = len(train_data)
@@ -132,11 +133,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
                 _optimizer=None if self._model_cfg.no_resume_opt else self._optimizer,
                 loss_scaler=None if self._model_cfg.no_resume_opt else self._loss_scaler,
                 logger=self._logger, log_info=True)
-        self.start_epoch = 0
-        if self._train_cfg.start_epoch is not None:
-            # a specified start_epoch will always override the resume epoch
-            self.start_epoch = self._train_cfg.start_epoch
-        elif resume_epoch is not None:
+        if resume_epoch is not None:
             self.start_epoch = resume_epoch
 
         if max(self.start_epoch, self.epoch) >= self._train_cfg.epochs:
@@ -153,12 +150,12 @@ class TorchImageClassificationEstimator(BaseEstimator):
 
         # prepare dataset
         train_dataset = train_data.to_torch()
-        val_dataset = val_data.torch()
+        val_dataset = val_data.to_torch()
 
         # setup mixup / cutmix
         self._collate_fn = None
         self._mixup_fn = None
-        self.mixup_active = self._augmentation_cfg.mixup > 0 or self._augmentation_cfg.cutmix > 0. or self._augmentation_cfg.cutmix_minmax is not None
+        self.mixup_active = self._augmentation_cfg.mixup > 0 or self._augmentation_cfg.cut_mix > 0. or self._augmentation_cfg.cutmix_minmax is not None
         if self.mixup_active:
             mixup_args = dict(
                 mixup_alpha=self._augmentation_cfg.mixup, cutmix_alpha=self._augmentation_cfg.cutmix, 
@@ -182,7 +179,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
         train_loader = create_loader(
             train_dataset,
             input_size=self._dataset_cfg.input_size,
-            batch_size=self._dataset_cfg.batch_size,
+            batch_size=self._train_cfg.batch_size,
             is_training=True,
             use_prefetcher=self._misc_cfg.prefetcher,
             no_aug=self._augmentation_cfg.no_aug,
@@ -200,7 +197,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
             interpolation=train_interpolation,
             mean=self._dataset_cfg.mean,
             std=self._dataset_cfg.std,
-            num_workers=self._misc_cfg.workers,
+            num_workers=self._misc_cfg.num_workers,
             distributed=False,
             collate_fn=self._collate_fn,
             pin_memory=self._misc_cfg.pin_mem,
@@ -210,13 +207,13 @@ class TorchImageClassificationEstimator(BaseEstimator):
         val_loader = create_loader(
             val_dataset,
             input_size=self._dataset_cfg.input_size,
-            batch_size=self._dataset_cfg.validation_batch_size_multiplier * self._dataset_cfg.batch_size,
+            batch_size=self._dataset_cfg.validation_batch_size_multiplier * self._train_cfg.batch_size,
             is_training=False,
             use_prefetcher=self._misc_cfg.prefetcher,
             interpolation=self._dataset_cfg.interpolation,
             mean=self._dataset_cfg.mean,
             std=self._dataset_cfg.std,
-            num_workers=self._misc_cfg.workers,
+            num_workers=self._misc_cfg.num_workers,
             distributed=False,
             crop_pct=self._dataset_cfg.crop_pct,
             pin_memory=self._misc_cfg.pin_mem,
@@ -254,7 +251,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
         #     checkpoint_dir=self._logdir, recovery_dir=self._logdir, decreasing=decreasing, max_history=self._misc_cfg.checkpoint_hist)
         # TODO: early stoper
         self._time_elapsed += time.time() - start_tic
-        for epoch in range(max(self.start_epoch, self.epoch), self._train_cfg.epoch):
+        for epoch in range(max(self.start_epoch, self.epoch), self._train_cfg.epochs):
             train_metrics = self.train_one_epoch(
                 epoch, model, train_loader, self._optimizer, train_loss_fn,
                 lr_scheduler=self._lr_scheduler, saver=saver, output_dir=self._logdir,

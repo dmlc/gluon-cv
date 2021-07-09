@@ -267,8 +267,8 @@ class BaseEstimator:
             import torch
             for gid in gpu_ids:
                 try:
-                    _ = torch.zeros(1, device=f'cuda:{gpu_ids}')
-                    valid_gpus.append(gid)
+                    _ = torch.zeros(1, device=f'cuda:{gid}')
+                    valid_gpus.append(str(gid))
                 except:
                     pass
         except ImportError:
