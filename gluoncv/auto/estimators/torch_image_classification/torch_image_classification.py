@@ -91,7 +91,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
     def _fit(self, train_data, val_data, time_limit=math.inf):
         tic = time.time()
         self._cp_name = ''
-        self._best_acc = -float('inf')
+        self._best_acc = 0.0
         self.epoch = 0
         self.start_epoch = self._train_cfg.start_epoch
         self._time_elapsed = 0
@@ -221,12 +221,11 @@ class TorchImageClassificationEstimator(BaseEstimator):
         validate_loss_fn = nn.CrossEntropyLoss()
         train_loss_fn = train_loss_fn.to(self.ctx)
         validate_loss_fn = validate_loss_fn.to(self.ctx)
-        # TODO: output matrix
-        # setup eval metric tracking
         eval_metric = self._misc_cfg.eval_metric
         # TODO: early stoper
         self._time_elapsed += time.time() - start_tic
         for epoch in range(max(self.start_epoch, self.epoch), self._train_cfg.epochs):
+            self.epoch = epoch
             train_metrics = self.train_one_epoch(
                 epoch, self.model, train_loader, self._optimizer, train_loss_fn,
                 lr_scheduler=self._lr_scheduler, output_dir=self._logdir,
@@ -268,22 +267,21 @@ class TorchImageClassificationEstimator(BaseEstimator):
                 mixup_fn.mixup_enabled = False
 
         second_order = hasattr(optimizer, 'is_second_order') and optimizer.is_second_order
-        batch_time_m = AverageMeter()
         losses_m = AverageMeter()
         top1_m = AverageMeter()
 
         self.model.train()
 
-        last_idx = len(loader) - 1
         num_updates = epoch * len(loader)
         self._time_elapsed += time.time() - start_tic
+        tic = time.time()
+        last_tic = time.time()
         for batch_idx, (input, target) in enumerate(loader):
             b_tic = time.time()
-            last_batch = batch_idx == last_idx
             if self._time_elapsed > time_limit:
                 return {'train_acc': top1_m.avg, 'train_loss': losses_m.avg, 'time_limit': True}
             if not self._misc_cfg.prefetcher:
-                # FIXME: prefetcher only work on cpu?
+                # prefetcher would move data to cuda by default
                 input, target = input.to(self.ctx), target.to(self.ctx)
                 if mixup_fn is not None:
                     input, target = mixup_fn(input, target)
@@ -318,25 +316,14 @@ class TorchImageClassificationEstimator(BaseEstimator):
                 torch.cuda.synchronize()
 
             num_updates += 1
-            batch_time_m.update(time.time() - b_tic)
-            if last_batch or batch_idx % self._misc_cfg.log_interval == 0:
+            if (batch_idx+1) % self._misc_cfg.log_interval == 0:
                 lrl = [param_group['lr'] for param_group in optimizer.param_groups]
                 lr = sum(lrl) / len(lrl)
-
-                self._logger.info(
-                    'Train: {} [{:>4d}/{} ({:>3.0f}%)]  '
-                    'Loss: {loss.val:>9.6f} ({loss.avg:>6.4f})  '
-                    'Time: {batch_time.val:.3f}s, {rate:>7.2f}/s  '
-                    '({batch_time.avg:.3f}s, {rate_avg:>7.2f}/s)  '
-                    'LR: {lr:.3e}  '.format(
-                        epoch,
-                        batch_idx, len(loader),
-                        100. * batch_idx / last_idx,
-                        loss=losses_m,
-                        batch_time=batch_time_m,
-                        rate=input.size(0) * 1 / batch_time_m.val,
-                        rate_avg=input.size(0) * 1 / batch_time_m.avg,
-                        lr=lr))
+                self._logger.info('Epoch[%d] Batch [%d]\tSpeed: %f samples/sec\taccuracy=%f\tlr=%f',
+                                      epoch, batch_idx,
+                                      self._train_cfg.batch_size*self._misc_cfg.log_interval/(time.time()-last_tic),
+                                      top1_m.avg, lr)
+                last_tic = time.time()
 
                 if self._misc_cfg.save_images and output_dir:
                     torchvision.utils.save_image(
@@ -349,10 +336,15 @@ class TorchImageClassificationEstimator(BaseEstimator):
                 lr_scheduler.step_update(num_updates=num_updates, metric=losses_m.avg)
 
             self._time_elapsed += time.time() - b_tic
-        
+
+        throughput = int(self._train_cfg.batch_size * batch_idx /(time.time() - tic))
+        self._logger.info('[Epoch %d] training: accuracy=%f', epoch, top1_m.avg)
+        self._logger.info('[Epoch %d] speed: %d samples/sec\ttime cost: %f', epoch, throughput, time.time()-tic)
+
         end_time = time.time()
         if hasattr(optimizer, 'sync_lookahead'):
             optimizer.sync_lookahead()
+
         self._time_elapsed += time.time() - end_time
 
         return {'train_acc': top1_m.avg, 'train_loss': losses_m.avg, 'time_limit': False}
@@ -393,6 +385,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
                 top1_m.update(acc1.item(), output.size(0))
                 top5_m.update(acc5.item(), output.size(0))
 
+        self._logger.info('[Epoch %d] validation: top1=%f top5=%f', self.epoch, top1_m.avg, top5_m.avg)
         # TODO: update early stoper
         # FIXME: should I use avg here?
         if top1_m.avg > self._best_acc:
@@ -410,6 +403,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
         assert len(self.classes) == self.num_class
 
         # ctx
+        self.found_gpu = False
         valid_gpus = []
         if self._cfg.gpus:
             valid_gpus = self._torch_validate_gpus(self._cfg.gpus)
@@ -423,6 +417,11 @@ class TorchImageClassificationEstimator(BaseEstimator):
                     f'Loaded on gpu({valid_gpus}), different from gpu({self._cfg.gpus}).')
             valid_gpus = ','.join(valid_gpus)
         self.ctx = torch.device(f'cuda:{valid_gpus}' if self.found_gpu else 'cpu')
+
+        if not self.found_gpu and self._misc_cfg.prefetcher:
+            self._logger.warning(
+                'Training on cpu. Prefetcher disabled.')
+            update_cfg(self._cfg, {'misc': {'prefetcher': False}})
 
         self.model = create_model(
             self._model_cfg.model,
