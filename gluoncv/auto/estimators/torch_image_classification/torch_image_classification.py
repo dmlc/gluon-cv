@@ -2,7 +2,6 @@ import math
 import os
 import time
 from contextlib import suppress
-from collections import OrderedDict
 
 import pandas as pd
 import numpy as np
@@ -20,6 +19,7 @@ from timm.loss import LabelSmoothingCrossEntropy, SoftTargetCrossEntropy, JsdCro
 
 from .default import TorchImageClassificationCfg
 from .utils import *
+from ..conf import _BEST_CHECKPOINT_FILE
 from ..base_estimator import BaseEstimator, set_default
 from ...data.dataset import ImageClassificationDataset
 from ....utils.filesystem import try_import
@@ -52,8 +52,8 @@ class TorchImageClassificationEstimator(BaseEstimator):
         if problem_type is None:
             problem_type = MULTICLASS
         self._problem_type = problem_type
-        self.last_train = None
         self._feature_net = None
+        self._cp_name = ''
 
         self._model_cfg = self._cfg.model
         self._dataset_cfg = self._cfg.dataset
@@ -97,10 +97,6 @@ class TorchImageClassificationEstimator(BaseEstimator):
         self._time_elapsed = 0
         if max(self.start_epoch, self.epoch) >= self._train_cfg.epochs:
             return {'time', self._time_elapsed}
-        if not isinstance(train_data, pd.DataFrame):
-            self.last_train = len(train_data)
-        else:
-            self.last_train = train_data
         self._init_trainer()
         self._time_elapsed += time.time() - tic
         return self._resume_fit(train_data, val_data, time_limit=time_limit)
@@ -239,53 +235,44 @@ class TorchImageClassificationEstimator(BaseEstimator):
         train_loss_fn = train_loss_fn.to(self.ctx)
         validate_loss_fn = validate_loss_fn.to(self.ctx)
         # TODO: output matrix
-        # setup checkpoint saver and eval metric tracking
+        # setup eval metric tracking
         eval_metric = self._misc_cfg.eval_metric
-        best_metric = None
-        best_epoch = None
-        saver = None
-        decreasing = True if eval_metric == 'loss' else False
-        # TODO: custom saver
-        # saver = CheckpointSaver(
-        #     model=model, optimizer=self._optimizer, args=args, model_ema=self._model_ema, amp_scaler=self._loss_scaler,
-        #     checkpoint_dir=self._logdir, recovery_dir=self._logdir, decreasing=decreasing, max_history=self._misc_cfg.checkpoint_hist)
         # TODO: early stoper
         self._time_elapsed += time.time() - start_tic
         for epoch in range(max(self.start_epoch, self.epoch), self._train_cfg.epochs):
             train_metrics = self.train_one_epoch(
                 epoch, self.model, train_loader, self._optimizer, train_loss_fn,
-                lr_scheduler=self._lr_scheduler, saver=saver, output_dir=self._logdir,
-                amp_autocast=self._amp_autocast, loss_scaler=self._loss_scaler, model_ema=self._model_ema, mixup_fn=self._mixup_fn)
+                lr_scheduler=self._lr_scheduler, output_dir=self._logdir,
+                amp_autocast=self._amp_autocast, loss_scaler=self._loss_scaler, model_ema=self._model_ema, mixup_fn=self._mixup_fn, time_limit=time_limit)
+            # reaching time limit, exit early
+            if train_metrics['time_limit']:
+                self._logger.warning(f'`time_limit={time_limit}` reached, exit early...')
+                return {'train_acc': train_metrics['train_acc'], 'valid_acc': self._best_acc,
+                'time': self._time_elapsed, 'checkpoint': self.cp_name}
             post_tic = time.time()
 
-            # TODO: evaluation function takes different parameters than mxnet one
             eval_metrics = self.validate(self.model, val_loader, validate_loss_fn, amp_autocast=self._amp_autocast)
 
             if self._model_ema is not None and not self._model_ema_cfg.model_ema_force_cpu:
                 ema_eval_metrics = self.validate(
-                    self._model_ema.module, val_loader, validate_loss_fn, amp_autocast=self._amp_autocast, log_suffix=' (EMA)')
+                    self._model_ema.module, val_loader, validate_loss_fn, amp_autocast=self._amp_autocast)
                 eval_metrics = ema_eval_metrics
 
             if self._lr_scheduler is not None:
                 # step LR for next epoch
                 self._lr_scheduler.step(epoch + 1, eval_metrics[eval_metric])
 
-            if saver is not None:
-                # save proper checkpoint with eval metric
-                save_metric = eval_metrics[eval_metric]
-                best_metric, best_epoch = saver.save_checkpoint(epoch, metric=save_metric)
-
-            if best_metric is not None:
-                self._logger.info('*** Best metric: {0} (epoch {1})'.format(best_metric, best_epoch))
+            # TODO: get best epoch
 
             self._time_elapsed += time.time() - post_tic
         # TODO: return score, time and checkpoint
-        return {'train_loss': train_metrics['loss']}
+        return {'train_acc': train_metrics['train_acc'], 'valid_acc': self._best_acc,
+                'time': self._time_elapsed, 'checkpoint': self.cp_name}
 
     def train_one_epoch(
         self, epoch, model, loader, optimizer, loss_fn,
-        lr_scheduler=None, saver=None, output_dir=None, amp_autocast=suppress,
-        loss_scaler=None, model_ema=None, mixup_fn=None):
+        lr_scheduler=None, output_dir=None, amp_autocast=suppress,
+        loss_scaler=None, model_ema=None, mixup_fn=None, time_limit=math.inf):
         start_tic = time.time()
         if self._augmentation_cfg.mixup_off_epoch and epoch >= self._augmentation_cfg.mixup_off_epoch:
             if self._misc_cfg.prefetcher and loader.mixup_enabled:
@@ -296,6 +283,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
         second_order = hasattr(optimizer, 'is_second_order') and optimizer.is_second_order
         batch_time_m = AverageMeter()
         losses_m = AverageMeter()
+        top1_m = AverageMeter()
 
         self.model.train()
 
@@ -305,6 +293,8 @@ class TorchImageClassificationEstimator(BaseEstimator):
         for batch_idx, (input, target) in enumerate(loader):
             b_tic = time.time()
             last_batch = batch_idx == last_idx
+            if self._time_elapsed > time_limit:
+                return {'train_acc': top1_m.avg, 'train_loss': losses_m.avg, 'time_limit': True}
             if not self._misc_cfg.prefetcher:
                 # FIXME: prefetcher only work on cpu?
                 input, target = input.to(self.ctx), target.to(self.ctx)
@@ -314,8 +304,10 @@ class TorchImageClassificationEstimator(BaseEstimator):
             with amp_autocast():
                 output = self.model(input)
                 loss = loss_fn(output, target)
+            acc1 = accuracy(output, target)[0]
 
             losses_m.update(loss.item(), input.size(0))
+            top1_m.update(acc1.item(), output.size(0))
 
             optimizer.zero_grad()
             if loss_scaler is not None:
@@ -366,10 +358,6 @@ class TorchImageClassificationEstimator(BaseEstimator):
                         padding=0,
                         normalize=True)
 
-            if saver is not None and self._misc_cfg.recovery_interval and (
-                    last_batch or (batch_idx + 1) % self._misc_cfg.recovery_interval == 0):
-                saver.save_recovery(epoch, batch_idx=batch_idx)
-
             if lr_scheduler is not None:
                 lr_scheduler.step_update(num_updates=num_updates, metric=losses_m.avg)
 
@@ -380,21 +368,17 @@ class TorchImageClassificationEstimator(BaseEstimator):
             optimizer.sync_lookahead()
         self._time_elapsed += time.time() - end_time
 
-        return OrderedDict([('loss', losses_m.avg)])
+        return {'train_acc': top1_m.avg, 'train_loss': losses_m.avg, 'time_limit': False}
 
-    def validate(self, model, loader, loss_fn, amp_autocast=suppress, log_suffix=''):
-        batch_time_m = AverageMeter()
+    def validate(self, model, loader, loss_fn, amp_autocast=suppress):
         losses_m = AverageMeter()
         top1_m = AverageMeter()
         top5_m = AverageMeter()
 
         model.eval()
 
-        last_idx = len(loader) - 1
         with torch.no_grad():
             for batch_idx, (input, target) in enumerate(loader):
-                b_tic = time.time()
-                last_batch = batch_idx == last_idx
                 if not self._misc_cfg.prefetcher:
                     input = input.to(self.ctx)
                     target = target.to(self.ctx)
@@ -422,21 +406,16 @@ class TorchImageClassificationEstimator(BaseEstimator):
                 top1_m.update(acc1.item(), output.size(0))
                 top5_m.update(acc5.item(), output.size(0))
 
-                batch_time_m.update(time.time() - b_tic)
-                if last_batch or batch_idx % self._misc_cfg.log_interval == 0:
-                    log_name = 'Test' + log_suffix
-                    self._logger.info(
-                        '{0}: [{1:>4d}/{2}]  '
-                        'Time: {batch_time.val:.3f} ({batch_time.avg:.3f})  '
-                        'Loss: {loss.val:>7.4f} ({loss.avg:>6.4f})  '
-                        'Acc@1: {top1.val:>7.4f} ({top1.avg:>7.4f})  '
-                        'Acc@5: {top5.val:>7.4f} ({top5.avg:>7.4f})'.format(
-                            log_name, batch_idx, last_idx, batch_time=batch_time_m,
-                            loss=losses_m, top1=top1_m, top5=top5_m))
+        # TODO: update early stoper
+        # FIXME: should I use avg here?
+        if top1_m.avg > self._best_acc:
+            self.cp_name = os.path.join(self._logdir, _BEST_CHECKPOINT_FILE)
+            self._logger.info('[Epoch %d] Current best top-1: %f vs previous %f, saved to %s',
+                                      self.epoch, top1_m.avg, self._best_acc, self.cp_name)
+            self.save(self.cp_name)
+            self._best_acc = top1_m.avg
 
-        metrics = OrderedDict([('loss', losses_m.avg), ('top1', top1_m.avg), ('top5', top5_m.avg)])
-
-        return metrics
+        return {'loss': losses_m.avg, 'top1': top1_m.avg, 'top5': top5_m.avg}
 
     def _init_network(self, **kwargs):
         if self._problem_type == REGRESSION:

@@ -99,7 +99,6 @@ class ModelEMACfg:
 class MiscCfg:
     seed: int = 42
     log_interval: int = 50  # how many batches to wait before logging training status
-    recovery_interval: int = 0  # how many batches to wait before writing recovery checkpoint
     checkpoint_hist: int = 10  # number of checkpoints to keep
     num_workers: int = 4  # how many training processes to use
     save_images: bool = False  # save images of input bathes every log interval for debugging
