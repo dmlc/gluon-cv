@@ -10,8 +10,6 @@ class ModelCfg:
     model: str = 'resnet101'
     pretrained: bool = False
     initial_checkpoint: str = ''  # Initialize model from this checkpoint
-    resume: str = ''  # Resume full model and optimizer state from checkpoint
-    no_resume_opt: bool = False  # prevent resume of optimizer state when resuming model
     global_pool_type: Union[str, None] = None  # Global pool type, one of (fast, avg, max, avgmax, avgmaxc). Model default if None
 
 @dataclass

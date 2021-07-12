@@ -53,7 +53,6 @@ class TorchImageClassificationEstimator(BaseEstimator):
             problem_type = MULTICLASS
         self._problem_type = problem_type
         self._feature_net = None
-        self._cp_name = ''
 
         self._model_cfg = self._cfg.model
         self._dataset_cfg = self._cfg.dataset
@@ -91,6 +90,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
 
     def _fit(self, train_data, val_data, time_limit=math.inf):
         tic = time.time()
+        self._cp_name = ''
         self._best_acc = -float('inf')
         self.epoch = 0
         self.start_epoch = self._train_cfg.start_epoch
@@ -121,17 +121,6 @@ class TorchImageClassificationEstimator(BaseEstimator):
         else:
             self._logger.info('AMP not enabled. Training in float32.')
 
-        # TODO: move resume_checkpoint and save_checkpoint to baseestimator save & load
-        resume_epoch = None
-        if self._model_cfg.resume:
-            resume_epoch = resume_checkpoint(
-                self.model, self._model_cfg.resume,
-                _optimizer=None if self._model_cfg.no_resume_opt else self._optimizer,
-                loss_scaler=None if self._model_cfg.no_resume_opt else self._loss_scaler,
-                logger=self._logger, log_info=True)
-        if resume_epoch is not None:
-            self.start_epoch = resume_epoch
-
         if max(self.start_epoch, self.epoch) >= self._train_cfg.epochs:
             return {'time', self._time_elapsed}
 
@@ -141,8 +130,6 @@ class TorchImageClassificationEstimator(BaseEstimator):
             # Important to create EMA model after cuda(), DP wrapper, and AMP but before SyncBN and DDP wrapper
             self._model_ema = ModelEmaV2(
                 self.model, decay=self._model_ema_cfg.model_ema_decay, device='cpu' if self._model_ema_cfg.model_ema_force_cpu else None)
-            if self._model_cfg.resume:
-                load_checkpoint(self._model_ema.module, self._cfg.modelresume, use_ema=True)
 
         # prepare dataset
         train_dataset = train_data.to_torch()
