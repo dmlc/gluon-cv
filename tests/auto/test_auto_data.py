@@ -21,6 +21,8 @@ import os
 import tempfile
 import pandas as pd
 from gluoncv.auto.data.dataset import ImageClassificationDataset
+from gluoncv.auto.data.dataset import ObjectDetectionDataset
+
 
 def test_image_datasets_from_csv():
     N = 10
@@ -44,7 +46,7 @@ def test_image_datasets_from_csv():
         d2 = ImageClassificationDataset.from_csv(abnormal_csv, image_column='some_image', label_column='some_label')
 
 def test_object_detection_data():
-    df = ObjectDetection.Dataset.from_voc('https://autogluon.s3.amazonaws.com/datasets/tiny_motorbike.zip')
+    df = ObjectDetectionDataset.from_voc('https://autogluon.s3.amazonaws.com/datasets/tiny_motorbike.zip')
     if df.is_packed():
         df2 = df.unpack().pack()
     else:
