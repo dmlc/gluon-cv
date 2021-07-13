@@ -9,13 +9,10 @@ from autocfg import dataclass, field
 class ModelCfg:
     model: str = 'resnet101'
     pretrained: bool = False
-    initial_checkpoint: str = ''  # Initialize model from this checkpoint
     global_pool_type: Union[str, None] = None  # Global pool type, one of (fast, avg, max, avgmax, avgmaxc). Model default if None
 
 @dataclass
 class DatasetCfg:
-    data_dir: str = ''  # path to dataset
-    dataset: str = ''  # dataset type (default: ImageFolder/ImageTar if empty)
     img_size: Union[int, None] = None  # Image patch size (default: None => model default)
     input_size: Union[Tuple[int, int, int], None] = None  # Input all image dimensions (d h w, e.g. --input-size 3 224 224), uses model default if empty
     crop_pct: Union[float, None] = None  # Input image center crop percent (for validation only)
@@ -58,6 +55,11 @@ class TrainCfg:
     bn_eps: Union[float, None] = None  # BatchNorm epsilon override
     sync_bn: bool = False  # Enable NVIDIA Apex or Torch synchronized BatchNorm
     split_bn: bool = False  # Enable separate BN layers per augmentation split
+    early_stop_patience : int = -1  # epochs with no improvement after which train is early stopped, negative: disabled
+    early_stop_min_delta : float = 0.001  # ignore changes less than min_delta for metrics
+    # the baseline value for metric, training won't stop if not reaching baseline
+    early_stop_baseline : Union[float, int] = 0.0
+    early_stop_max_value : Union[float, int] = 1.0  # early stop if reaching max value instantly
 
 @dataclass
 class AugmentationCfg:
@@ -97,7 +99,6 @@ class ModelEMACfg:
 class MiscCfg:
     seed: int = 42
     log_interval: int = 50  # how many batches to wait before logging training status
-    checkpoint_hist: int = 10  # number of checkpoints to keep
     num_workers: int = 4  # how many training processes to use
     save_images: bool = False  # save images of input bathes every log interval for debugging
     amp: bool = False  # use NVIDIA Apex AMP or Native AMP for mixed precision training

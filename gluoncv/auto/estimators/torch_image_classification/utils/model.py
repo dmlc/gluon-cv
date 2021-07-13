@@ -3,6 +3,7 @@ import os
 
 import torch
 
+# FIXME: shouldn't need this anymore
 def resume_checkpoint(model, checkpoint_path, optimizer=None, loss_scaler=None, logger=None, log_info=False):
     resume_epoch = None
     if os.path.isfile(checkpoint_path):

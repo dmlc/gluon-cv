@@ -1,5 +1,7 @@
 import math
 import os
+import pickle
+import logging
 import time
 from contextlib import suppress
 
@@ -11,14 +13,15 @@ import torchvision.utils
 from torch.optim.optimizer import Optimizer
 
 from timm.data import create_loader, Mixup, FastCollateMixup, AugMixDataset
-from timm.models import create_model, safe_model_name, convert_splitbn_model, load_checkpoint, model_parameters
-from timm.utils import random_seed, dispatch_clip_grad, accuracy, ModelEmaV2, AverageMeter
+from timm.models import create_model, safe_model_name, convert_splitbn_model, model_parameters
+from timm.utils import random_seed, dispatch_clip_grad, accuracy, unwrap_model, get_state_dict
 from timm.optim import create_optimizer_v2
-from timm.utils import ApexScaler, NativeScaler
+from timm.utils import ApexScaler, NativeScaler, ModelEmaV2, AverageMeter
 from timm.loss import LabelSmoothingCrossEntropy, SoftTargetCrossEntropy, JsdCrossEntropy
 
 from .default import TorchImageClassificationCfg
 from .utils import *
+from ..utils import EarlyStopperOnPlateau
 from ..conf import _BEST_CHECKPOINT_FILE
 from ..base_estimator import BaseEstimator, set_default
 from ...data.dataset import ImageClassificationDataset
@@ -47,7 +50,7 @@ except AttributeError:
 
 @set_default(TorchImageClassificationCfg())
 class TorchImageClassificationEstimator(BaseEstimator):
-    def __init__(self, config, logger=None, reporter=None, model=None, optimizer=None, problem_type=None):
+    def __init__(self, config, logger=None, reporter=None, net=None, optimizer=None, problem_type=None):
         super().__init__(config, logger=logger, reporter=reporter, name=None)
         if problem_type is None:
             problem_type = MULTICLASS
@@ -73,14 +76,14 @@ class TorchImageClassificationEstimator(BaseEstimator):
             elif self._misc_cfg.apex_amp or self._misc_cfg.native_amp:
                 self._logger.warning(f'Neither APEX or native Torch AMP is available, using float32. \
                                        Install NVIDA apex or upgrade to PyTorch 1.6')
-
-        if model is not None:
-            assert isinstance(model, nn), f"given custom network {type(model)}, `torch.nn` expected"
+        # FIXME: will provided model conflict with config provided?
+        if net is not None:
+            assert isinstance(net, nn.Module), f"given custom network {type(net)}, `torch.nn` expected"
             try:
-                self.model.to('cpu')
+                net.to('cpu')
             except ValueError:
                 pass
-        self._custom_model = model
+        self.net = net
         if optimizer is not None:
             if isinstance(optimizer, str):
                 pass
@@ -98,6 +101,8 @@ class TorchImageClassificationEstimator(BaseEstimator):
         if max(self.start_epoch, self.epoch) >= self._train_cfg.epochs:
             return {'time', self._time_elapsed}
         self._init_trainer()
+        self._init_loss_scaler()
+        self._init_model_ema()
         self._time_elapsed += time.time() - tic
         return self._resume_fit(train_data, val_data, time_limit=time_limit)
 
@@ -107,29 +112,8 @@ class TorchImageClassificationEstimator(BaseEstimator):
         if self._problem_type != REGRESSION and (not self.classes or not self.num_class):
             raise ValueError('This is a classification problem and we are not able to determine classes of dataset')
 
-        # setup automatic mixed-precision (AMP) loss scaling and op casting
-        self._amp_autocast = suppress  # do nothing
-        self._loss_scaler = None
-        if self.use_amp == 'apex':
-            self.model, self._optimizer = amp.initialize(self.model, self._optimizer, opt_level='O1')
-            self._loss_scaler = ApexScaler()
-            self._logger.info('Using NVIDIA APEX AMP. Training in mixed precision.')
-        elif self.use_amp == 'native':
-            self._amp_autocast = torch.cuda.amp.autocast
-            self._loss_scaler = NativeScaler()
-            self._logger.info('Using native Torch AMP. Training in mixed precision.')
-        else:
-            self._logger.info('AMP not enabled. Training in float32.')
-
         if max(self.start_epoch, self.epoch) >= self._train_cfg.epochs:
-            return {'time', self._time_elapsed}
-
-        # setup exponential moving average of model weights, SWA could be used here too
-        self._model_ema = None
-        if self._model_ema_cfg.model_ema:
-            # Important to create EMA model after cuda(), DP wrapper, and AMP but before SyncBN and DDP wrapper
-            self._model_ema = ModelEmaV2(
-                self.model, decay=self._model_ema_cfg.model_ema_decay, device='cpu' if self._model_ema_cfg.model_ema_force_cpu else None)
+            return {'time': self._time_elapsed}
 
         # prepare dataset
         train_dataset = train_data.to_torch()
@@ -222,12 +206,26 @@ class TorchImageClassificationEstimator(BaseEstimator):
         train_loss_fn = train_loss_fn.to(self.ctx)
         validate_loss_fn = validate_loss_fn.to(self.ctx)
         eval_metric = self._misc_cfg.eval_metric
-        # TODO: early stoper
+        early_stopper = EarlyStopperOnPlateau(
+            patience=self._train_cfg.early_stop_patience,
+            min_delta=self._train_cfg.early_stop_min_delta,
+            baseline_value=self._train_cfg.early_stop_baseline,
+            max_value=self._train_cfg.early_stop_max_value)
+
+        self._logger.info('Start training from [Epoch %d]', max(self._train_cfg.start_epoch, self.epoch))
+
         self._time_elapsed += time.time() - start_tic
-        for epoch in range(max(self.start_epoch, self.epoch), self._train_cfg.epochs):
-            self.epoch = epoch
+        for self.epoch in range(max(self.start_epoch, self.epoch), self._train_cfg.epochs):
+            epoch = self.epoch
+            if self._best_acc >= 1.0:
+                self._logger.info('[Epoch {}] Early stopping as acc is reaching 1.0'.format(epoch))
+                break
+            should_stop, stop_message = early_stopper.get_early_stop_advice()
+            if should_stop:
+                self._logger.info('[Epoch {}] '.format(epoch) + stop_message)
+                break
             train_metrics = self.train_one_epoch(
-                epoch, self.model, train_loader, self._optimizer, train_loss_fn,
+                epoch, self.net, train_loader, self._optimizer, train_loss_fn,
                 lr_scheduler=self._lr_scheduler, output_dir=self._logdir,
                 amp_autocast=self._amp_autocast, loss_scaler=self._loss_scaler, model_ema=self._model_ema, mixup_fn=self._mixup_fn, time_limit=time_limit)
             # reaching time limit, exit early
@@ -237,26 +235,26 @@ class TorchImageClassificationEstimator(BaseEstimator):
                 'time': self._time_elapsed, 'checkpoint': self.cp_name}
             post_tic = time.time()
 
-            eval_metrics = self.validate(self.model, val_loader, validate_loss_fn, amp_autocast=self._amp_autocast)
+            eval_metrics = self.validate(self.net, val_loader, validate_loss_fn, amp_autocast=self._amp_autocast)
 
             if self._model_ema is not None and not self._model_ema_cfg.model_ema_force_cpu:
                 ema_eval_metrics = self.validate(
                     self._model_ema.module, val_loader, validate_loss_fn, amp_autocast=self._amp_autocast)
                 eval_metrics = ema_eval_metrics
 
+            early_stopper.update(eval_metrics['top1'])
+
             if self._lr_scheduler is not None:
                 # step LR for next epoch
                 self._lr_scheduler.step(epoch + 1, eval_metrics[eval_metric])
 
-            # TODO: get best epoch
-
             self._time_elapsed += time.time() - post_tic
-        # TODO: return score, time and checkpoint
+
         return {'train_acc': train_metrics['train_acc'], 'valid_acc': self._best_acc,
                 'time': self._time_elapsed, 'checkpoint': self.cp_name}
 
     def train_one_epoch(
-        self, epoch, model, loader, optimizer, loss_fn,
+        self, epoch, net, loader, optimizer, loss_fn,
         lr_scheduler=None, output_dir=None, amp_autocast=suppress,
         loss_scaler=None, model_ema=None, mixup_fn=None, time_limit=math.inf):
         start_tic = time.time()
@@ -270,7 +268,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
         losses_m = AverageMeter()
         top1_m = AverageMeter()
 
-        self.model.train()
+        self.net.train()
 
         num_updates = epoch * len(loader)
         self._time_elapsed += time.time() - start_tic
@@ -287,9 +285,10 @@ class TorchImageClassificationEstimator(BaseEstimator):
                     input, target = mixup_fn(input, target)
             
             with amp_autocast():
-                output = self.model(input)
+                output = self.net(input)
                 loss = loss_fn(output, target)
             acc1 = accuracy(output, target)[0]
+            acc1 /= 100
 
             losses_m.update(loss.item(), input.size(0))
             top1_m.update(acc1.item(), output.size(0))
@@ -299,18 +298,18 @@ class TorchImageClassificationEstimator(BaseEstimator):
                 loss_scaler(
                     loss, optimizer,
                     clip_grad=self._optimizer_cfg.clip_grad, clip_mode=self._optimizer_cfg.clip_mode,
-                    parameters=model_parameters(model, exclude_head='agc' in self._optimizer_cfg.clip_mode),
+                    parameters=model_parameters(net, exclude_head='agc' in self._optimizer_cfg.clip_mode),
                     create_graph=second_order)
             else:
                 loss.backward(create_graph=second_order)
                 if self._optimizer_cfg.clip_grad is not None:
                     dispatch_clip_grad(
-                        model_parameters(model, exclude_head='agc' in self._optimizer_cfg.clip_mode),
+                        model_parameters(net, exclude_head='agc' in self._optimizer_cfg.clip_mode),
                         value=self._optimizer_cfg.clip_grad, mode=self._optimizer_cfg.clip_mode)
                 optimizer.step()
 
             if model_ema is not None:
-                model_ema.update(model)
+                model_ema.update(net)
 
             if self.found_gpu:
                 torch.cuda.synchronize()
@@ -349,12 +348,12 @@ class TorchImageClassificationEstimator(BaseEstimator):
 
         return {'train_acc': top1_m.avg, 'train_loss': losses_m.avg, 'time_limit': False}
 
-    def validate(self, model, loader, loss_fn, amp_autocast=suppress):
+    def validate(self, net, loader, loss_fn, amp_autocast=suppress):
         losses_m = AverageMeter()
         top1_m = AverageMeter()
         top5_m = AverageMeter()
 
-        model.eval()
+        net.eval()
 
         with torch.no_grad():
             for batch_idx, (input, target) in enumerate(loader):
@@ -363,7 +362,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
                     target = target.to(self.ctx)
 
                 with amp_autocast():
-                    output = model(input)
+                    output = net(input)
                 if isinstance(output, (tuple, list)):
                     output = output[0]
 
@@ -375,6 +374,8 @@ class TorchImageClassificationEstimator(BaseEstimator):
 
                 loss = loss_fn(output, target)
                 acc1, acc5 = accuracy(output, target, topk=(1, min(5, self.num_class)))
+                acc1 /= 100
+                acc5 /=100
 
                 reduced_loss = loss.data
 
@@ -423,12 +424,11 @@ class TorchImageClassificationEstimator(BaseEstimator):
                 'Training on cpu. Prefetcher disabled.')
             update_cfg(self._cfg, {'misc': {'prefetcher': False}})
 
-        self.model = create_model(
+        self.net = create_model(
             self._model_cfg.model,
             pretrained=self._model_cfg.pretrained,
             num_classes=self.num_class,
             global_pool=self._model_cfg.global_pool_type,
-            checkpoint_path=self._model_cfg.initial_checkpoint,
             drop_rate=self._augmentation_cfg.drop,
             drop_path_rate=self._augmentation_cfg.drop_path,
             drop_block_rate=self._augmentation_cfg.drop_block,
@@ -438,9 +438,9 @@ class TorchImageClassificationEstimator(BaseEstimator):
         )
 
         self._logger.info(f'Model {safe_model_name(self._model_cfg.model)} created, param count: \
-                                    {sum([m.numel() for m in self.model.parameters()])}')
+                                    {sum([m.numel() for m in self.net.parameters()])}')
 
-        resolve_data_config(self._cfg, model=self.model)
+        resolve_data_config(self._cfg, model=self.net)
 
         # setup augmentation batch splits for contrastive loss or split bn
         # TODO: disable for now
@@ -450,19 +450,19 @@ class TorchImageClassificationEstimator(BaseEstimator):
         # enable split bn (separate bn stats per batch-portion)
         if self._train_cfg.split_bn:
             assert self._augmentation_cfg.aug_splits > 1 or self._augmentation_cfg.resplit
-            self.model = convert_splitbn_model(self.model, max(self._augmentation_cfg.aug_splits, 2))
+            self.net = convert_splitbn_model(self.net, max(self._augmentation_cfg.aug_splits, 2))
 
         # move model to correct ctx
-        self.model = self.model.to(self.ctx)
+        self.net = self.net.to(self.ctx)
 
         # setup synchronized BatchNorm
         if self._train_cfg.sync_bn:
             assert not self._train_cfg.split_bn
             if has_apex and self.use_amp != 'native':
                 # Apex SyncBN preferred unless native amp is activated
-                self.model = convert_syncbn_model(self.model)
+                self.net = convert_syncbn_model(self.net)
             else:
-                self.model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(self.model)
+                self.net = torch.nn.SyncBatchNorm.convert_sync_batchnorm(self.net)
             self._logger.info(
                 'Converted model to use Synchronized BatchNorm. WARNING: You may have issues if using '
                 'zero initialized BN layers (enabled by default for ResNets) while sync-bn enabled.')
@@ -470,12 +470,37 @@ class TorchImageClassificationEstimator(BaseEstimator):
         if self._misc_cfg.torchscript:
             assert not self.use_amp == 'apex', 'Cannot use APEX AMP with torchscripted model'
             assert not self._train_cfg.sync_bn, 'Cannot use SyncBatchNorm with torchscripted model'
-            self.model = torch.jit.script(self.model)
+            self.net = torch.jit.script(self.net)
 
     def _init_trainer(self):
         if self._optimizer is None:
-            self._optimizer = create_optimizer_v2(self.model, **optimizer_kwargs(cfg=self._cfg))
+            self._optimizer = create_optimizer_v2(self.net, **optimizer_kwargs(cfg=self._cfg))
         self._lr_scheduler, self.num_epochs = create_scheduler(self._cfg, self._optimizer)
+        self._lr_scheduler.step(self.epoch)
+
+    def _init_loss_scaler(self):
+        # setup automatic mixed-precision (AMP) loss scaling and op casting
+        self._amp_autocast = suppress  # do nothing
+        self._loss_scaler = None
+        if self.use_amp == 'apex':
+            self.net, self._optimizer = amp.initialize(self.net, self._optimizer, opt_level='O1')
+            self._loss_scaler = ApexScaler()
+            self._logger.info('Using NVIDIA APEX AMP. Training in mixed precision.')
+        elif self.use_amp == 'native':
+            self._amp_autocast = torch.cuda.amp.autocast
+            self._loss_scaler = NativeScaler()
+            self._logger.info('Using native Torch AMP. Training in mixed precision.')
+        else:
+            self._logger.info('AMP not enabled. Training in float32.')
+
+    def _init_model_ema(self):
+        # setup exponential moving average of model weights, SWA could be used here too
+        self._model_ema = None
+        if self._model_ema_cfg.model_ema:
+            # Important to create EMA model after cuda(), DP wrapper, and AMP but before SyncBN and DDP wrapper
+            self._model_ema = ModelEmaV2(
+                self.net, decay=self._model_ema_cfg.model_ema_decay, device='cpu' if self._model_ema_cfg.model_ema_force_cpu else None)
+
 
     def evaluate(self, val_data):
         return self._evaluate(val_data)
@@ -483,10 +508,75 @@ class TorchImageClassificationEstimator(BaseEstimator):
     def _evaluate(self, val_data):
         validate_loss_fn = nn.CrossEntropyLoss()
         validate_loss_fn = validate_loss_fn.to(self.ctx)
-        return self.validate(self.model, val_data, validate_loss_fn, amp_autocast=self._amp_autocast)
+        return self.validate(self.net, val_data, validate_loss_fn, amp_autocast=self._amp_autocast)
 
     def _predict(self, x, **kwargs):
         pass
 
     def _predict_feature(self, x, **kwargs):
         pass
+
+    def _reconstruct_state_dict(self, state_dict):
+        new_state_dict = {}
+        for k, v in state_dict.items():
+            name = k[7:] if k.startswith('module') else k
+            new_state_dict[name] = v
+        return new_state_dict
+
+    def __getstate__(self):
+        d = self.__dict__.copy()
+        try:
+            import torch
+            net = d.pop('net', None)
+            model_ema = d.pop('_model_ema', None)
+            optimizer = d.pop('_optimizer', None)
+            loss_scaler = d.pop('_loss_scaler', None)
+            save_state = {
+                'state_dict': get_state_dict(net, unwrap_model),
+                'optimizer': optimizer.state_dict(),
+            }
+            if loss_scaler is not None:
+                save_state[loss_scaler.state_dict_key] = loss_scaler.state_dict()
+            if model_ema is not None:
+                save_state['state_dict_ema'] = get_state_dict(model_ema, unwrap_model)
+        except ImportError:
+            pass
+        d['save_state'] = save_state
+        d['_logger'] = None
+        d['_reporter'] = None
+        return d
+
+    def __setstate__(self, state):
+        save_state = state.pop('save_state', None)
+        assert save_state is not None, 'No save state detected. Cannot load checkpoint'
+        self.__dict__.update(state)
+        # logger
+        self._logger = logging.getLogger(state.get('_name', self.__class__.__name__))
+        self._logger.setLevel(logging.ERROR)
+        try:
+            fh = logging.FileHandler(self._log_file)
+            self._logger.addHandler(fh)
+        #pylint: disable=bare-except
+        except:
+            pass
+        try:
+            import torch
+            self.net = None
+            self._optimizer = None
+            self._init_network()
+            net_state_dict = self._reconstruct_state_dict(save_state['state_dict'])
+            self.net.load_state_dict(net_state_dict)
+            self._init_trainer()
+            self._optimizer.load_state_dict(save_state['optimizer'])
+            self._init_loss_scaler()
+            if self._loss_scaler and self._loss_scaler.state_dict_key in save_state:
+                loss_scaler_dict = save_state[self._loss_scaler.state_dict_key]
+                self._loss_scaler.load_state_dict(loss_scaler_dict)
+            self._init_model_ema()
+            model_ema_dict = save_state.get('state_dict_ema', None)
+            if model_ema_dict:
+                model_ema_dict = self._reconstruct_state_dict(model_ema_dict)
+                self._model_ema.load_state_dict(model_ema_dict)
+        except ImportError:
+            pass
+        self._logger.setLevel(logging.INFO)

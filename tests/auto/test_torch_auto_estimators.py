@@ -24,8 +24,8 @@ IMAGE_CLASS_DATASET, _, IMAGE_CLASS_TEST = ImageClassificationDataset.from_folde
 
 def test_image_classification_estimator():
     from gluoncv.auto.estimators import TorchImageClassificationEstimator
-    est = TorchImageClassificationEstimator({'train': {'epochs': 2}, 'misc': {'log_interval': 5}, 'gpus': ()})
-    # est = TorchImageClassificationEstimator({'train': {'epochs': 2}, 'misc': {'log_interval': 5}})
+    # est = TorchImageClassificationEstimator({'train': {'epochs': 1}, 'misc': {'log_interval': 5}, 'gpus': ()})
+    est = TorchImageClassificationEstimator({'train': {'epochs': 1}, 'misc': {'log_interval': 5}})
     res = est.fit(IMAGE_CLASS_DATASET)
 
 
