@@ -1,8 +1,8 @@
 import math
 import os
-import pickle
 import logging
 import time
+import warnings
 from contextlib import suppress
 from PIL import Image
 
@@ -33,6 +33,8 @@ problem_type_constants = try_import(package='autogluon.core.constants',
 MULTICLASS = problem_type_constants.MULTICLASS
 BINARY = problem_type_constants.BINARY
 REGRESSION = problem_type_constants.REGRESSION
+
+warnings.filterwarnings('ignore', message='.*Argument interpolation should be of type InterpolationMode instead of int.*')
 
 try:
     from apex import amp
