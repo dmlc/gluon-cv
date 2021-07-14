@@ -4,6 +4,7 @@ import pickle
 import logging
 import time
 from contextlib import suppress
+from PIL import Image
 
 import pandas as pd
 import numpy as np
@@ -510,7 +511,57 @@ class TorchImageClassificationEstimator(BaseEstimator):
         return self.validate(self.net, val_data, validate_loss_fn, amp_autocast=self._amp_autocast)
 
     def _predict(self, x, **kwargs):
-        pass
+        # TODO: test predict
+        if isinstance(x, pd.DataFrame):
+            assert 'image' in x.columns, "Expect column `image` for input images"
+            df = self._predict(tuple(x['image']))
+            return df.reset_index(drop=True)
+        elif isinstance(x, (list, tuple)):
+            loader = create_loader(
+                ImageListDataset(x), 
+                input_size=self._dataset_cfg.input_size,
+                batch_size=self._train_cfg.batch_size,
+                use_prefetcher=self._misc_cfg.prefetcher,
+                interpolation=self._dataset_cfg.interpolation,
+                mean=self._dataset_cfg.mean,
+                std=self._dataset_cfg.std,
+                num_workers=self._misc_cfg.num_workers,
+                crop_pct=self._dataset_cfg.crop_pct
+            )
+
+            self.net.eval()
+
+            topk = min(5, self.num_class)
+            results = []
+            idx = 0
+            with torch.no_grad():
+                for input, _ in loader:
+                    input = input.to(self.ctx[0])
+                    labels = self.net(input)
+                    for l in labels:
+                        probs = nn.functional.softmax(l, dim=0).cpu().numpy().flatten()
+                        topk_inds = l.topk(topk)[1].cpu().numpy().flatten()
+                        results.extend([{'class': self.classes[topk_inds[k]], 
+                                        'score': probs[topk_inds[k]],
+                                        'id': topk_inds[k],
+                                        'image': x[idx]}
+                                        for k in range(topk)])
+                        idx += 1
+            return pd.DataFrame(results)
+        elif not isinstance(x, torch.tensor):
+            raise ValueError('Input is not supported: {}'.format(type(x)))
+        with torch.no_grad():
+            input = x.to(self.ctx[0])
+            label = self.net(input)
+            topk = min(5, self.num_class)
+            probs = nn.functional.softmax(label, dim=0).cpu().numpy().flatten()
+            topk_inds = label.topk(topk)[1].cpu().numpy().flatten()
+            df = pd.DataFrame([{'class': self.classes[topk_inds[k]], 
+                                'score': probs[topk_inds[k]], 
+                                'id': topk_inds[k]} 
+                                for k in range(topk)])
+        return df
+
 
     def _predict_feature(self, x, **kwargs):
         pass
@@ -579,3 +630,19 @@ class TorchImageClassificationEstimator(BaseEstimator):
         except ImportError:
             pass
         self._logger.setLevel(logging.INFO)
+
+class ImageListDataset(torch.utils.data.Dataset):
+    """An internal image list dataset for batch predict"""
+    def __init__(self, imlist):
+        self._imlist = imlist
+        self.transform = None
+
+    def __getitem__(self, idx):
+        img = Image.open(self._imlist[idx]).convert('RGB')
+        label = None
+        if self.transform is not None:
+            img = self.transform(img)
+        return img, torch.tensor(-1, dtype=torch.long)
+
+    def __len__(self):
+        return len(self._imlist)
