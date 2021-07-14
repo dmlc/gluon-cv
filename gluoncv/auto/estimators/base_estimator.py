@@ -316,6 +316,8 @@ class BaseEstimator:
                     self.net.to(self.ctx[0])
                 self.ctx = ctx_list
                 done = True
+        except ImportError:
+            pass
         if not done:
             raise RuntimeError("Unable to reset_ctx, no `mxnet` and `pytorch`.")
 
