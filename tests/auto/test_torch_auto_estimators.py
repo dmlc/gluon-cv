@@ -28,6 +28,7 @@ def test_image_classification_estimator():
     est = TorchImageClassificationEstimator({'train': {'epochs': 1}, 'misc': {'log_interval': 5}})
     res = est.fit(IMAGE_CLASS_DATASET)
     pred = est.predict(IMAGE_CLASS_TEST)
+    pred_features = est.predict_feature(IMAGE_CLASS_TEST)
 
 
 if __name__ == '__main__':

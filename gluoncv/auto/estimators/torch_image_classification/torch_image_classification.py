@@ -25,7 +25,6 @@ from .utils import *
 from ..utils import EarlyStopperOnPlateau
 from ..conf import _BEST_CHECKPOINT_FILE
 from ..base_estimator import BaseEstimator, set_default
-from ...data.dataset import ImageClassificationDataset
 from ....utils.filesystem import try_import
 problem_type_constants = try_import(package='autogluon.core.constants',
                                     fromlist=['MULTICLASS', 'BINARY', 'REGRESSION'],
@@ -513,7 +512,6 @@ class TorchImageClassificationEstimator(BaseEstimator):
         return self.validate(self.net, val_data, validate_loss_fn, amp_autocast=self._amp_autocast)
 
     def _predict(self, x, **kwargs):
-        # TODO: test predict
         if isinstance(x, pd.DataFrame):
             assert 'image' in x.columns, "Expect column `image` for input images"
             df = self._predict(tuple(x['image']))
@@ -566,7 +564,47 @@ class TorchImageClassificationEstimator(BaseEstimator):
 
 
     def _predict_feature(self, x, **kwargs):
-        pass
+        if isinstance(x, pd.DataFrame):
+            assert 'image' in x.columns, "Expect column `image` for input images"
+            df = self._predict_feature(tuple(x['image']))
+            df = df.set_index(x.index)
+            df['image'] = x['image']
+            return df
+        elif isinstance(x, (list, tuple)):
+            assert isinstance(x[0], str), "expect image paths in list/tuple input"
+            loader = create_loader(
+                ImageListDataset(x), 
+                input_size=self._dataset_cfg.input_size,
+                batch_size=self._train_cfg.batch_size,
+                use_prefetcher=self._misc_cfg.prefetcher,
+                interpolation=self._dataset_cfg.interpolation,
+                mean=self._dataset_cfg.mean,
+                std=self._dataset_cfg.std,
+                num_workers=self._misc_cfg.num_workers,
+                crop_pct=self._dataset_cfg.crop_pct
+            )
+
+            self.net.eval()
+
+            results = []
+            with torch.no_grad():
+                for input, _ in loader:
+                    input = input.to(self.ctx[0])
+                    features = self.net.forward_features(input)
+                    for f in features:
+                        f = f.cpu().numpy().flatten()
+                        results.append({'image_feature': f})
+            df = pd.DataFrame(results)
+            df['image'] = x
+            return df
+        elif not isinstance(x, torch.tensor):
+            raise ValueError('Input is not supported: {}'.format(type(x)))
+        with torch.no_grad():
+            input = x.to(self.ctx[0])
+            feature = self.net.forward_features(input)
+            result = [{'image_feature': feature}]
+        df = pd.DataFrame(result)
+        return df
 
     def _reconstruct_state_dict(self, state_dict):
         new_state_dict = {}
