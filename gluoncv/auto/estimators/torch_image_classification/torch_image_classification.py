@@ -203,8 +203,8 @@ class TorchImageClassificationEstimator(BaseEstimator):
         else:
             train_loss_fn = nn.CrossEntropyLoss()
         validate_loss_fn = nn.CrossEntropyLoss()
-        train_loss_fn = train_loss_fn.to(self.ctx)
-        validate_loss_fn = validate_loss_fn.to(self.ctx)
+        train_loss_fn = train_loss_fn.to(self.ctx[0])
+        validate_loss_fn = validate_loss_fn.to(self.ctx[0])
         eval_metric = self._misc_cfg.eval_metric
         early_stopper = EarlyStopperOnPlateau(
             patience=self._train_cfg.early_stop_patience,
@@ -280,7 +280,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
                 return {'train_acc': top1_m.avg, 'train_loss': losses_m.avg, 'time_limit': True}
             if not self._misc_cfg.prefetcher:
                 # prefetcher would move data to cuda by default
-                input, target = input.to(self.ctx), target.to(self.ctx)
+                input, target = input.to(self.ctx[0]), target.to(self.ctx[0])
                 if mixup_fn is not None:
                     input, target = mixup_fn(input, target)
             
@@ -358,8 +358,8 @@ class TorchImageClassificationEstimator(BaseEstimator):
         with torch.no_grad():
             for batch_idx, (input, target) in enumerate(loader):
                 if not self._misc_cfg.prefetcher:
-                    input = input.to(self.ctx)
-                    target = target.to(self.ctx)
+                    input = input.to(self.ctx[0])
+                    target = target.to(self.ctx[0])
 
                 with amp_autocast():
                     output = net(input)
@@ -416,8 +416,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
             elif len(valid_gpus) != len(self._cfg.gpus):
                 self._logger.warning(
                     f'Loaded on gpu({valid_gpus}), different from gpu({self._cfg.gpus}).')
-            valid_gpus = ','.join(valid_gpus)
-        self.ctx = torch.device(f'cuda:{valid_gpus}' if self.found_gpu else 'cpu')
+        self.ctx = [torch.device(f'cuda:{gid}') for gid in valid_gpus] if self.found_gpu else [torch.device('cpu')]
 
         if not self.found_gpu and self._misc_cfg.prefetcher:
             self._logger.warning(
@@ -453,7 +452,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
             self.net = convert_splitbn_model(self.net, max(self._augmentation_cfg.aug_splits, 2))
 
         # move model to correct ctx
-        self.net = self.net.to(self.ctx)
+        self.net = self.net.to(self.ctx[0])
 
         # setup synchronized BatchNorm
         if self._train_cfg.sync_bn:
@@ -507,7 +506,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
     
     def _evaluate(self, val_data):
         validate_loss_fn = nn.CrossEntropyLoss()
-        validate_loss_fn = validate_loss_fn.to(self.ctx)
+        validate_loss_fn = validate_loss_fn.to(self.ctx[0])
         return self.validate(self.net, val_data, validate_loss_fn, amp_autocast=self._amp_autocast)
 
     def _predict(self, x, **kwargs):

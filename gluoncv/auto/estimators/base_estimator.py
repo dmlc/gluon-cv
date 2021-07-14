@@ -305,6 +305,17 @@ class BaseEstimator:
                 done = True
         except ImportError:
             pass
+        try:
+            import torch
+            if isinstance(self.net, torch.nn.Module):
+                for c in ctx_list:
+                    assert isinstance(c, torch.device)
+                if hasattr(self.net, 'reset_ctx'):
+                    self.net.reset_ctx(ctx_list)
+                else:
+                    self.net.to(self.ctx[0])
+                self.ctx = ctx_list
+                done = True
         if not done:
             raise RuntimeError("Unable to reset_ctx, no `mxnet` and `pytorch`.")
 
