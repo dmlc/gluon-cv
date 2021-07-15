@@ -3,8 +3,6 @@
 from typing import Union, Tuple
 from autocfg import dataclass, field
 
-# TODO: remove wandb
-
 @dataclass
 class ModelCfg:
     model: str = 'resnet101'
@@ -44,7 +42,6 @@ class TrainCfg:
     warmup_lr: float = 0.0001
     min_lr: float = 1e-5
     epochs: int = 200
-    epoch_repeats: float = 0.  # epoch repeat multiplier (number of times to repeat dataset epoch per train epoch)
     start_epoch: int = 0  # manual epoch number (useful on restarts)
     decay_epochs: int = 30  # epoch interval to decay LR
     warmup_epochs: int = 3  # epochs to warmup LR, if scheduler supports

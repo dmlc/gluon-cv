@@ -455,6 +455,8 @@ class TorchImageClassificationEstimator(BaseEstimator):
 
         # move model to correct ctx
         self.net = self.net.to(self.ctx[0])
+        if self.found_gpu and len(self.ctx) > 1:
+            self.net = torch.nn.DataParallel(self.net, device_ids=valid_gpus)
 
         # setup synchronized BatchNorm
         if self._train_cfg.sync_bn:
