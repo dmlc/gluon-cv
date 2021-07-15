@@ -801,5 +801,5 @@ def _check_load_coco_bbox(coco, entry, min_object_area=0, use_crowd=False):
         if obj['area'] > 0 and xmax > xmin and ymax > ymin:
             cname = coco.loadCats(obj['category_id'])[0]['name']
             valid_objs.append({'xmin': xmin / width, 'ymin': ymin / height, 'xmax': xmax / width,
-                               'ymax': ymax, 'class': cname, 'is_crowd': is_crowd})
+                               'ymax': ymax / height, 'class': cname, 'is_crowd': is_crowd})
     return valid_objs
