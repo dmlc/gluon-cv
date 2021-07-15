@@ -454,10 +454,10 @@ class TorchImageClassificationEstimator(BaseEstimator):
             self.net = convert_splitbn_model(self.net, max(self._augmentation_cfg.aug_splits, 2))
 
         # move model to correct ctx
+        if self.found_gpu:
+            self.net = torch.nn.DataParallel(self.net, device_ids=[int(i) for i in valid_gpus])
         self.net = self.net.to(self.ctx[0])
-        if self.found_gpu and len(self.ctx) > 1:
-            self.net = torch.nn.DataParallel(self.net, device_ids=valid_gpus)
-
+        
         # setup synchronized BatchNorm
         if self._train_cfg.sync_bn:
             assert not self._train_cfg.split_bn
@@ -592,7 +592,10 @@ class TorchImageClassificationEstimator(BaseEstimator):
             with torch.no_grad():
                 for input, _ in loader:
                     input = input.to(self.ctx[0])
-                    features = self.net.forward_features(input)
+                    try:
+                        features = self.net.forward_features(input)
+                    except AttributeError:
+                        features = self.net.module.forward_features(input)
                     for f in features:
                         f = f.cpu().numpy().flatten()
                         results.append({'image_feature': f})
@@ -623,10 +626,16 @@ class TorchImageClassificationEstimator(BaseEstimator):
             model_ema = d.pop('_model_ema', None)
             optimizer = d.pop('_optimizer', None)
             loss_scaler = d.pop('_loss_scaler', None)
-            save_state = {
-                'state_dict': get_state_dict(net, unwrap_model),
-                'optimizer': optimizer.state_dict(),
-            }
+            if isinstance(net, torch.nn.DataParallel):
+                save_state = {
+                    'state_dict': get_state_dict(net.module, unwrap_model),
+                    'optimizer': optimizer.state_dict(),
+                }
+            else:
+                save_state = {
+                    'state_dict': get_state_dict(net, unwrap_model),
+                    'optimizer': optimizer.state_dict(),
+                }
             if loss_scaler is not None:
                 save_state[loss_scaler.state_dict_key] = loss_scaler.state_dict()
             if model_ema is not None:
@@ -657,7 +666,10 @@ class TorchImageClassificationEstimator(BaseEstimator):
             self._optimizer = None
             self._init_network()
             net_state_dict = self._reconstruct_state_dict(save_state['state_dict'])
-            self.net.load_state_dict(net_state_dict)
+            if isinstance(self.net, torch.nn.DataParallel):
+                self.net.module.load_state_dict(net_state_dict)
+            else:
+                self.net.load_state_dict(net_state_dict)
             self._init_trainer()
             self._optimizer.load_state_dict(save_state['optimizer'])
             self._init_loss_scaler()

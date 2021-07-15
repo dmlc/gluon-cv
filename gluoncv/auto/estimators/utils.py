@@ -124,7 +124,7 @@ def _suggest_load_context(model, mode, orig_ctx):
             if not all(isinstance(i, int) for i in mode):
                 raise ValueError('Requires integer gpu id, given {}'.format(mode))
             return [mx.gpu(i) for i in mode if i in range(mx.context.num_gpus())]
-    if torch is not None and isinstance(model, torch.nn.Module):
+    if torch is not None and isinstance(model, (torch.nn.Module, torch.nn.DataParallel)):
         if mode == 'auto':
             if orig_ctx[0] == torch.device('cpu'):
                 mode = 'cpu'

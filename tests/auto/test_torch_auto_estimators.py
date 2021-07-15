@@ -18,6 +18,7 @@
 # under the License.
 """Test auto estimators"""
 from gluoncv.auto.data.dataset import ImageClassificationDataset
+from autogluon.core.scheduler.resource import get_cpu_count, get_gpu_count
 
 IMAGE_CLASS_DATASET, _, IMAGE_CLASS_TEST = ImageClassificationDataset.from_folders(
     'https://autogluon.s3.amazonaws.com/datasets/shopee-iet.zip')
@@ -25,7 +26,7 @@ IMAGE_CLASS_DATASET, _, IMAGE_CLASS_TEST = ImageClassificationDataset.from_folde
 def test_image_classification_estimator():
     from gluoncv.auto.estimators import TorchImageClassificationEstimator
     # est = TorchImageClassificationEstimator({'train': {'epochs': 1}, 'misc': {'log_interval': 5}, 'gpus': ()})
-    est = TorchImageClassificationEstimator({'train': {'epochs': 1}, 'misc': {'log_interval': 5}})
+    est = TorchImageClassificationEstimator({'model': {'model': 'resnet50'}, 'train': {'epochs': 100}, 'misc': {'log_interval': 5}, 'gpus': list(range(get_gpu_count()))})
     res = est.fit(IMAGE_CLASS_DATASET)
     pred = est.predict(IMAGE_CLASS_TEST)
     pred_features = est.predict_feature(IMAGE_CLASS_TEST)
