@@ -64,7 +64,7 @@ class AugmentationCfg:
     scale: Tuple[float, float] = (0.08, 1.0)  # Random resize scale
     ratio: Tuple[float, float] = (3./4., 4./3.) # Random resize aspect ratio (default: 0.75 1.33
     hflip: float = 0.5  # Horizontal flip training aug probability
-    vflip: float = 0.5 # Vertical flip training aug probability
+    vflip: float = 0.0 # Vertical flip training aug probability
     color_jitter: float = 0.4
     auto_augment: Union[str, None] = None  # Use AutoAugment policy. "v0" or "original
     aug_splits: int = 0  # Number of augmentation splits (default: 0, valid: 0 or >=2)
@@ -88,7 +88,7 @@ class AugmentationCfg:
 
 @dataclass
 class ModelEMACfg:
-    model_ema: bool = False  # Enable tracking moving average of model weights
+    model_ema: bool = True  # Enable tracking moving average of model weights
     model_ema_force_cpu: bool = False # Force ema to be tracked on CPU, rank=0 node only. Disables EMA validation
     model_ema_decay: float = 0.9998  # decay factor for model weights moving average
 

@@ -17,6 +17,7 @@
 # specific language governing permissions and limitations
 # under the License.
 """Test auto estimators"""
+from gluoncv.auto.estimators import TorchImageClassificationEstimator
 from gluoncv.auto.data.dataset import ImageClassificationDataset
 from autogluon.core.scheduler.resource import get_cpu_count, get_gpu_count
 
@@ -24,13 +25,25 @@ IMAGE_CLASS_DATASET, _, IMAGE_CLASS_TEST = ImageClassificationDataset.from_folde
     'https://autogluon.s3.amazonaws.com/datasets/shopee-iet.zip')
 
 def test_image_classification_estimator():
-    from gluoncv.auto.estimators import TorchImageClassificationEstimator
-    # est = TorchImageClassificationEstimator({'train': {'epochs': 1}, 'misc': {'log_interval': 5}, 'gpus': ()})
-    est = TorchImageClassificationEstimator({'model': {'model': 'resnet50'}, 'train': {'epochs': 100}, 'misc': {'log_interval': 5}, 'gpus': list(range(get_gpu_count()))})
+    est = TorchImageClassificationEstimator({'model': {'model': 'resnet50'}, 'train': {'epochs': 1008}, 'misc': {'log_interval': 5}, 'gpus': list(range(get_gpu_count()))})
     res = est.fit(IMAGE_CLASS_DATASET)
-    pred = est.predict(IMAGE_CLASS_TEST)
-    pred_features = est.predict_feature(IMAGE_CLASS_TEST)
+    est.predict(IMAGE_CLASS_TEST)
+    est.predict_feature(IMAGE_CLASS_TEST)
+    _save_load_test(est, 'test.pkl')
 
+def test_image_classification_estimator_cpu():
+    est = TorchImageClassificationEstimator({'model': {'model': 'resnet50'}, 'train': {'epochs': 1}, 'misc': {'log_interval': 5}, 'gpus': ()})
+    res = est.fit(IMAGE_CLASS_DATASET)
+    est.predict(IMAGE_CLASS_TEST)
+    est.predict_feature(IMAGE_CLASS_TEST)
+    _save_load_test(est, 'test.pkl')
+
+def _save_load_test(est, filename):
+    est._cfg.unfreeze()
+    est._cfg.gpus = list(range(16))  # invalid cfg, check if load can restore succesfully
+    est.save(filename)
+    est2 = est.__class__.load(filename)
+    return est2
 
 if __name__ == '__main__':
     import nose

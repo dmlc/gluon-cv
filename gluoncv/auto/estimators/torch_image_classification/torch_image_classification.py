@@ -97,10 +97,11 @@ class TorchImageClassificationEstimator(BaseEstimator):
         tic = time.time()
         self._cp_name = ''
         self._best_acc = 0.0
+        self.epochs = self._train_cfg.epochs
         self.epoch = 0
         self.start_epoch = self._train_cfg.start_epoch
         self._time_elapsed = 0
-        if max(self.start_epoch, self.epoch) >= self._train_cfg.epochs:
+        if max(self.start_epoch, self.epoch) >= self.epochs:
             return {'time', self._time_elapsed}
         self._init_trainer()
         self._init_loss_scaler()
@@ -114,7 +115,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
         if self._problem_type != REGRESSION and (not self.classes or not self.num_class):
             raise ValueError('This is a classification problem and we are not able to determine classes of dataset')
 
-        if max(self.start_epoch, self.epoch) >= self._train_cfg.epochs:
+        if max(self.start_epoch, self.epoch) >= self.epochs:
             return {'time': self._time_elapsed}
 
         # prepare dataset
@@ -217,7 +218,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
         self._logger.info('Start training from [Epoch %d]', max(self._train_cfg.start_epoch, self.epoch))
 
         self._time_elapsed += time.time() - start_tic
-        for self.epoch in range(max(self.start_epoch, self.epoch), self._train_cfg.epochs):
+        for self.epoch in range(max(self.start_epoch, self.epoch), self.epochs):
             epoch = self.epoch
             if self._best_acc >= 1.0:
                 self._logger.info('[Epoch {}] Early stopping as acc is reaching 1.0'.format(epoch))
@@ -244,7 +245,15 @@ class TorchImageClassificationEstimator(BaseEstimator):
                     self._model_ema.module, val_loader, validate_loss_fn, amp_autocast=self._amp_autocast)
                 eval_metrics = ema_eval_metrics
 
-            early_stopper.update(eval_metrics['top1'])
+            val_acc = eval_metrics['top1']
+            early_stopper.update(val_acc)
+
+            if val_acc > self._best_acc:
+                self.cp_name = os.path.join(self._logdir, _BEST_CHECKPOINT_FILE)
+                self._logger.info('[Epoch %d] Current best top-1: %f vs previous %f, saved to %s',
+                                        self.epoch, val_acc, self._best_acc, self.cp_name)
+                self.save(self.cp_name)
+                self._best_acc = val_acc
 
             if self._lr_scheduler is not None:
                 # step LR for next epoch
@@ -390,13 +399,6 @@ class TorchImageClassificationEstimator(BaseEstimator):
 
         self._logger.info('[Epoch %d] validation: top1=%f top5=%f', self.epoch, top1_m.avg, top5_m.avg)
         # TODO: update early stoper
-        # FIXME: should I use avg here?
-        if top1_m.avg > self._best_acc:
-            self.cp_name = os.path.join(self._logdir, _BEST_CHECKPOINT_FILE)
-            self._logger.info('[Epoch %d] Current best top-1: %f vs previous %f, saved to %s',
-                                      self.epoch, top1_m.avg, self._best_acc, self.cp_name)
-            self.save(self.cp_name)
-            self._best_acc = top1_m.avg
 
         return {'loss': losses_m.avg, 'top1': top1_m.avg, 'top5': top5_m.avg}
 
@@ -478,8 +480,8 @@ class TorchImageClassificationEstimator(BaseEstimator):
     def _init_trainer(self):
         if self._optimizer is None:
             self._optimizer = create_optimizer_v2(self.net, **optimizer_kwargs(cfg=self._cfg))
-        self._lr_scheduler, self.num_epochs = create_scheduler(self._cfg, self._optimizer)
-        self._lr_scheduler.step(self.epoch)
+        self._lr_scheduler, self.epochs = create_scheduler(self._cfg, self._optimizer)
+        self._lr_scheduler.step(self.start_epoch, self.epoch)
 
     def _init_loss_scaler(self):
         # setup automatic mixed-precision (AMP) loss scaling and op casting
@@ -497,6 +499,10 @@ class TorchImageClassificationEstimator(BaseEstimator):
             self._logger.info('AMP not enabled. Training in float32.')
 
     def _init_model_ema(self):
+        # Disable for now
+        if self._model_ema_cfg.model_ema:
+            update_cfg(self._cfg, {'model_ema': {'model_ema': False}})
+            self._logger.info('Disable EMA as it is not supported for now.')
         # setup exponential moving average of model weights, SWA could be used here too
         self._model_ema = None
         if self._model_ema_cfg.model_ema:
@@ -680,7 +686,10 @@ class TorchImageClassificationEstimator(BaseEstimator):
             model_ema_dict = save_state.get('state_dict_ema', None)
             if model_ema_dict:
                 model_ema_dict = self._reconstruct_state_dict(model_ema_dict)
-                self._model_ema.load_state_dict(model_ema_dict)
+                if isinstance(self.net, torch.nn.DataParallel):
+                    self._model_ema.module.module.load_state_dict(model_ema_dict)
+                else:
+                    self._model_ema.module.load_state_dict(model_ema_dict)
         except ImportError:
             pass
         self._logger.setLevel(logging.INFO)
