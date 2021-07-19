@@ -407,6 +407,12 @@ class TorchImageClassificationEstimator(BaseEstimator):
             raise NotImplementedError
         assert len(self.classes) == self.num_class
 
+        # Disable syncBatchNorm as it's only supported on DDP
+        if self._train_cfg.sync_bn:
+            self._logger.info(
+                'Disable Sync batch norm as it is not supported for now.')
+            update_cfg(self._cfg, {'train': {'sync_bn': False}})
+
         # ctx
         self.found_gpu = False
         valid_gpus = []
@@ -426,6 +432,9 @@ class TorchImageClassificationEstimator(BaseEstimator):
             self._logger.warning(
                 'Training on cpu. Prefetcher disabled.')
             update_cfg(self._cfg, {'misc': {'prefetcher': False}})
+            self._logger.warning(
+                'Training on cpu. SyncBatchNorm disabled.')
+            update_cfg(self._cfg, {'train': {'sync_bn': False}})
 
         self.net = create_model(
             self._model_cfg.model,
@@ -501,8 +510,8 @@ class TorchImageClassificationEstimator(BaseEstimator):
     def _init_model_ema(self):
         # Disable for now
         if self._model_ema_cfg.model_ema:
-            update_cfg(self._cfg, {'model_ema': {'model_ema': False}})
             self._logger.info('Disable EMA as it is not supported for now.')
+            update_cfg(self._cfg, {'model_ema': {'model_ema': False}})
         # setup exponential moving average of model weights, SWA could be used here too
         self._model_ema = None
         if self._model_ema_cfg.model_ema:

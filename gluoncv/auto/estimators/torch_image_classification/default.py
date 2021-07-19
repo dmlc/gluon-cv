@@ -7,7 +7,7 @@ from autocfg import dataclass, field
 class ModelCfg:
     model: str = 'resnet101'
     pretrained: bool = False
-    global_pool_type: Union[str, None] = None  # Global pool type, one of (fast, avg, max, avgmax, avgmaxc). Model default if None
+    global_pool_type: Union[str, None] = None  # Global pool type, one of (fast, avg, max, avgmax). Model default if None
 
 @dataclass
 class DatasetCfg:
@@ -107,7 +107,7 @@ class MiscCfg:
     eval_metric: str = 'top1'  # 'Best metric (default: "top1")
     tta: int = 0  # Test/inference time augmentation (oversampling) factor. 0=None
     use_multi_epochs_loader: bool = False  # use the multi-epochs-loader to save time at the beginning of every epoch
-    torchscript: bool = False  #convert model torchscript for inference
+    torchscript: bool = False  # keep false, convert model torchscript for inference
 
 @dataclass
 class TorchImageClassificationCfg:
