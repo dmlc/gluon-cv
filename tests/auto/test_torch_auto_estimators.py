@@ -126,6 +126,7 @@ def build_config(pretrained, global_pool_type, sync_bn, no_aug, mixup, cutmix, m
         config['train']['batch_size'] = 2
     config['train']['epochs'] = 1
     config['gpus'] = list(range(get_gpu_count()))
+    config['misc']['apex_amp'] = False # apex amp cause mem leak: https://github.com/NVIDIA/apex/issues/439
     return config
 
 if __name__ == '__main__':

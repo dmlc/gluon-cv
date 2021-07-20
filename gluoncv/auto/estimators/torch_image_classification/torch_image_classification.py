@@ -294,7 +294,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
         losses_m = AverageMeter()
         train_metric_score_m = AverageMeter()
 
-        self.net.train()
+        net.train()
 
         num_updates = epoch * len(loader)
         self._time_elapsed += time.time() - start_tic
@@ -313,7 +313,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
                     input, target = mixup_fn(input, target)
 
             with amp_autocast():
-                output = self.net(input)
+                output = net(input)
                 loss = loss_fn(output, target)
             if output.shape == target.shape:
                 train_metric_name = 'rmse'
