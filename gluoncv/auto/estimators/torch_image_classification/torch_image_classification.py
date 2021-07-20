@@ -18,7 +18,7 @@ from timm.models import create_model, safe_model_name, convert_splitbn_model, mo
 from timm.utils import random_seed, dispatch_clip_grad, accuracy, unwrap_model, get_state_dict
 from timm.optim import create_optimizer_v2
 from timm.utils import ApexScaler, NativeScaler, ModelEmaV2, AverageMeter
-from timm.loss import LabelSmoothingCrossEntropy, SoftTargetCrossEntropy, JsdCrossEntropy
+from timm.loss import LabelSmoothingCrossEntropy, SoftTargetCrossEntropy
 
 from .default import TorchImageClassificationCfg
 from .utils import *
@@ -69,7 +69,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
 
         # resolve AMP arguments based on PyTorch / Apex availability
         self.use_amp = None
-        if self._misc_cfg.amp:
+        if self._misc_cfg.amp :
             # `amp` chooses native amp before apex (APEX ver not actively maintained)
             if self._misc_cfg.native_amp and has_native_amp:
                 self.use_amp = 'native'
@@ -104,7 +104,6 @@ class TorchImageClassificationEstimator(BaseEstimator):
         if max(self.start_epoch, self.epoch) >= self.epochs:
             return {'time', self._time_elapsed}
         self._init_trainer()
-        self._init_loss_scaler()
         self._init_model_ema()
         self._time_elapsed += time.time() - tic
         return self._resume_fit(train_data, val_data, time_limit=time_limit)
@@ -118,6 +117,11 @@ class TorchImageClassificationEstimator(BaseEstimator):
         if max(self.start_epoch, self.epoch) >= self.epochs:
             return {'time': self._time_elapsed}
 
+        # wrap DP if possible
+        if self.found_gpu:
+            self.net = torch.nn.DataParallel(self.net, device_ids=[int(i) for i in self.valid_gpus])
+        self.net = self.net.to(self.ctx[0])
+
         # prepare dataset
         train_dataset = train_data.to_torch()
         val_dataset = val_data.to_torch()
@@ -125,7 +129,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
         # setup mixup / cutmix
         self._collate_fn = None
         self._mixup_fn = None
-        self.mixup_active = self._augmentation_cfg.mixup > 0 or self._augmentation_cfg.cut_mix > 0. or self._augmentation_cfg.cutmix_minmax is not None
+        self.mixup_active = self._augmentation_cfg.mixup > 0 or self._augmentation_cfg.cutmix > 0. or self._augmentation_cfg.cutmix_minmax is not None
         if self.mixup_active:
             mixup_args = dict(
                 mixup_alpha=self._augmentation_cfg.mixup, cutmix_alpha=self._augmentation_cfg.cutmix, 
@@ -133,14 +137,9 @@ class TorchImageClassificationEstimator(BaseEstimator):
                 switch_prob=self._augmentation_cfg.mixup_switch_prob, mode=self._augmentation_cfg.mixup_mode,
                 label_smoothing=self._augmentation_cfg.smoothing, num_classes=self.num_class)
             if self._misc_cfg.prefetcher:
-                assert not self._augmentation_cfg.aug_splits  # collate conflict (need to support deinterleaving in collate mixup)
                 self._collate_fn = FastCollateMixup(**mixup_args)
             else:
                 self._mixup_fn = Mixup(**mixup_args)
-
-        # wrap dataset in AugMix helper
-        if self._augmentation_cfg.aug_splits > 1:
-            train_dataset = AugMixDataset(train_dataset, num_splits=self._augmentation_cfg.aug_splits)
 
         # create data loaders w/ augmentation pipeiine
         train_interpolation = self._augmentation_cfg.train_interpolation
@@ -153,17 +152,12 @@ class TorchImageClassificationEstimator(BaseEstimator):
             is_training=True,
             use_prefetcher=self._misc_cfg.prefetcher,
             no_aug=self._augmentation_cfg.no_aug,
-            re_prob=self._augmentation_cfg.reprob,
-            re_mode=self._augmentation_cfg.remode,
-            re_count=self._augmentation_cfg.recount,
-            re_split=self._augmentation_cfg.resplit,
             scale=self._augmentation_cfg.scale,
             ratio=self._augmentation_cfg.ratio,
             hflip=self._augmentation_cfg.hflip,
             vflip=self._augmentation_cfg.vflip,
             color_jitter=self._augmentation_cfg.color_jitter,
             auto_augment=self._augmentation_cfg.auto_augment,
-            num_aug_splits=self._augmentation_cfg.aug_splits,
             interpolation=train_interpolation,
             mean=self._dataset_cfg.mean,
             std=self._dataset_cfg.std,
@@ -195,10 +189,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
     def _train_loop(self, train_loader, val_loader, time_limit=math.inf):
         start_tic = time.time()
         # setup loss function
-        if self._augmentation_cfg.jsd:
-            assert self._augmentation_cfg.aug_splits > 1  # JSD only valid with aug splits set
-            train_loss_fn = JsdCrossEntropy(num_splits=self._augmentation_cfg.aug_splits, smoothing=self._augmentation_cfg.smoothing)
-        elif self.mixup_active:
+        if self.mixup_active:
             # smoothing is handled with mixup target transform
             train_loss_fn = SoftTargetCrossEntropy()
         elif self._augmentation_cfg.smoothing:
@@ -261,8 +252,13 @@ class TorchImageClassificationEstimator(BaseEstimator):
 
             self._time_elapsed += time.time() - post_tic
 
-        return {'train_acc': train_metrics['train_acc'], 'valid_acc': self._best_acc,
-                'time': self._time_elapsed, 'checkpoint': self.cp_name}
+        if 'accuracy' in train_metrics:
+            return {'train_acc': train_metrics['accuracy'], 'valid_acc': self._best_acc,
+                    'time': self._time_elapsed, 'checkpoint': self.cp_name}
+        # rmse
+        else:
+            return {'train_score': train_metrics['rmse'], 'valid_acc': self._best_acc,
+                    'time': self._time_elapsed, 'checkpoint': self.cp_name}
 
     def train_one_epoch(
         self, epoch, net, loader, optimizer, loss_fn,
@@ -277,7 +273,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
 
         second_order = hasattr(optimizer, 'is_second_order') and optimizer.is_second_order
         losses_m = AverageMeter()
-        top1_m = AverageMeter()
+        train_metric_score_m = AverageMeter()
 
         self.net.train()
 
@@ -285,10 +281,11 @@ class TorchImageClassificationEstimator(BaseEstimator):
         self._time_elapsed += time.time() - start_tic
         tic = time.time()
         last_tic = time.time()
+        train_metric_name = 'accuracy'
         for batch_idx, (input, target) in enumerate(loader):
             b_tic = time.time()
             if self._time_elapsed > time_limit:
-                return {'train_acc': top1_m.avg, 'train_loss': losses_m.avg, 'time_limit': True}
+                return {'train_acc': train_metric_score_m.avg, 'train_loss': losses_m.avg, 'time_limit': True}
             if not self._misc_cfg.prefetcher:
                 # prefetcher would move data to cuda by default
                 input, target = input.to(self.ctx[0]), target.to(self.ctx[0])
@@ -298,11 +295,14 @@ class TorchImageClassificationEstimator(BaseEstimator):
             with amp_autocast():
                 output = self.net(input)
                 loss = loss_fn(output, target)
-            acc1 = accuracy(output, target)[0]
-            acc1 /= 100
+            if output.shape == target.shape:
+                train_metric_name = 'rmse'
+                train_metric_score = rmse(output, target)
+            else:
+                train_metric_score = accuracy(output, target)[0] / 100
 
             losses_m.update(loss.item(), input.size(0))
-            top1_m.update(acc1.item(), output.size(0))
+            train_metric_score_m.update(train_metric_score.item(), output.size(0))
 
             optimizer.zero_grad()
             if loss_scaler is not None:
@@ -329,10 +329,10 @@ class TorchImageClassificationEstimator(BaseEstimator):
             if (batch_idx+1) % self._misc_cfg.log_interval == 0:
                 lrl = [param_group['lr'] for param_group in optimizer.param_groups]
                 lr = sum(lrl) / len(lrl)
-                self._logger.info('Epoch[%d] Batch [%d]\tSpeed: %f samples/sec\taccuracy=%f\tlr=%f',
+                self._logger.info('Epoch[%d] Batch [%d]\tSpeed: %f samples/sec\t%s=%f\tlr=%f',
                                       epoch, batch_idx,
                                       self._train_cfg.batch_size*self._misc_cfg.log_interval/(time.time()-last_tic),
-                                      top1_m.avg, lr)
+                                      train_metric_name, train_metric_score_m.avg, lr)
                 last_tic = time.time()
 
                 if self._misc_cfg.save_images and output_dir:
@@ -348,7 +348,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
             self._time_elapsed += time.time() - b_tic
 
         throughput = int(self._train_cfg.batch_size * batch_idx /(time.time() - tic))
-        self._logger.info('[Epoch %d] training: accuracy=%f', epoch, top1_m.avg)
+        self._logger.info('[Epoch %d] training: %s=%f', epoch, train_metric_name, train_metric_score_m.avg)
         self._logger.info('[Epoch %d] speed: %d samples/sec\ttime cost: %f', epoch, throughput, time.time()-tic)
 
         end_time = time.time()
@@ -357,7 +357,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
 
         self._time_elapsed += time.time() - end_time
 
-        return {'train_acc': top1_m.avg, 'train_loss': losses_m.avg, 'time_limit': False}
+        return {train_metric_name: train_metric_score_m.avg, 'train_loss': losses_m.avg, 'time_limit': False}
 
     def validate(self, net, loader, loss_fn, amp_autocast=suppress):
         losses_m = AverageMeter()
@@ -427,6 +427,12 @@ class TorchImageClassificationEstimator(BaseEstimator):
                 self._logger.warning(
                     f'Loaded on gpu({valid_gpus}), different from gpu({self._cfg.gpus}).')
         self.ctx = [torch.device(f'cuda:{gid}') for gid in valid_gpus] if self.found_gpu else [torch.device('cpu')]
+        self.valid_gpus = valid_gpus
+
+        if not self.found_gpu and self.use_amp:
+            self.use_amp = None
+            self._logger.warning('Training on cpu. AMP disabled.')
+            update_cfg(self._cfg, {'misc': {'amp': False, 'apex_amp': False, 'native_amp': False}})
 
         if not self.found_gpu and self._misc_cfg.prefetcher:
             self._logger.warning(
@@ -453,25 +459,11 @@ class TorchImageClassificationEstimator(BaseEstimator):
                                     {sum([m.numel() for m in self.net.parameters()])}')
 
         resolve_data_config(self._cfg, model=self.net)
-
-        # setup augmentation batch splits for contrastive loss or split bn
-        # TODO: disable for now
-        if self._augmentation_cfg.aug_splits > 0:
-            assert self._augmentation_cfg.aug_splits > 1, 'A split of 1 makes no sense'
-
-        # enable split bn (separate bn stats per batch-portion)
-        if self._train_cfg.split_bn:
-            assert self._augmentation_cfg.aug_splits > 1 or self._augmentation_cfg.resplit
-            self.net = convert_splitbn_model(self.net, max(self._augmentation_cfg.aug_splits, 2))
-
-        # move model to correct ctx
-        if self.found_gpu:
-            self.net = torch.nn.DataParallel(self.net, device_ids=[int(i) for i in valid_gpus])
-        self.net = self.net.to(self.ctx[0])
         
+        self.net = self.net.to(self.ctx[0])
+
         # setup synchronized BatchNorm
         if self._train_cfg.sync_bn:
-            assert not self._train_cfg.split_bn
             if has_apex and self.use_amp != 'native':
                 # Apex SyncBN preferred unless native amp is activated
                 self.net = convert_syncbn_model(self.net)
@@ -489,6 +481,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
     def _init_trainer(self):
         if self._optimizer is None:
             self._optimizer = create_optimizer_v2(self.net, **optimizer_kwargs(cfg=self._cfg))
+        self._init_loss_scaler()
         self._lr_scheduler, self.epochs = create_scheduler(self._cfg, self._optimizer)
         self._lr_scheduler.step(self.start_epoch, self.epoch)
 
@@ -687,7 +680,6 @@ class TorchImageClassificationEstimator(BaseEstimator):
                 self.net.load_state_dict(net_state_dict)
             self._init_trainer()
             self._optimizer.load_state_dict(save_state['optimizer'])
-            self._init_loss_scaler()
             if self._loss_scaler and self._loss_scaler.state_dict_key in save_state:
                 loss_scaler_dict = save_state[self._loss_scaler.state_dict_key]
                 self._loss_scaler.load_state_dict(loss_scaler_dict)

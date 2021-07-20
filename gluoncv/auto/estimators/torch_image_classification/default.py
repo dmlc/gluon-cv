@@ -51,7 +51,6 @@ class TrainCfg:
     bn_momentum: Union[float, None] = None  # BatchNorm momentum override
     bn_eps: Union[float, None] = None  # BatchNorm epsilon override
     sync_bn: bool = False  # Enable NVIDIA Apex or Torch synchronized BatchNorm
-    split_bn: bool = False  # Enable separate BN layers per augmentation split
     early_stop_patience : int = -1  # epochs with no improvement after which train is early stopped, negative: disabled
     early_stop_min_delta : float = 0.001  # ignore changes less than min_delta for metrics
     # the baseline value for metric, training won't stop if not reaching baseline
@@ -67,14 +66,8 @@ class AugmentationCfg:
     vflip: float = 0.0 # Vertical flip training aug probability
     color_jitter: float = 0.4
     auto_augment: Union[str, None] = None  # Use AutoAugment policy. "v0" or "original
-    aug_splits: int = 0  # Number of augmentation splits (default: 0, valid: 0 or >=2)
-    jsd: bool = False  # 'Enable Jensen-Shannon Divergence + CE loss. Use with `aug_splits`
-    reprob: float = 0.  # Random erase prob
-    remode: str = 'const'  # Random erase mode
-    recount: int = 1  # Random erase count
-    resplit: bool = False  # Do not random erase first (clean) augmentation split
     mixup: float = 0.0  # mixup alpha, mixup enabled if > 0
-    cut_mix: float = 0.0  # cutmix alpha, cutmix enabled if > 0
+    cutmix: float = 0.0  # cutmix alpha, cutmix enabled if > 0
     cutmix_minmax: Union[Tuple, None] = None  # cutmix min/max ratio, overrides alpha and enables cutmix if set
     mixup_prob: float = 1.0  # Probability of performing mixup or cutmix when either/both is enabled
     mixup_switch_prob: float = 0.5  # Probability of switching to cutmix when both mixup and cutmix enabled
@@ -102,8 +95,7 @@ class MiscCfg:
     apex_amp: bool = False  # Use NVIDIA Apex AMP mixed precision
     native_amp: bool = False  # Use Native Torch AMP mixed precision
     pin_mem: bool = False  # Pin CPU memory in DataLoader for more efficient (sometimes) transfer to GPU
-    prefetcher: bool = True  # use fast prefetcher
-    output: Union[str, None] = None  # path to output folder (default: none, current dir)
+    prefetcher: bool = False  # use fast prefetcher
     eval_metric: str = 'top1'  # 'Best metric (default: "top1")
     tta: int = 0  # Test/inference time augmentation (oversampling) factor. 0=None
     use_multi_epochs_loader: bool = False  # use the multi-epochs-loader to save time at the beginning of every epoch
