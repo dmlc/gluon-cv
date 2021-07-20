@@ -27,7 +27,7 @@ IMAGE_CLASS_DATASET, _, IMAGE_CLASS_TEST = ImageClassificationDataset.from_folde
     'https://autogluon.s3.amazonaws.com/datasets/shopee-iet.zip')
 
 def test_image_classification_estimator():
-    est = TorchImageClassificationEstimator({'model': {'model': 'resnet50'}, 'train': {'epochs': 100}, 'gpus': list(range(get_gpu_count()))})
+    est = TorchImageClassificationEstimator({'model': {'model': 'resnet50'}, 'train': {'epochs': 1}, 'gpus': list(range(get_gpu_count()))})
     res = est.fit(IMAGE_CLASS_DATASET)
     est.predict(IMAGE_CLASS_TEST)
     est.predict_feature(IMAGE_CLASS_TEST)
