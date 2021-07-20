@@ -42,12 +42,13 @@ def test_image_classification_estimator_cpu():
 
 @nottest
 def test_config_combination():
-    test_config = build_config().rand
-    est = TorchImageClassificationEstimator(test_config)
-    res = est.fit(IMAGE_CLASS_DATASET)
-    est.predict(IMAGE_CLASS_TEST)
-    est.predict_feature(IMAGE_CLASS_TEST)
-    _save_load_test(est, 'test.pkl')
+    for _ in range(100):
+        test_config = build_config().rand
+        est = TorchImageClassificationEstimator(test_config)
+        res = est.fit(IMAGE_CLASS_DATASET)
+        est.predict(IMAGE_CLASS_TEST)
+        est.predict_feature(IMAGE_CLASS_TEST)
+        _save_load_test(est, 'test.pkl')
 
 def _save_load_test(est, filename):
     est._cfg.unfreeze()
