@@ -55,6 +55,20 @@ except AttributeError:
 
 @set_default(TorchImageClassificationCfg())
 class TorchImageClassificationEstimator(BaseEstimator):
+    """Torch Estimator implementation for Image Classification.
+
+    Parameters
+    ----------
+    config : dict
+        Config in nested dict.
+    logger : logging.Logger
+        Optional logger for this estimator, can be `None` when default setting is used.
+    reporter : callable
+        The reporter for metric checkpointing.
+    net : torch.nn.Module
+        The custom network. If defined, the model name in config will be ignored so your
+        custom network will be used for training rather than pulling it from model zoo.
+    """
     def __init__(self, config, logger=None, reporter=None, net=None, optimizer=None, problem_type=None):
         super().__init__(config, logger=logger, reporter=reporter, name=None)
         if problem_type is None:
@@ -240,6 +254,8 @@ class TorchImageClassificationEstimator(BaseEstimator):
                 eval_metrics = ema_eval_metrics
 
             val_acc = eval_metrics['top1']
+            if self._reporter:
+                self._reporter(epoch=epoch, acc_reward=val_acc)
             early_stopper.update(val_acc)
 
             if val_acc > self._best_acc:
