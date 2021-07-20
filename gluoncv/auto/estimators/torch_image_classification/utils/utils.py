@@ -1,10 +1,11 @@
-from .constants import *
+from .constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD, DEFAULT_CROP_PCT
 
 def update_cfg(cfg, udict):
     cfg.unfreeze()
     cfg.update(udict)
     cfg.freeze()
 
+# pylint: disable=dangerous-default-value
 def resolve_data_config(cfg, default_cfg={}, model=None, use_test_size=False):
     default_cfg = default_cfg
     if not default_cfg and model is not None and hasattr(model, 'default_cfg'):

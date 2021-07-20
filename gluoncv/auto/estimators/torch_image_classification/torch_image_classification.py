@@ -149,8 +149,8 @@ class TorchImageClassificationEstimator(BaseEstimator):
         self.mixup_active = self._augmentation_cfg.mixup > 0 or self._augmentation_cfg.cutmix > 0. or self._augmentation_cfg.cutmix_minmax is not None
         if self.mixup_active:
             mixup_args = dict(
-                mixup_alpha=self._augmentation_cfg.mixup, cutmix_alpha=self._augmentation_cfg.cutmix, 
-                cutmix_minmax=self._augmentation_cfg.cutmix_minmax, prob=self._augmentation_cfg.mixup_prob, 
+                mixup_alpha=self._augmentation_cfg.mixup, cutmix_alpha=self._augmentation_cfg.cutmix,
+                cutmix_minmax=self._augmentation_cfg.cutmix_minmax, prob=self._augmentation_cfg.mixup_prob,
                 switch_prob=self._augmentation_cfg.mixup_switch_prob, mode=self._augmentation_cfg.mixup_mode,
                 label_smoothing=self._augmentation_cfg.smoothing, num_classes=self.num_class)
             if self._misc_cfg.prefetcher:
@@ -301,6 +301,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
         tic = time.time()
         last_tic = time.time()
         train_metric_name = 'accuracy'
+        batch_idx = 0
         for batch_idx, (input, target) in enumerate(loader):
             b_tic = time.time()
             if self._time_elapsed > time_limit:
@@ -310,7 +311,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
                 input, target = input.to(self.ctx[0]), target.to(self.ctx[0])
                 if mixup_fn is not None:
                     input, target = mixup_fn(input, target)
-            
+
             with amp_autocast():
                 output = self.net(input)
                 loss = loss_fn(output, target)
