@@ -1,3 +1,5 @@
+"""Torch Classification Estimator"""
+# pylint: disable=unused-variable,bad-whitespace,missing-function-docstring,logging-format-interpolation,arguments-differ,logging-not-lazy, not-callable
 import math
 import os
 import logging
@@ -21,7 +23,8 @@ from timm.utils import ApexScaler, NativeScaler, ModelEmaV2, AverageMeter
 from timm.loss import LabelSmoothingCrossEntropy, SoftTargetCrossEntropy
 
 from .default import TorchImageClassificationCfg
-from .utils import *
+from .utils import resolve_data_config, update_cfg, optimizer_kwargs, \
+                   create_scheduler, rmse
 from ..utils import EarlyStopperOnPlateau
 from ..conf import _BEST_CHECKPOINT_FILE
 from ..base_estimator import BaseEstimator, set_default
@@ -69,7 +72,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
 
         # resolve AMP arguments based on PyTorch / Apex availability
         self.use_amp = None
-        if self._misc_cfg.amp :
+        if self._misc_cfg.amp:
             # `amp` chooses native amp before apex (APEX ver not actively maintained)
             if self._misc_cfg.native_amp and has_native_amp:
                 self.use_amp = 'native'
@@ -226,7 +229,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
             if train_metrics['time_limit']:
                 self._logger.warning(f'`time_limit={time_limit}` reached, exit early...')
                 return {'train_acc': train_metrics['train_acc'], 'valid_acc': self._best_acc,
-                'time': self._time_elapsed, 'checkpoint': self.cp_name}
+                        'time': self._time_elapsed, 'checkpoint': self._cp_name}
             post_tic = time.time()
 
             eval_metrics = self.validate(self.net, val_loader, validate_loss_fn, amp_autocast=self._amp_autocast)
@@ -240,10 +243,10 @@ class TorchImageClassificationEstimator(BaseEstimator):
             early_stopper.update(val_acc)
 
             if val_acc > self._best_acc:
-                self.cp_name = os.path.join(self._logdir, _BEST_CHECKPOINT_FILE)
+                self._cp_name = os.path.join(self._logdir, _BEST_CHECKPOINT_FILE)
                 self._logger.info('[Epoch %d] Current best top-1: %f vs previous %f, saved to %s',
-                                        self.epoch, val_acc, self._best_acc, self.cp_name)
-                self.save(self.cp_name)
+                                  self.epoch, val_acc, self._best_acc, self._cp_name)
+                self.save(self._cp_name)
                 self._best_acc = val_acc
 
             if self._lr_scheduler is not None:
@@ -254,16 +257,16 @@ class TorchImageClassificationEstimator(BaseEstimator):
 
         if 'accuracy' in train_metrics:
             return {'train_acc': train_metrics['accuracy'], 'valid_acc': self._best_acc,
-                    'time': self._time_elapsed, 'checkpoint': self.cp_name}
+                    'time': self._time_elapsed, 'checkpoint': self._cp_name}
         # rmse
         else:
             return {'train_score': train_metrics['rmse'], 'valid_acc': self._best_acc,
-                    'time': self._time_elapsed, 'checkpoint': self.cp_name}
+                    'time': self._time_elapsed, 'checkpoint': self._cp_name}
 
     def train_one_epoch(
-        self, epoch, net, loader, optimizer, loss_fn,
-        lr_scheduler=None, output_dir=None, amp_autocast=suppress,
-        loss_scaler=None, model_ema=None, mixup_fn=None, time_limit=math.inf):
+            self, epoch, net, loader, optimizer, loss_fn,
+            lr_scheduler=None, output_dir=None, amp_autocast=suppress,
+            loss_scaler=None, model_ema=None, mixup_fn=None, time_limit=math.inf):
         start_tic = time.time()
         if self._augmentation_cfg.mixup_off_epoch and epoch >= self._augmentation_cfg.mixup_off_epoch:
             if self._misc_cfg.prefetcher and loader.mixup_enabled:
@@ -330,9 +333,9 @@ class TorchImageClassificationEstimator(BaseEstimator):
                 lrl = [param_group['lr'] for param_group in optimizer.param_groups]
                 lr = sum(lrl) / len(lrl)
                 self._logger.info('Epoch[%d] Batch [%d]\tSpeed: %f samples/sec\t%s=%f\tlr=%f',
-                                      epoch, batch_idx,
-                                      self._train_cfg.batch_size*self._misc_cfg.log_interval/(time.time()-last_tic),
-                                      train_metric_name, train_metric_score_m.avg, lr)
+                                  epoch, batch_idx,
+                                  self._train_cfg.batch_size*self._misc_cfg.log_interval/(time.time()-last_tic),
+                                  train_metric_name, train_metric_score_m.avg, lr)
                 last_tic = time.time()
 
                 if self._misc_cfg.save_images and output_dir:
@@ -347,7 +350,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
 
             self._time_elapsed += time.time() - b_tic
 
-        throughput = int(self._train_cfg.batch_size * batch_idx /(time.time() - tic))
+        throughput = int(self._train_cfg.batch_size * batch_idx / (time.time() - tic))
         self._logger.info('[Epoch %d] training: %s=%f', epoch, train_metric_name, train_metric_score_m.avg)
         self._logger.info('[Epoch %d] speed: %d samples/sec\ttime cost: %f', epoch, throughput, time.time()-tic)
 
@@ -386,7 +389,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
                 loss = loss_fn(output, target)
                 acc1, acc5 = accuracy(output, target, topk=(1, min(5, self.num_class)))
                 acc1 /= 100
-                acc5 /=100
+                acc5 /= 100
 
                 reduced_loss = loss.data
 
@@ -459,7 +462,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
                                     {sum([m.numel() for m in self.net.parameters()])}')
 
         resolve_data_config(self._cfg, model=self.net)
-        
+
         self.net = self.net.to(self.ctx[0])
 
         # setup synchronized BatchNorm
@@ -472,7 +475,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
             self._logger.info(
                 'Converted model to use Synchronized BatchNorm. WARNING: You may have issues if using '
                 'zero initialized BN layers (enabled by default for ResNets) while sync-bn enabled.')
-        
+
         if self._misc_cfg.torchscript:
             assert not self.use_amp == 'apex', 'Cannot use APEX AMP with torchscripted model'
             assert not self._train_cfg.sync_bn, 'Cannot use SyncBatchNorm with torchscripted model'
@@ -515,7 +518,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
 
     def evaluate(self, val_data):
         return self._evaluate(val_data)
-    
+
     def _evaluate(self, val_data):
         validate_loss_fn = nn.CrossEntropyLoss()
         validate_loss_fn = validate_loss_fn.to(self.ctx[0])
@@ -528,7 +531,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
             return df.reset_index(drop=True)
         elif isinstance(x, (list, tuple)):
             loader = create_loader(
-                ImageListDataset(x), 
+                ImageListDataset(x),
                 input_size=self._dataset_cfg.input_size,
                 batch_size=self._train_cfg.batch_size,
                 use_prefetcher=self._misc_cfg.prefetcher,
@@ -551,10 +554,10 @@ class TorchImageClassificationEstimator(BaseEstimator):
                     for l in labels:
                         probs = nn.functional.softmax(l, dim=0).cpu().numpy().flatten()
                         topk_inds = l.topk(topk)[1].cpu().numpy().flatten()
-                        results.extend([{'class': self.classes[topk_inds[k]], 
-                                        'score': probs[topk_inds[k]],
-                                        'id': topk_inds[k],
-                                        'image': x[idx]}
+                        results.extend([{'class': self.classes[topk_inds[k]],
+                                         'score': probs[topk_inds[k]],
+                                         'id': topk_inds[k],
+                                         'image': x[idx]}
                                         for k in range(topk)])
                         idx += 1
             return pd.DataFrame(results)
@@ -566,10 +569,10 @@ class TorchImageClassificationEstimator(BaseEstimator):
             topk = min(5, self.num_class)
             probs = nn.functional.softmax(label, dim=0).cpu().numpy().flatten()
             topk_inds = label.topk(topk)[1].cpu().numpy().flatten()
-            df = pd.DataFrame([{'class': self.classes[topk_inds[k]], 
-                                'score': probs[topk_inds[k]], 
-                                'id': topk_inds[k]} 
-                                for k in range(topk)])
+            df = pd.DataFrame([{'class': self.classes[topk_inds[k]],
+                                'score': probs[topk_inds[k]],
+                                'id': topk_inds[k]}
+                               for k in range(topk)])
         return df
 
 
@@ -583,7 +586,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
         elif isinstance(x, (list, tuple)):
             assert isinstance(x[0], str), "expect image paths in list/tuple input"
             loader = create_loader(
-                ImageListDataset(x), 
+                ImageListDataset(x),
                 input_size=self._dataset_cfg.input_size,
                 batch_size=self._train_cfg.batch_size,
                 use_prefetcher=self._misc_cfg.prefetcher,
@@ -626,6 +629,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
             new_state_dict[name] = v
         return new_state_dict
 
+    # pylint: disable=redefined-outer-name, reimported
     def __getstate__(self):
         d = self.__dict__.copy()
         try:

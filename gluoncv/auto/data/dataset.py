@@ -424,6 +424,7 @@ class _TorchImageClassificationDataset(TorchDataset):
         im_path = self._dataset['image'][idx]
         img = self._imread(im_path).convert('RGB')
         label = None
+        # # pylint: disable=not-callable
         if self.transform is not None:
             img = self.transform(img)
         if self._has_label:

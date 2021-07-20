@@ -26,7 +26,7 @@ def resolve_data_config(cfg, default_cfg={}, model=None, use_test_size=False):
             input_size = default_cfg['test_input_size']
         elif 'input_size' in default_cfg:
             input_size = default_cfg['input_size']
-    update_cfg(cfg, { 'dataset': { 'input_size': input_size } })
+    update_cfg(cfg, {'dataset': {'input_size': input_size}})
 
     # resolve interpolation method
     interpolation = 'bicubic'
@@ -34,7 +34,7 @@ def resolve_data_config(cfg, default_cfg={}, model=None, use_test_size=False):
         interpolation = cfg.dataset.interpolation
     elif 'interpolation' in default_cfg:
         interpolation = default_cfg['interpolation']
-    update_cfg(cfg, { 'dataset': { 'interpolation': interpolation } })
+    update_cfg(cfg, {'dataset': {'interpolation': interpolation}})
 
     # resolve dataset + model mean for normalization
     mean = IMAGENET_DEFAULT_MEAN
@@ -46,7 +46,7 @@ def resolve_data_config(cfg, default_cfg={}, model=None, use_test_size=False):
             assert len(mean) == in_chans
     elif 'mean' in default_cfg:
         mean = default_cfg['mean']
-    update_cfg(cfg, { 'dataset': { 'mean': mean } })
+    update_cfg(cfg, {'dataset': {'mean': mean}})
 
     # resolve dataset + model std deviation for normalization
     std = IMAGENET_DEFAULT_STD
@@ -58,7 +58,7 @@ def resolve_data_config(cfg, default_cfg={}, model=None, use_test_size=False):
             assert len(std) == in_chans
     elif 'std' in default_cfg:
         std = default_cfg['std']
-    update_cfg(cfg, { 'dataset': { 'std': std } })
+    update_cfg(cfg, {'dataset': {'std': std}})
 
     # resolve default crop percentage
     crop_pct = DEFAULT_CROP_PCT
@@ -66,4 +66,4 @@ def resolve_data_config(cfg, default_cfg={}, model=None, use_test_size=False):
         crop_pct = cfg.dataset.crop_pct
     elif 'crop_pct' in default_cfg:
         crop_pct = default_cfg['crop_pct']
-    update_cfg(cfg, { 'dataset': { 'crop_pct': crop_pct } })
+    update_cfg(cfg, {'dataset': {'crop_pct': crop_pct}})
