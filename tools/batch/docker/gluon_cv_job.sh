@@ -29,6 +29,7 @@ else
 fi;
 
 python3 -m pip install --quiet -e .
+python3 -m pip install --quiet timm==0.4.12
 
 cd $WORK_DIR
 /bin/bash -o pipefail -c "$COMMAND"
