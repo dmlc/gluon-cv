@@ -2,6 +2,7 @@ name: gluon_cv_py3_mxnet
 channels:
   - conda-forge
   - defaults
+  - pytorch
 dependencies:
   - python=3.6
   - perl
@@ -16,6 +17,8 @@ dependencies:
   - tqdm
   - pillow
   - pandas
+  - pytorch==1.6.0
+  - torchvision==0.7.0
   - pip:
     - https://repo.mxnet.io/dist/python/cu100mkl/mxnet_cu100mkl-1.6.0b20191010-py2.py3-none-manylinux1_x86_64.whl
     - coverage-badge
@@ -26,3 +29,4 @@ dependencies:
     - portalocker
     - autocfg>=0.0.6
     - autogluon.core==0.2.0
+    - timm==0.4.12
