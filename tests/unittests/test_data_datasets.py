@@ -9,6 +9,7 @@ import gluoncv as gcv
 from gluoncv import data
 from .tiny_datasets import COCODetectionTiny, COCOInstanceTiny, VOCDetectionTiny, VOCSegmentationTiny
 import os.path as osp
+import unittest
 
 
 def test_pascal_voc_detection():
@@ -48,6 +49,7 @@ def test_coco_instance():
         index = np.random.randint(0, len(val))
         _ = val[index]
 
+@unittest.skip("temporarily disabled due to drawing compatibility")
 def test_voc_segmentation():
 
     # use valid only, loading training split is very slow

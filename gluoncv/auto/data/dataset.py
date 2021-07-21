@@ -621,9 +621,9 @@ class ObjectDetectionDataset(pd.DataFrame):
         rois_columns = ['class', 'xmin', 'ymin', 'xmax', 'ymax', 'difficult']
         image_attr_columns = ['width', 'height']
         new_df = self.groupby(['image'], as_index=False).agg(list).reset_index(drop=True)
-        new_df['rois'] = new_df.agg(
-            lambda y: [{k : y[new_df.columns.get_loc(k)][i] for k in rois_columns if k in new_df.columns} \
-                for i in range(len(y[new_df.columns.get_loc('class')]))], axis=1)
+        new_df['rois'] = new_df.apply(
+            lambda y: [{k : y.loc[k][i] for k in rois_columns if k in new_df.columns} \
+                for i in range(len(y.loc['class']))], axis=1)
         new_df = new_df.drop(rois_columns, axis=1, errors='ignore')
         new_df['image_attr'] = new_df.agg(
             lambda y: {k : y[new_df.columns.get_loc(k)][0] for k in image_attr_columns if k in new_df.columns}, axis=1)
@@ -849,5 +849,5 @@ def _check_load_coco_bbox(coco, entry, min_object_area=0, use_crowd=False):
         if obj['area'] > 0 and xmax > xmin and ymax > ymin:
             cname = coco.loadCats(obj['category_id'])[0]['name']
             valid_objs.append({'xmin': xmin / width, 'ymin': ymin / height, 'xmax': xmax / width,
-                               'ymax': ymax, 'class': cname, 'is_crowd': is_crowd})
+                               'ymax': ymax / height, 'class': cname, 'is_crowd': is_crowd})
     return valid_objs
