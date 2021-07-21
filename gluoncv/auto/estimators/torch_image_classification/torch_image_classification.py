@@ -655,16 +655,18 @@ class TorchImageClassificationEstimator(BaseEstimator):
             model_ema = d.pop('_model_ema', None)
             optimizer = d.pop('_optimizer', None)
             loss_scaler = d.pop('_loss_scaler', None)
-            if isinstance(net, torch.nn.DataParallel):
-                save_state = {
-                    'state_dict': get_state_dict(net.module, unwrap_model),
-                    'optimizer': optimizer.state_dict(),
-                }
-            else:
-                save_state = {
-                    'state_dict': get_state_dict(net, unwrap_model),
-                    'optimizer': optimizer.state_dict(),
-                }
+            save_state = None
+            if net is not None:
+                if isinstance(net, torch.nn.DataParallel):
+                    save_state = {
+                        'state_dict': get_state_dict(net.module, unwrap_model),
+                        'optimizer': optimizer.state_dict(),
+                    }
+                else:
+                    save_state = {
+                        'state_dict': get_state_dict(net, unwrap_model),
+                        'optimizer': optimizer.state_dict(),
+                    }
             if loss_scaler is not None:
                 save_state[loss_scaler.state_dict_key] = loss_scaler.state_dict()
             if model_ema is not None:
@@ -678,7 +680,6 @@ class TorchImageClassificationEstimator(BaseEstimator):
 
     def __setstate__(self, state):
         save_state = state.pop('save_state', None)
-        assert save_state is not None, 'No save state detected. Cannot load checkpoint'
         self.__dict__.update(state)
         # logger
         self._logger = logging.getLogger(state.get('_name', self.__class__.__name__))
@@ -689,6 +690,13 @@ class TorchImageClassificationEstimator(BaseEstimator):
         #pylint: disable=bare-except
         except:
             pass
+        if not save_state:
+            self.net = None
+            self._model_ema = None
+            self._optimizer = None
+            self._loss_scaler = None
+            self._logger.setLevel(logging.INFO)
+            return
         try:
             import torch
             self.net = None
