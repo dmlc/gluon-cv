@@ -24,10 +24,6 @@ import autogluon.core as ag
 from autogluon.core.scheduler.resource import get_cpu_count, get_gpu_count
 import mxnet as mx
 
-mx.nd.waitall()
-ctx = mx.gpu(0)
-ctx.empty_cache()
-
 IMAGE_CLASS_DATASET, _, IMAGE_CLASS_TEST = ImageClassificationDataset.from_folders(
     'https://autogluon.s3.amazonaws.com/datasets/shopee-iet.zip')
 
