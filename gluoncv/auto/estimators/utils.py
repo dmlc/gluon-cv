@@ -4,11 +4,11 @@ import numpy as np
 __all__ = ['EarlyStopperOnPlateau', '_suggest_load_context', 'create_dummy_estimator']
 
 def _dummy_constructor(self, *arg, **kwargs):
-    raise RuntimeError(self.reason)
+    raise RuntimeError(self.reason.format(type(self).__name__))
 
 def create_dummy_estimator(name, reason):
     assert isinstance(reason, str)
-    DummyEstimator = type("DummyEstimator" + name, (object, ), {
+    DummyEstimator = type(name, (object, ), {
         # constructor
         "__init__": _dummy_constructor,
 

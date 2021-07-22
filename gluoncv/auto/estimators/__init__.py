@@ -11,7 +11,7 @@ try:
     from .center_net import CenterNetEstimator
 except ImportError:
     # create dummy placeholder estimator classes
-    reason = 'This estimator requires mxnet to be installed which is missing.'
+    reason = 'gluoncv.auto.estimators.{} requires mxnet to be installed which is missing.'
     ImageClassificationEstimator = create_dummy_estimator(
         'ImageClassificationEstimator', reason)
     SSDEstimator = create_dummy_estimator(
