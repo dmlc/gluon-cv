@@ -39,7 +39,6 @@ def try_import_pycocotools():
     try:
         import pycocotools as _
     except ImportError:
-        import os
         # we need to install pycootools, which is a bit tricky
         # pycocotools sdist requires Cython, numpy(already met)
         import_try_install('cython')
