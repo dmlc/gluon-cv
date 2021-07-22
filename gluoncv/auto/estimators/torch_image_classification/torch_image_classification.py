@@ -5,6 +5,7 @@ import os
 import logging
 import time
 import warnings
+import pickle
 from contextlib import suppress
 from PIL import Image
 
@@ -75,6 +76,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
             problem_type = MULTICLASS
         self._problem_type = problem_type
         self._feature_net = None
+        self._custom_net = False
 
         self._model_cfg = self._cfg.model
         self._dataset_cfg = self._cfg.dataset
@@ -100,15 +102,13 @@ class TorchImageClassificationEstimator(BaseEstimator):
             assert isinstance(net, nn.Module), f"given custom network {type(net)}, `torch.nn` expected"
             try:
                 net.to('cpu')
+                self._custom_net = True
             except ValueError:
                 pass
         self.net = net
         if optimizer is not None:
-            if isinstance(optimizer, str):
-                pass
-            else:
-                assert isinstance(optimizer, Optimizer)
-        self._optimizer = optimizer
+            self._logger.warning('Custom optimizer object not supported. Will follow the config instead.')
+        self._optimizer = None
 
     def _fit(self, train_data, val_data, time_limit=math.inf):
         tic = time.time()
@@ -462,21 +462,24 @@ class TorchImageClassificationEstimator(BaseEstimator):
                 'Training on cpu. SyncBatchNorm disabled.')
             update_cfg(self._cfg, {'train': {'sync_bn': False}})
 
-        self.net = create_model(
-            self._model_cfg.model,
-            pretrained=self._model_cfg.pretrained,
-            num_classes=self.num_class,
-            global_pool=self._model_cfg.global_pool_type,
-            drop_rate=self._augmentation_cfg.drop,
-            drop_path_rate=self._augmentation_cfg.drop_path,
-            drop_block_rate=self._augmentation_cfg.drop_block,
-            bn_momentum=self._train_cfg.bn_momentum,
-            bn_eps=self._train_cfg.bn_eps,
-            scriptable=self._misc_cfg.torchscript
-        )
+        if not self.net:
+            self.net = create_model(
+                self._model_cfg.model,
+                pretrained=self._model_cfg.pretrained,
+                num_classes=self.num_class,
+                global_pool=self._model_cfg.global_pool_type,
+                drop_rate=self._augmentation_cfg.drop,
+                drop_path_rate=self._augmentation_cfg.drop_path,
+                drop_block_rate=self._augmentation_cfg.drop_block,
+                bn_momentum=self._train_cfg.bn_momentum,
+                bn_eps=self._train_cfg.bn_eps,
+                scriptable=self._misc_cfg.torchscript
+            )
 
-        self._logger.info(f'Model {safe_model_name(self._model_cfg.model)} created, param count: \
-                                    {sum([m.numel() for m in self.net.parameters()])}')
+            self._logger.info(f'Model {safe_model_name(self._model_cfg.model)} created, param count: \
+                                        {sum([m.numel() for m in self.net.parameters()])}')
+        else:
+            self._logger.info(f'Use user provided model. Neglect model in config.')
 
         resolve_data_config(self._cfg, model=self.net)
 
@@ -655,18 +658,18 @@ class TorchImageClassificationEstimator(BaseEstimator):
             model_ema = d.pop('_model_ema', None)
             optimizer = d.pop('_optimizer', None)
             loss_scaler = d.pop('_loss_scaler', None)
-            save_state = None
+            save_state = {}
             if net is not None:
-                if isinstance(net, torch.nn.DataParallel):
-                    save_state = {
-                        'state_dict': get_state_dict(net.module, unwrap_model),
-                        'optimizer': optimizer.state_dict(),
-                    }
+                if not self._custom_net:
+                    if isinstance(net, torch.nn.DataParallel):
+                        save_state['state_dict'] = get_state_dict(net.module, unwrap_model)
+                    else:
+                        save_state['state_dict'] = get_state_dict(net, unwrap_model)
                 else:
-                    save_state = {
-                        'state_dict': get_state_dict(net, unwrap_model),
-                        'optimizer': optimizer.state_dict(),
-                    }
+                    net_pickle = pickle.dumps(net)
+                    save_state['net_pickle'] = net_pickle
+            if optimizer is not None:
+                save_state['optimizer'] = optimizer.state_dict()
             if loss_scaler is not None:
                 save_state[loss_scaler.state_dict_key] = loss_scaler.state_dict()
             if model_ema is not None:
@@ -683,7 +686,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
         self.__dict__.update(state)
         # logger
         self._logger = logging.getLogger(state.get('_name', self.__class__.__name__))
-        self._logger.setLevel(logging.ERROR)
+        self._logger.setLevel(logging.ERROR)    
         try:
             fh = logging.FileHandler(self._log_file)
             self._logger.addHandler(fh)
@@ -699,20 +702,26 @@ class TorchImageClassificationEstimator(BaseEstimator):
             import torch
             self.net = None
             self._optimizer = None
-            self._init_network()
-            net_state_dict = self._reconstruct_state_dict(save_state['state_dict'])
-            if isinstance(self.net, torch.nn.DataParallel):
-                self.net.module.load_state_dict(net_state_dict)
+            if self._custom_net:
+                if save_state.get('net_pickle', None):
+                    self.net = pickle.loads(save_state['net_pickle'])
             else:
-                self.net.load_state_dict(net_state_dict)
-            self._init_trainer()
-            self._optimizer.load_state_dict(save_state['optimizer'])
-            if self._loss_scaler and self._loss_scaler.state_dict_key in save_state:
+                if save_state.get('state_dict', None):
+                    self._init_network()
+                    net_state_dict = self._reconstruct_state_dict(save_state['state_dict'])
+                    if isinstance(self.net, torch.nn.DataParallel):
+                        self.net.module.load_state_dict(net_state_dict)
+                    else:
+                        self.net.load_state_dict(net_state_dict)
+            if save_state.get('optimizer', None):
+                self._init_trainer()
+                self._optimizer.load_state_dict(save_state['optimizer'])
+            if hasattr(self, '_loss_scaler') and self._loss_scaler.state_dict_key in save_state:
                 loss_scaler_dict = save_state[self._loss_scaler.state_dict_key]
                 self._loss_scaler.load_state_dict(loss_scaler_dict)
-            self._init_model_ema()
-            model_ema_dict = save_state.get('state_dict_ema', None)
-            if model_ema_dict:
+            if save_state.get('state_dict_ema', None):
+                self._init_model_ema()
+                model_ema_dict = save_state.get('state_dict_ema')
                 model_ema_dict = self._reconstruct_state_dict(model_ema_dict)
                 if isinstance(self.net, torch.nn.DataParallel):
                     self._model_ema.module.module.load_state_dict(model_ema_dict)

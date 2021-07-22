@@ -22,19 +22,24 @@ from gluoncv.auto.estimators import TorchImageClassificationEstimator
 from gluoncv.auto.data.dataset import ImageClassificationDataset
 import autogluon.core as ag
 from autogluon.core.scheduler.resource import get_cpu_count, get_gpu_count
+import mxnet as mx
+
+mx.nd.waitall()
+ctx = mx.gpu(0)
+ctx.empty_cache()
 
 IMAGE_CLASS_DATASET, _, IMAGE_CLASS_TEST = ImageClassificationDataset.from_folders(
     'https://autogluon.s3.amazonaws.com/datasets/shopee-iet.zip')
 
 def test_image_classification_estimator():
-    est = TorchImageClassificationEstimator({'model': {'model': 'resnet50'}, 'train': {'epochs': 1}, 'gpus': list(range(get_gpu_count()))})
+    est = TorchImageClassificationEstimator({'model': {'model': 'resnet18'}, 'train': {'epochs': 1}, 'gpus': list(range(get_gpu_count()))})
     res = est.fit(IMAGE_CLASS_DATASET)
     est.predict(IMAGE_CLASS_TEST)
     est.predict_feature(IMAGE_CLASS_TEST)
     _save_load_test(est, 'test.pkl')
 
 def test_image_classification_estimator_cpu():
-    est = TorchImageClassificationEstimator({'model': {'model': 'resnet50'}, 'train': {'epochs': 1}, 'gpus': ()})
+    est = TorchImageClassificationEstimator({'model': {'model': 'resnet18'}, 'train': {'epochs': 1}, 'gpus': ()})
     res = est.fit(IMAGE_CLASS_DATASET)
     est.predict(IMAGE_CLASS_TEST)
     est.predict_feature(IMAGE_CLASS_TEST)
