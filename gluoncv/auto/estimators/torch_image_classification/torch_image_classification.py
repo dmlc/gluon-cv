@@ -716,7 +716,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
             if save_state.get('optimizer', None):
                 self._init_trainer()
                 self._optimizer.load_state_dict(save_state['optimizer'])
-            if hasattr(self, '_loss_scaler') and self._loss_scaler.state_dict_key in save_state:
+            if hasattr(self, '_loss_scaler') and self._loss_scaler and self._loss_scaler.state_dict_key in save_state:
                 loss_scaler_dict = save_state[self._loss_scaler.state_dict_key]
                 self._loss_scaler.load_state_dict(loss_scaler_dict)
             if save_state.get('state_dict_ema', None):
