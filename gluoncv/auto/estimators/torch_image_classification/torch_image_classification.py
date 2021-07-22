@@ -692,9 +692,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
             pass
         if not save_state:
             self.net = None
-            self._model_ema = None
             self._optimizer = None
-            self._loss_scaler = None
             self._logger.setLevel(logging.INFO)
             return
         try:
