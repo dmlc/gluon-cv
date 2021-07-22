@@ -22,6 +22,12 @@ try:
 except ImportError:
     MXDataset = object
     mx = None
+try:
+    import torch
+    TorchDataset = torch.utils.data.Dataset
+except ImportError:
+    TorchDataset = object
+    torch = None
 
 logger = logging.getLogger()
 
@@ -155,6 +161,12 @@ class ImageClassificationDataset(pd.DataFrame):
         df = self.rename(columns={self.IMG_COL: "image", self.LABEL_COL: "label"}, errors='ignore')
         df = df.reset_index(drop=True)
         return _MXImageClassificationDataset(df)
+
+    def to_torch(self):
+        """Return a pytorch based iterator that returns ndarray and labels"""
+        df = self.rename(columns={self.IMG_COL: "image", self.LABEL_COL: "label"}, errors='ignore')
+        df = df.reset_index(drop=True)
+        return _TorchImageClassificationDataset(df)
 
     @classmethod
     def from_csv(cls, csv_file, root=None, image_column='image', label_column='label', no_class=False):
@@ -383,6 +395,42 @@ class _MXImageClassificationDataset(MXDataset):
         label = None
         if self._has_label:
             label = self._dataset['label'][idx]
+        return img, label
+
+class _TorchImageClassificationDataset(TorchDataset):
+    """Internal wrapper read entries in pd.DataFrame as images/labels.
+
+    Parameters
+    ----------
+    dataset : ImageClassificationDataset
+        DataFrame as ImageClassificationDataset.
+
+    """
+    def __init__(self, dataset):
+        if torch is None:
+            raise RuntimeError('Unable to import pytorch which is required.')
+        assert isinstance(dataset, ImageClassificationDataset)
+        assert 'image' in dataset.columns
+        self._has_label = 'label' in dataset.columns
+        self._dataset = dataset
+        self.classes = self._dataset.classes
+        self._imread = Image.open
+        self.transform = None
+
+    def __len__(self):
+        return self._dataset.shape[0]
+
+    def __getitem__(self, idx):
+        im_path = self._dataset['image'][idx]
+        img = self._imread(im_path).convert('RGB')
+        label = None
+        # # pylint: disable=not-callable
+        if self.transform is not None:
+            img = self.transform(img)
+        if self._has_label:
+            label = self._dataset['label'][idx]
+        else:
+            label = torch.tensor(-1, dtype=torch.long)
         return img, label
 
 

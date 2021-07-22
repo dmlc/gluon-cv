@@ -259,6 +259,22 @@ class BaseEstimator:
             pass
         return valid_gpus
 
+    #FIXME: better design than a duplicate function?
+    def _torch_validate_gpus(self, gpu_ids):
+        """validate if requested gpus are actually available"""
+        valid_gpus = []
+        try:
+            import torch
+            for gid in gpu_ids:
+                try:
+                    _ = torch.zeros(1, device=f'cuda:{gid}')
+                    valid_gpus.append(str(gid))
+                except:
+                    pass
+        except ImportError:
+            pass
+        return valid_gpus
+
     def reset_ctx(self, ctx=None):
         """Reset model context.
 
@@ -285,6 +301,21 @@ class BaseEstimator:
                     self.net.reset_ctx(ctx_list)
                 else:
                     self.net.collect_params().reset_ctx(ctx_list)
+                self.ctx = ctx_list
+                done = True
+        except ImportError:
+            pass
+        try:
+            import torch
+            if isinstance(self.net, (torch.nn.Module, torch.nn.DataParallel)):
+                for c in ctx_list:
+                    assert isinstance(c, torch.device)
+                if hasattr(self.net, 'reset_ctx'):
+                    self.net.reset_ctx(ctx_list)
+                else:
+                    if isinstance(self.net, torch.nn.DataParallel):
+                        self.net = torch.nn.DataParallel(self.net.module, device_ids=[ctx.index for ctx in ctx_list])
+                    self.net.to(self.ctx[0])
                 self.ctx = ctx_list
                 done = True
         except ImportError:
