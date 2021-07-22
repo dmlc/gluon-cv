@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 from PIL import Image
 import cv2
 from ..data import is_url, url_data
-from ...data.mscoco.utils import try_import_pycocotools
+from ...utils.filesystem import import_try_install
 from ...utils.bbox import bbox_xywh_to_xyxy, bbox_clip_xyxy
 try:
     import xml.etree.cElementTree as ET
@@ -30,6 +30,29 @@ except ImportError:
     torch = None
 
 logger = logging.getLogger()
+
+
+
+def try_import_pycocotools():
+    """Tricks to optionally install and import pycocotools"""
+    # first we can try import pycocotools
+    try:
+        import pycocotools as _
+    except ImportError:
+        # we need to install pycootools, which is a bit tricky
+        # pycocotools sdist requires Cython, numpy(already met)
+        import_try_install('cython')
+        # pypi pycocotools is not compatible with windows
+        win_url = 'git+https://github.com/zhreshold/cocoapi.git#subdirectory=PythonAPI'
+        try:
+            if os.name == 'nt':
+                import_try_install('pycocotools', win_url)
+            else:
+                import_try_install('pycocotools')
+        except ImportError:
+            faq = 'cocoapi FAQ'
+            raise ImportError('Cannot import or install pycocotools, please refer to %s.' % faq)
+
 
 def _absolute_pathify(df, root=None, column='image'):
     """Convert relative paths to absolute"""

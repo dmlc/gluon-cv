@@ -1,6 +1,9 @@
 """Visualize image."""
 import numpy as np
-import mxnet as mx
+try:
+    import mxnet as mx
+except ImportError:
+    mx = None
 
 def plot_image(img, ax=None, reverse_rgb=False):
     """Visualize image.
@@ -31,7 +34,7 @@ def plot_image(img, ax=None, reverse_rgb=False):
         # create new axes
         fig = plt.figure()
         ax = fig.add_subplot(1, 1, 1)
-    if isinstance(img, mx.nd.NDArray):
+    if mx is not None and isinstance(img, mx.nd.NDArray):
         img = img.asnumpy()
     img = img.copy()
     if reverse_rgb:
@@ -76,7 +79,7 @@ def cv_plot_image(img, scale=1, upperleft_txt=None, upperleft_txt_corner=(10, 10
     from ..filesystem import try_import_cv2
     cv2 = try_import_cv2()
 
-    if isinstance(img, mx.nd.NDArray):
+    if mx is not None and isinstance(img, mx.nd.NDArray):
         img = img.asnumpy()
 
     height, width, _ = img.shape

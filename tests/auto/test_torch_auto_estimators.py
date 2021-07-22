@@ -22,7 +22,6 @@ from gluoncv.auto.estimators import TorchImageClassificationEstimator
 from gluoncv.auto.data.dataset import ImageClassificationDataset
 import autogluon.core as ag
 from autogluon.core.scheduler.resource import get_cpu_count, get_gpu_count
-import mxnet as mx
 
 IMAGE_CLASS_DATASET, _, IMAGE_CLASS_TEST = ImageClassificationDataset.from_folders(
     'https://autogluon.s3.amazonaws.com/datasets/shopee-iet.zip')
@@ -84,7 +83,7 @@ def _save_load_test(est, filename):
 )
 def build_config(pretrained, global_pool_type, sync_bn, no_aug, mixup, cutmix, model_ema,
                 model_ema_force_cpu, save_images, pin_mem, use_multi_epochs_loader,
-                 amp, apex_amp, native_amp, prefetcher, interpolation, batch_size, hflip, vflip, 
+                 amp, apex_amp, native_amp, prefetcher, interpolation, batch_size, hflip, vflip,
                  train_interpolation, num_workers, tta):
     config = {
         'model': {
