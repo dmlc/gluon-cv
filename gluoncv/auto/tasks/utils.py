@@ -224,6 +224,7 @@ def config_to_nested(config):
     """Convert config to nested version"""
     estimator = config.get('estimator', None)
     transfer = config.get('transfer', None)
+    custom_net = config.get('custom_net', None)
     # choose hyperparameters based on pretrained model in transfer learning
     if transfer:
         # choose estimator
@@ -292,6 +293,7 @@ def config_to_nested(config):
     for k, v in config.items():
         _recursive_update(cfg_map, k, v, auto_strs, auto_ints)
     cfg_map['estimator'] = estimator
+    cfg_map['custom_net'] = custom_net
     return cfg_map
 
 def config_to_nested_v0(config):

@@ -78,8 +78,8 @@ class TorchImageClassificationEstimator(BaseEstimator):
         self._feature_net = None
         self._custom_net = False
 
-        self._model_cfg = self._cfg.model
-        self._dataset_cfg = self._cfg.dataset
+        self._img_cls_cfg = self._cfg.img_cls
+        self._data_cfg = self._cfg.data
         self._optimizer_cfg = self._cfg.optimizer
         self._train_cfg = self._cfg.train
         self._augmentation_cfg = self._cfg.augmentation
@@ -161,10 +161,10 @@ class TorchImageClassificationEstimator(BaseEstimator):
         # create data loaders w/ augmentation pipeiine
         train_interpolation = self._augmentation_cfg.train_interpolation
         if self._augmentation_cfg.no_aug or not train_interpolation:
-            train_interpolation = self._dataset_cfg.interpolation
+            train_interpolation = self._data_cfg.interpolation
         train_loader = create_loader(
             train_dataset,
-            input_size=self._dataset_cfg.input_size,
+            input_size=self._data_cfg.input_size,
             batch_size=self._train_cfg.batch_size,
             is_training=True,
             use_prefetcher=self._misc_cfg.prefetcher,
@@ -176,8 +176,8 @@ class TorchImageClassificationEstimator(BaseEstimator):
             color_jitter=self._augmentation_cfg.color_jitter,
             auto_augment=self._augmentation_cfg.auto_augment,
             interpolation=train_interpolation,
-            mean=self._dataset_cfg.mean,
-            std=self._dataset_cfg.std,
+            mean=self._data_cfg.mean,
+            std=self._data_cfg.std,
             num_workers=self._misc_cfg.num_workers,
             distributed=False,
             collate_fn=self._collate_fn,
@@ -187,16 +187,16 @@ class TorchImageClassificationEstimator(BaseEstimator):
 
         val_loader = create_loader(
             val_dataset,
-            input_size=self._dataset_cfg.input_size,
-            batch_size=self._dataset_cfg.validation_batch_size_multiplier * self._train_cfg.batch_size,
+            input_size=self._data_cfg.input_size,
+            batch_size=self._data_cfg.validation_batch_size_multiplier * self._train_cfg.batch_size,
             is_training=False,
             use_prefetcher=self._misc_cfg.prefetcher,
-            interpolation=self._dataset_cfg.interpolation,
-            mean=self._dataset_cfg.mean,
-            std=self._dataset_cfg.std,
+            interpolation=self._data_cfg.interpolation,
+            mean=self._data_cfg.mean,
+            std=self._data_cfg.std,
             num_workers=self._misc_cfg.num_workers,
             distributed=False,
-            crop_pct=self._dataset_cfg.crop_pct,
+            crop_pct=self._data_cfg.crop_pct,
             pin_memory=self._misc_cfg.pin_mem,
         )
 
@@ -464,10 +464,10 @@ class TorchImageClassificationEstimator(BaseEstimator):
 
         if not self.net:
             self.net = create_model(
-                self._model_cfg.model,
-                pretrained=self._model_cfg.pretrained,
+                self._img_cls_cfg.model,
+                pretrained=self._img_cls_cfg.pretrained,
                 num_classes=self.num_class,
-                global_pool=self._model_cfg.global_pool_type,
+                global_pool=self._img_cls_cfg.global_pool_type,
                 drop_rate=self._augmentation_cfg.drop,
                 drop_path_rate=self._augmentation_cfg.drop_path,
                 drop_block_rate=self._augmentation_cfg.drop_block,
@@ -476,10 +476,12 @@ class TorchImageClassificationEstimator(BaseEstimator):
                 scriptable=self._misc_cfg.torchscript
             )
 
-            self._logger.info(f'Model {safe_model_name(self._model_cfg.model)} created, param count: \
+            self._logger.info(f'Model {safe_model_name(self._img_cls_cfg.model)} created, param count: \
                                         {sum([m.numel() for m in self.net.parameters()])}')
         else:
             self._logger.info(f'Use user provided model. Neglect model in config.')
+            out_features = list(self.net.children())[-1].out_features
+            assert out_features == self.num_class, f'Custom model out_feature {out_features} != num_class {self.num_class}'
 
         resolve_data_config(self._cfg, model=self.net)
 
@@ -552,14 +554,14 @@ class TorchImageClassificationEstimator(BaseEstimator):
         elif isinstance(x, (list, tuple)):
             loader = create_loader(
                 ImageListDataset(x),
-                input_size=self._dataset_cfg.input_size,
+                input_size=self._data_cfg.input_size,
                 batch_size=self._train_cfg.batch_size,
                 use_prefetcher=self._misc_cfg.prefetcher,
-                interpolation=self._dataset_cfg.interpolation,
-                mean=self._dataset_cfg.mean,
-                std=self._dataset_cfg.std,
+                interpolation=self._data_cfg.interpolation,
+                mean=self._data_cfg.mean,
+                std=self._data_cfg.std,
                 num_workers=self._misc_cfg.num_workers,
-                crop_pct=self._dataset_cfg.crop_pct
+                crop_pct=self._data_cfg.crop_pct
             )
 
             self.net.eval()
@@ -572,6 +574,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
                     input = input.to(self.ctx[0])
                     labels = self.net(input)
                     for l in labels:
+                        print(l)
                         probs = nn.functional.softmax(l, dim=0).cpu().numpy().flatten()
                         topk_inds = l.topk(topk)[1].cpu().numpy().flatten()
                         results.extend([{'class': self.classes[topk_inds[k]],
@@ -607,14 +610,14 @@ class TorchImageClassificationEstimator(BaseEstimator):
             assert isinstance(x[0], str), "expect image paths in list/tuple input"
             loader = create_loader(
                 ImageListDataset(x),
-                input_size=self._dataset_cfg.input_size,
+                input_size=self._data_cfg.input_size,
                 batch_size=self._train_cfg.batch_size,
                 use_prefetcher=self._misc_cfg.prefetcher,
-                interpolation=self._dataset_cfg.interpolation,
-                mean=self._dataset_cfg.mean,
-                std=self._dataset_cfg.std,
+                interpolation=self._data_cfg.interpolation,
+                mean=self._data_cfg.mean,
+                std=self._data_cfg.std,
                 num_workers=self._misc_cfg.num_workers,
-                crop_pct=self._dataset_cfg.crop_pct
+                crop_pct=self._data_cfg.crop_pct
             )
 
             self.net.eval()

@@ -23,10 +23,11 @@ from autogluon.core.searcher import RandomSearcher
 from ...utils.filesystem import try_import
 
 from ..estimators.base_estimator import BaseEstimator
-from ..estimators import ImageClassificationEstimator
+from ..estimators import ImageClassificationEstimator, TorchImageClassificationEstimator
 from .utils import config_to_nested
 from ..data.dataset import ImageClassificationDataset
 from ..estimators.conf import _BEST_CHECKPOINT_FILE
+from gluoncv.model_zoo import get_model_list
 
 problem_type_constants = try_import(package='autogluon.core.constants',
                                     fromlist=['MULTICLASS', 'BINARY', 'REGRESSION'],
@@ -37,6 +38,19 @@ REGRESSION = problem_type_constants.REGRESSION
 
 
 __all__ = ['ImageClassification', 'ImagePrediction']
+
+try:
+    import timm
+except ImportError:
+    timm = None
+try:
+    import torch
+except ImportError:
+    torch = None
+try:
+    import mxnet as mx
+except ImportError:
+    mx = None
 
 @dataclass
 class LiteConfig:
@@ -97,6 +111,38 @@ def _train_image_classification(args, reporter):
         num_trials = args.pop('num_trials')
     except AttributeError:
         task = None
+
+    # mxnet and torch dispatcher
+    dispatcher = None
+    torch_model_list = None
+    mxnet_model_list = list(get_model_list())
+    if args.get('custom_net', None):
+        custom_net = args.get('custom_net')
+        if torch and timm:
+            if isinstance(custom_net, torch.nn.Module):
+                dispatcher = 'torch'
+        if mx:
+            if isinstance(custom_net, mx.gluon.Block):
+                dispatcher = 'mxnet'
+    else:
+        if timm:
+            torch_model_list = timm.list_models()
+        model = args.get('model', None)
+        if model:
+            # timm model has higher priority
+            if torch_model_list and model in torch_model_list and problem_type != REGRESSION:
+                dispatcher = 'torch'
+            elif model in mxnet_model_list:
+                dispatcher = 'mxnet'
+            else:
+                if not torch_model_list:
+                    raise ValueError('Model not found in gluoncv model zoo. Install timm if it supports the model.')
+                elif model in torch_model_list:
+                    raise NotImplementedError('Regression not implemented for timm models.')
+                else:
+                    raise ValueError('Model not supported because it does not exist in both timm and gluoncv model zoo.')
+    assert dispatcher=='torch' or dispatcher=='mxnet', 'custom net needs to be of type either torch.nn.Module or mx.gluon.Block'
+    args['estimator'] = TorchImageClassificationEstimator if dispatcher=='torch' else ImageClassificationEstimator
     # convert user defined config to nested form
     args = config_to_nested(args)
 
@@ -107,7 +153,7 @@ def _train_image_classification(args, reporter):
     try:
         valid_summary_file = 'fit_summary_img_cls.ag'
         estimator_cls = args.pop('estimator', None)
-        assert estimator_cls == ImageClassificationEstimator
+        assert estimator_cls == ImageClassificationEstimator or estimator_cls == TorchImageClassificationEstimator
         if final_fit:
             # load from previous dumps
             estimator = None
@@ -325,24 +371,16 @@ class ImageClassification(BaseTask):
             train_data, val_data = train, val
 
         estimator = config.get('estimator', None)
-        if estimator is None:
-            estimator = [ImageClassificationEstimator]
-        else:
+        if estimator:
             if isinstance(estimator, ag.Space):
                 estimator = estimator.data
             elif isinstance(estimator, str):
                 estimator = [estimator]
             for i, e in enumerate(estimator):
-                if e == 'img_cls':
-                    estimator[i] = ImageClassificationEstimator
-                else:
+                if e != 'img_cls':
                     estimator.pop(e)
-        if not estimator:
-            raise ValueError('Unable to determine the estimator for fit function.')
-        if len(estimator) == 1:
-            config['estimator'] = estimator[0]
-        else:
-            config['estimator'] = ag.Categorical(*estimator)
+            if not estimator:
+                raise ValueError('Unable to determine the estimator for fit function.')
 
         # register args
         config['train_data'] = train_data
