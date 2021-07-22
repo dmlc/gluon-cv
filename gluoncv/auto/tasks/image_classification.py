@@ -116,6 +116,7 @@ def _train_image_classification(args, reporter):
     dispatcher = None
     torch_model_list = None
     mxnet_model_list = list(get_model_list())
+    custom_net = None
     if args.get('custom_net', None):
         custom_net = args.get('custom_net')
         if torch and timm:
@@ -185,7 +186,6 @@ def _train_image_classification(args, reporter):
             # create independent log_dir for each trial
             trial_log_dir = os.path.join(log_dir, '.trial_{}'.format(task_id))
             args['log_dir'] = trial_log_dir
-            custom_net = args.pop('custom_net', None)
             custom_optimizer = args.pop('custom_optimizer', None)
             estimator = estimator_cls(args, problem_type=problem_type, reporter=reporter,
                                       net=custom_net, optimizer=custom_optimizer)

@@ -462,6 +462,8 @@ class TorchImageClassificationEstimator(BaseEstimator):
                 'Training on cpu. SyncBatchNorm disabled.')
             update_cfg(self._cfg, {'train': {'sync_bn': False}})
 
+        random_seed(self._misc_cfg.seed)
+
         if not self.net:
             self.net = create_model(
                 self._img_cls_cfg.model,
