@@ -2,7 +2,10 @@
 from __future__ import absolute_import
 import random as pyrandom
 import numpy as np
-import mxnet as mx
+try:
+    import mxnet as mx
+except ImportError:
+    mx = None
 
 
 def seed(a=None):
@@ -23,4 +26,5 @@ def seed(a=None):
     """
     pyrandom.seed(a)
     np.random.seed(a)
-    mx.random.seed(a)
+    if mx is not None:
+        mx.random.seed(a)

@@ -2,7 +2,10 @@
 from __future__ import absolute_import, division
 
 import random
-import mxnet as mx
+try:
+    import mxnet as mx
+except ImportError:
+    mx = None
 from .image import plot_image
 
 def plot_bbox(img, bboxes, scores=None, labels=None, thresh=0.5,
@@ -62,11 +65,11 @@ def plot_bbox(img, bboxes, scores=None, labels=None, thresh=0.5,
     if len(bboxes) < 1:
         return ax
 
-    if isinstance(bboxes, mx.nd.NDArray):
+    if mx is not None and isinstance(bboxes, mx.nd.NDArray):
         bboxes = bboxes.asnumpy()
-    if isinstance(labels, mx.nd.NDArray):
+    if mx is not None and isinstance(labels, mx.nd.NDArray):
         labels = labels.asnumpy()
-    if isinstance(scores, mx.nd.NDArray):
+    if mx is not None and isinstance(scores, mx.nd.NDArray):
         scores = scores.asnumpy()
 
     if not absolute_coordinates:
@@ -158,13 +161,13 @@ def cv_plot_bbox(img, bboxes, scores=None, labels=None, thresh=0.5,
         raise ValueError('The length of scores and bboxes mismatch, {} vs {}'
                          .format(len(scores), len(bboxes)))
 
-    if isinstance(img, mx.nd.NDArray):
+    if mx is not None and isinstance(img, mx.nd.NDArray):
         img = img.asnumpy()
-    if isinstance(bboxes, mx.nd.NDArray):
+    if mx is not None and isinstance(bboxes, mx.nd.NDArray):
         bboxes = bboxes.asnumpy()
-    if isinstance(labels, mx.nd.NDArray):
+    if mx is not None and isinstance(labels, mx.nd.NDArray):
         labels = labels.asnumpy()
-    if isinstance(scores, mx.nd.NDArray):
+    if mx is not None and isinstance(scores, mx.nd.NDArray):
         scores = scores.asnumpy()
     if len(bboxes) < 1:
         return img
