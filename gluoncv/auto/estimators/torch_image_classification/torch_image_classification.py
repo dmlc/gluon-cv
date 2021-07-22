@@ -686,7 +686,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
         self.__dict__.update(state)
         # logger
         self._logger = logging.getLogger(state.get('_name', self.__class__.__name__))
-        self._logger.setLevel(logging.ERROR)    
+        self._logger.setLevel(logging.ERROR)
         try:
             fh = logging.FileHandler(self._log_file)
             self._logger.addHandler(fh)
