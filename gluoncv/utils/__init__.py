@@ -1,5 +1,5 @@
 """GluonCV Utility functions."""
-# pylint: disable=wildcard-import，exec-used，wrong-import-position
+# pylint: disable=wildcard-import,exec-used,wrong-import-position
 from __future__ import absolute_import
 
 import types
