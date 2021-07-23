@@ -115,7 +115,7 @@ def _train_image_classification(args, reporter):
     # mxnet and torch dispatcher
     dispatcher = None
     torch_model_list = None
-    mxnet_model_list = list(get_model_list())
+    mxnet_model_list = None
     custom_net = None
     if args.get('custom_net', None):
         custom_net = args.get('custom_net')
@@ -128,18 +128,22 @@ def _train_image_classification(args, reporter):
     else:
         if torch and timm:
             torch_model_list = timm.list_models()
+        if mx:
+            mxnet_model_list = list(get_model_list())
         model = args.get('model', None)
         if model:
             # timm model has higher priority
             if torch_model_list and model in torch_model_list and problem_type != REGRESSION:
                 dispatcher = 'torch'
-            elif model in mxnet_model_list:
+            elif mxnet_model_list and model in mxnet_model_list:
                 dispatcher = 'mxnet'
             else:
                 if not torch_model_list:
                     raise ValueError('Model not found in gluoncv model zoo. Install torch and timm if it supports the model.')
                 elif model in torch_model_list:
                     raise NotImplementedError('Regression not implemented for timm models.')
+                elif not mxnet_model_list:
+                    raise ValueError('Model not found in timm model zoo. Install mxnet if it supports the model.')
                 else:
                     raise ValueError('Model not supported because it does not exist in both timm and gluoncv model zoo.')
     assert dispatcher in ('torch', 'mxnet'), 'custom net needs to be of type either torch.nn.Module or mx.gluon.Block'
