@@ -126,7 +126,7 @@ def _train_image_classification(args, reporter):
             if isinstance(custom_net, mx.gluon.Block):
                 dispatcher = 'mxnet'
     else:
-        if timm:
+        if torch and timm:
             torch_model_list = timm.list_models()
         model = args.get('model', None)
         if model:
@@ -137,7 +137,7 @@ def _train_image_classification(args, reporter):
                 dispatcher = 'mxnet'
             else:
                 if not torch_model_list:
-                    raise ValueError('Model not found in gluoncv model zoo. Install timm if it supports the model.')
+                    raise ValueError('Model not found in gluoncv model zoo. Install torch and timm if it supports the model.')
                 elif model in torch_model_list:
                     raise NotImplementedError('Regression not implemented for timm models.')
                 else:
