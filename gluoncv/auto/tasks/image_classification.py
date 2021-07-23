@@ -215,6 +215,7 @@ def _train_image_classification(args, reporter):
 
     if estimator:
         result.update({'model_checkpoint': pickle.dumps(estimator)})
+        result.update({'estimator': estimator_cls})
     return result
 
 
@@ -292,6 +293,7 @@ class ImageClassification(BaseTask):
         self._config = config
 
         # scheduler options
+        self.scheduler = config.get('scheduler', 'local')
         self.search_strategy = config.get('search_strategy', 'random')
         self.search_options = config.get('search_options', {})
         self.scheduler_options = {
@@ -411,7 +413,7 @@ class ImageClassification(BaseTask):
             self._results = self._fit_summary
         else:
             self._logger.info("Starting HPO experiments")
-            results = self.run_fit(_train_image_classification, self.search_strategy,
+            results = self.run_fit(_train_image_classification, self.scheduler,
                                    self.scheduler_options)
             if isinstance(results, dict):
                 ks = ('best_reward', 'best_config', 'total_time', 'config_history', 'reward_attr')
@@ -420,6 +422,7 @@ class ImageClassification(BaseTask):
         self._logger.info("Finished, total runtime is %.2f s", end_time - start_time)
         if config.get('num_trials', 1) > 1:
             best_config = sample_config(_train_image_classification.args, results['best_config'])
+            best_config.update({'estimator': results['estimator']})
             # convert best config to nested form
             best_config = config_to_nested(best_config)
             best_config.pop('train_data', None)
