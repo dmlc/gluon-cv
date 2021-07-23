@@ -48,7 +48,7 @@ except ImportError:
     torch = None
 try:
     import mxnet as mx
-    from gluoncv.model_zoo import get_model_list
+    from ...model_zoo import get_model_list
 except ImportError:
     mx = None
 
