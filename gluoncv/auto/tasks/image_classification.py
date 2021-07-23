@@ -20,7 +20,6 @@ from autogluon.core.decorator import sample_config
 from autogluon.core.scheduler.resource import get_cpu_count, get_gpu_count
 from autogluon.core.task.base import BaseTask
 from autogluon.core.searcher import RandomSearcher
-from gluoncv.model_zoo import get_model_list
 from ...utils.filesystem import try_import
 
 from ..estimators.base_estimator import BaseEstimator
@@ -49,6 +48,7 @@ except ImportError:
     torch = None
 try:
     import mxnet as mx
+    from gluoncv.model_zoo import get_model_list
 except ImportError:
     mx = None
 
