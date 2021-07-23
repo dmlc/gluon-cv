@@ -20,6 +20,7 @@ from autogluon.core.decorator import sample_config
 from autogluon.core.scheduler.resource import get_cpu_count, get_gpu_count
 from autogluon.core.task.base import BaseTask
 from autogluon.core.searcher import RandomSearcher
+from gluoncv.model_zoo import get_model_list
 from ...utils.filesystem import try_import
 
 from ..estimators.base_estimator import BaseEstimator
@@ -27,7 +28,6 @@ from ..estimators import ImageClassificationEstimator, TorchImageClassificationE
 from .utils import config_to_nested
 from ..data.dataset import ImageClassificationDataset
 from ..estimators.conf import _BEST_CHECKPOINT_FILE
-from gluoncv.model_zoo import get_model_list
 
 problem_type_constants = try_import(package='autogluon.core.constants',
                                     fromlist=['MULTICLASS', 'BINARY', 'REGRESSION'],
@@ -142,7 +142,7 @@ def _train_image_classification(args, reporter):
                     raise NotImplementedError('Regression not implemented for timm models.')
                 else:
                     raise ValueError('Model not supported because it does not exist in both timm and gluoncv model zoo.')
-    assert dispatcher=='torch' or dispatcher=='mxnet', 'custom net needs to be of type either torch.nn.Module or mx.gluon.Block'
+    assert dispatcher in ('torch', 'mxnet'), 'custom net needs to be of type either torch.nn.Module or mx.gluon.Block'
     args['estimator'] = TorchImageClassificationEstimator if dispatcher=='torch' else ImageClassificationEstimator
     # convert user defined config to nested form
     args = config_to_nested(args)
@@ -154,7 +154,7 @@ def _train_image_classification(args, reporter):
     try:
         valid_summary_file = 'fit_summary_img_cls.ag'
         estimator_cls = args.pop('estimator', None)
-        assert estimator_cls == ImageClassificationEstimator or estimator_cls == TorchImageClassificationEstimator
+        assert estimator_cls in (ImageClassificationEstimator, TorchImageClassificationEstimator)
         if final_fit:
             # load from previous dumps
             estimator = None
