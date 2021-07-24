@@ -4,13 +4,13 @@ from typing import Union, Tuple
 from autocfg import dataclass, field
 
 @dataclass
-class ModelCfg:
+class ImageClassification:
     model: str = 'resnet101'
     pretrained: bool = False
     global_pool_type: Union[str, None] = None  # Global pool type, one of (fast, avg, max, avgmax). Model default if None
 
 @dataclass
-class DatasetCfg:
+class DataCfg:
     img_size: Union[int, None] = None  # Image patch size (default: None => model default)
     input_size: Union[Tuple[int, int, int], None] = None  # Input all image dimensions (d h w, e.g. --input-size 3 224 224), uses model default if empty
     crop_pct: Union[float, None] = None  # Input image center crop percent (for validation only)
@@ -103,8 +103,8 @@ class MiscCfg:
 
 @dataclass
 class TorchImageClassificationCfg:
-    model : ModelCfg = field(default_factory=ModelCfg)
-    dataset: DatasetCfg = field(default_factory=DatasetCfg)
+    img_cls : ImageClassification = field(default_factory=ImageClassification)
+    data: DataCfg = field(default_factory=DataCfg)
     optimizer: OptimizerCfg = field(default_factory=OptimizerCfg)
     train: TrainCfg = field(default_factory=TrainCfg)
     augmentation: AugmentationCfg = field(default_factory=AugmentationCfg)

@@ -23,7 +23,7 @@ from autogluon.core.searcher import RandomSearcher
 from ...utils.filesystem import try_import
 
 from ..estimators.base_estimator import BaseEstimator
-from ..estimators import ImageClassificationEstimator
+from ..estimators import ImageClassificationEstimator, TorchImageClassificationEstimator
 from .utils import config_to_nested
 from ..data.dataset import ImageClassificationDataset
 from ..estimators.conf import _BEST_CHECKPOINT_FILE
@@ -37,6 +37,20 @@ REGRESSION = problem_type_constants.REGRESSION
 
 
 __all__ = ['ImageClassification', 'ImagePrediction']
+
+try:
+    import timm
+except ImportError:
+    timm = None
+try:
+    import torch
+except ImportError:
+    torch = None
+try:
+    import mxnet as mx
+    from ...model_zoo import get_model_list
+except ImportError:
+    mx = None
 
 @dataclass
 class LiteConfig:
@@ -97,6 +111,43 @@ def _train_image_classification(args, reporter):
         num_trials = args.pop('num_trials')
     except AttributeError:
         task = None
+
+    # mxnet and torch dispatcher
+    dispatcher = None
+    torch_model_list = None
+    mxnet_model_list = None
+    custom_net = None
+    if args.get('custom_net', None):
+        custom_net = args.get('custom_net')
+        if torch and timm:
+            if isinstance(custom_net, torch.nn.Module):
+                dispatcher = 'torch'
+        if mx:
+            if isinstance(custom_net, mx.gluon.Block):
+                dispatcher = 'mxnet'
+    else:
+        if torch and timm:
+            torch_model_list = timm.list_models()
+        if mx:
+            mxnet_model_list = list(get_model_list())
+        model = args.get('model', None)
+        if model:
+            # timm model has higher priority
+            if torch_model_list and model in torch_model_list and problem_type != REGRESSION:
+                dispatcher = 'torch'
+            elif mxnet_model_list and model in mxnet_model_list:
+                dispatcher = 'mxnet'
+            else:
+                if not torch_model_list:
+                    raise ValueError('Model not found in gluoncv model zoo. Install torch and timm if it supports the model.')
+                elif model in torch_model_list:
+                    raise NotImplementedError('Regression not implemented for timm models.')
+                elif not mxnet_model_list:
+                    raise ValueError('Model not found in timm model zoo. Install mxnet if it supports the model.')
+                else:
+                    raise ValueError('Model not supported because it does not exist in both timm and gluoncv model zoo.')
+    assert dispatcher in ('torch', 'mxnet'), 'custom net needs to be of type either torch.nn.Module or mx.gluon.Block'
+    args['estimator'] = TorchImageClassificationEstimator if dispatcher=='torch' else ImageClassificationEstimator
     # convert user defined config to nested form
     args = config_to_nested(args)
 
@@ -107,7 +158,7 @@ def _train_image_classification(args, reporter):
     try:
         valid_summary_file = 'fit_summary_img_cls.ag'
         estimator_cls = args.pop('estimator', None)
-        assert estimator_cls == ImageClassificationEstimator
+        assert estimator_cls in (ImageClassificationEstimator, TorchImageClassificationEstimator)
         if final_fit:
             # load from previous dumps
             estimator = None
@@ -139,7 +190,6 @@ def _train_image_classification(args, reporter):
             # create independent log_dir for each trial
             trial_log_dir = os.path.join(log_dir, '.trial_{}'.format(task_id))
             args['log_dir'] = trial_log_dir
-            custom_net = args.pop('custom_net', None)
             custom_optimizer = args.pop('custom_optimizer', None)
             estimator = estimator_cls(args, problem_type=problem_type, reporter=reporter,
                                       net=custom_net, optimizer=custom_optimizer)
@@ -165,6 +215,7 @@ def _train_image_classification(args, reporter):
 
     if estimator:
         result.update({'model_checkpoint': pickle.dumps(estimator)})
+        result.update({'estimator': estimator_cls})
     return result
 
 
@@ -242,6 +293,7 @@ class ImageClassification(BaseTask):
         self._config = config
 
         # scheduler options
+        self.scheduler = config.get('scheduler', 'local')
         self.search_strategy = config.get('search_strategy', 'random')
         self.search_options = config.get('search_options', {})
         self.scheduler_options = {
@@ -325,24 +377,16 @@ class ImageClassification(BaseTask):
             train_data, val_data = train, val
 
         estimator = config.get('estimator', None)
-        if estimator is None:
-            estimator = [ImageClassificationEstimator]
-        else:
+        if estimator:
             if isinstance(estimator, ag.Space):
                 estimator = estimator.data
             elif isinstance(estimator, str):
                 estimator = [estimator]
             for i, e in enumerate(estimator):
-                if e == 'img_cls':
-                    estimator[i] = ImageClassificationEstimator
-                else:
+                if e != 'img_cls':
                     estimator.pop(e)
-        if not estimator:
-            raise ValueError('Unable to determine the estimator for fit function.')
-        if len(estimator) == 1:
-            config['estimator'] = estimator[0]
-        else:
-            config['estimator'] = ag.Categorical(*estimator)
+            if not estimator:
+                raise ValueError('Unable to determine the estimator for fit function.')
 
         # register args
         config['train_data'] = train_data
@@ -369,7 +413,7 @@ class ImageClassification(BaseTask):
             self._results = self._fit_summary
         else:
             self._logger.info("Starting HPO experiments")
-            results = self.run_fit(_train_image_classification, self.search_strategy,
+            results = self.run_fit(_train_image_classification, self.scheduler,
                                    self.scheduler_options)
             if isinstance(results, dict):
                 ks = ('best_reward', 'best_config', 'total_time', 'config_history', 'reward_attr')
@@ -378,6 +422,7 @@ class ImageClassification(BaseTask):
         self._logger.info("Finished, total runtime is %.2f s", end_time - start_time)
         if config.get('num_trials', 1) > 1:
             best_config = sample_config(_train_image_classification.args, results['best_config'])
+            best_config.update({'estimator': results['estimator']})
             # convert best config to nested form
             best_config = config_to_nested(best_config)
             best_config.pop('train_data', None)
