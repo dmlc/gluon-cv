@@ -54,7 +54,7 @@ except ImportError:
 
 @dataclass
 class LiteConfig:
-    model : Union[type(None), str, ag.Space] = ag.Categorical('resnet18', 'mobilenetv3_small')
+    model : Union[type(None), str, ag.Space] = ag.Categorical('resnet18', 'mobilenetv3_small_100', 'visformer_tiny')
     lr : Union[ag.Space, float] = 1e-2
     num_trials : int = 1
     epochs : Union[ag.Space, int] = 5
@@ -67,7 +67,7 @@ class LiteConfig:
 
 @dataclass
 class DefaultConfig:
-    model : Union[type(None), str, ag.Space] = ag.Categorical('resnet50', 'resnest50')
+    model : Union[type(None), str, ag.Space] = ag.Categorical('resnet50', 'efficientnet_b0', 'visformer_small')
     lr : Union[ag.Space, float] = ag.Categorical(1e-2, 5e-2)
     num_trials : int = 3
     epochs : Union[ag.Space, int] = 15
