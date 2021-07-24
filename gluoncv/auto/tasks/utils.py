@@ -5,11 +5,15 @@ import numpy as np
 
 import autogluon.core as ag
 
-from ... import data as gdata
 from ..estimators.base_estimator import BaseEstimator
 from ..estimators import SSDEstimator, FasterRCNNEstimator, YOLOv3Estimator, CenterNetEstimator
 from ..estimators import ImageClassificationEstimator
 from ..data.dataset import ObjectDetectionDataset
+
+try:
+    from ... import data as gdata
+except ImportError:
+    gdata = None
 
 
 class ConfigDict(dict):
@@ -128,14 +132,17 @@ def auto_suggest(config, estimator, logger):
         if train_dataset is None:
             dataset_name = config.get('dataset', 'voc')
             dataset_root = config.get('dataset_root', '~/.mxnet/datasets/')
-            if dataset_name == 'voc':
+            if gdata is not None and dataset_name == 'voc':
                 train_dataset = gdata.VOCDetection(splits=[(2007, 'trainval'), (2012, 'trainval')])
-            elif dataset_name == 'voc_tiny':
+            elif gdata is not None and dataset_name == 'voc_tiny':
                 train_dataset = gdata.CustomVOCDetectionBase(classes=('motorbike',),
                                                              root=dataset_root + 'tiny_motorbike',
                                                              splits=[('', 'trainval')])
-            elif dataset_name == 'coco':
+            elif gdata is not None and dataset_name == 'coco':
                 train_dataset = gdata.COCODetection(splits=['instances_train2017'])
+            else:
+                if gdata is None:
+                    logger.warning('Unable to import mxnet so voc and coco formats are currently not loaded.')
         elif isinstance(train_dataset, ObjectDetectionDataset):
             train_dataset = train_dataset.to_mxnet()
         else:
