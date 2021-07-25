@@ -54,7 +54,7 @@ except ImportError:
 
 @dataclass
 class LiteConfig:
-    model : Union[type(None), str, ag.Space] = ag.Categorical('resnet18_v1b', 'mobilenetv3_small')
+    model : Union[type(None), str, ag.Space] = ag.Categorical('resnet18', 'mobilenetv3_small_100', 'visformer_tiny')
     lr : Union[ag.Space, float] = 1e-2
     num_trials : int = 1
     epochs : Union[ag.Space, int] = 5
@@ -67,7 +67,7 @@ class LiteConfig:
 
 @dataclass
 class DefaultConfig:
-    model : Union[type(None), str, ag.Space] = ag.Categorical('resnet50_v1b', 'resnest50')
+    model : Union[type(None), str, ag.Space] = ag.Categorical('resnet50', 'efficientnet_b0', 'visformer_small')
     lr : Union[ag.Space, float] = ag.Categorical(1e-2, 5e-2)
     num_trials : int = 3
     epochs : Union[ag.Space, int] = 15
@@ -393,6 +393,7 @@ class ImageClassification(BaseTask):
         config['val_data'] = val_data
         config['wall_clock_tick'] = wall_clock_tick
         config['log_dir'] = os.path.join(config.get('log_dir', os.getcwd()), str(uuid.uuid4())[:8])
+        self.scheduler_options['checkpoint'] = os.path.join(config['log_dir'], 'exp1.ag')
         config['problem_type'] = self._problem_type
         _train_image_classification.register_args(**config)
 
@@ -414,7 +415,7 @@ class ImageClassification(BaseTask):
         else:
             self._logger.info("Starting HPO experiments")
             results = self.run_fit(_train_image_classification, self.scheduler,
-                                   self.scheduler_options)
+                                   self.scheduler_options, plot_results=False)
             if isinstance(results, dict):
                 ks = ('best_reward', 'best_config', 'total_time', 'config_history', 'reward_attr')
                 self._results.update({k: v for k, v in results.items() if k in ks})
