@@ -30,6 +30,7 @@ def test_image_classification_estimator():
     est = TorchImageClassificationEstimator({'img_cls': {'model': 'resnet18'}, 'train': {'epochs': 1}, 'gpus': list(range(get_gpu_count()))})
     res = est.fit(IMAGE_CLASS_DATASET)
     est.predict(IMAGE_CLASS_TEST)
+    est.predict(IMAGE_CLASS_TEST.iloc[0]['image'])
     est.predict_feature(IMAGE_CLASS_TEST)
     _save_load_test(est, 'test.pkl')
 

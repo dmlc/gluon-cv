@@ -549,7 +549,9 @@ class TorchImageClassificationEstimator(BaseEstimator):
         return self.validate(self.net, val_data, validate_loss_fn, amp_autocast=self._amp_autocast)
 
     def _predict(self, x, **kwargs):
-        if isinstance(x, pd.DataFrame):
+        if isinstance(x, str):
+            return self._predict((x,))
+        elif isinstance(x, pd.DataFrame):
             assert 'image' in x.columns, "Expect column `image` for input images"
             df = self._predict(tuple(x['image']))
             return df.reset_index(drop=True)
@@ -576,7 +578,6 @@ class TorchImageClassificationEstimator(BaseEstimator):
                     input = input.to(self.ctx[0])
                     labels = self.net(input)
                     for l in labels:
-                        print(l)
                         probs = nn.functional.softmax(l, dim=0).cpu().numpy().flatten()
                         topk_inds = l.topk(topk)[1].cpu().numpy().flatten()
                         results.extend([{'class': self.classes[topk_inds[k]],
@@ -586,7 +587,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
                                         for k in range(topk)])
                         idx += 1
             return pd.DataFrame(results)
-        elif not isinstance(x, torch.tensor):
+        elif not isinstance(x, torch.Tensor):
             raise ValueError('Input is not supported: {}'.format(type(x)))
         with torch.no_grad():
             input = x.to(self.ctx[0])
@@ -602,7 +603,9 @@ class TorchImageClassificationEstimator(BaseEstimator):
 
 
     def _predict_feature(self, x, **kwargs):
-        if isinstance(x, pd.DataFrame):
+        if isinstance(x, str):
+            return self._predict_feature((x,))
+        elif isinstance(x, pd.DataFrame):
             assert 'image' in x.columns, "Expect column `image` for input images"
             df = self._predict_feature(tuple(x['image']))
             df = df.set_index(x.index)
@@ -638,7 +641,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
             df = pd.DataFrame(results)
             df['image'] = x
             return df
-        elif not isinstance(x, torch.tensor):
+        elif not isinstance(x, torch.Tensor):
             raise ValueError('Input is not supported: {}'.format(type(x)))
         with torch.no_grad():
             input = x.to(self.ctx[0])
