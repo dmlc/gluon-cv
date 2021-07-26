@@ -553,10 +553,10 @@ class TorchImageClassificationEstimator(BaseEstimator):
         if with_proba and self._problem_type not in [MULTICLASS, BINARY]:
             raise AssertionError('with_proba is only supported for classification problems. Please use predict instead.')
         if isinstance(x, str):
-            return self._predict((x,)).drop(columns=['image'], errors='ignore')
+            return self._predict((x,), **kwargs).drop(columns=['image'], errors='ignore')
         elif isinstance(x, pd.DataFrame):
             assert 'image' in x.columns, "Expect column `image` for input images"
-            df = self._predict(tuple(x['image']))
+            df = self._predict(tuple(x['image']), **kwargs)
             return df.reset_index(drop=True)
         elif isinstance(x, (list, tuple)):
             loader = create_loader(
