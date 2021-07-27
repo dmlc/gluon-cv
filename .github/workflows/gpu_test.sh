@@ -20,4 +20,4 @@ if [[ $TESTS_PATH == *"auto"* ]]; then
   pip3 install timm==0.4.12
 fi
 
-nosetests --with-timer --timer-ok 5 --timer-warning 20 -x --with-coverage --cover-package $COVER_PACKAGE -v $TESTS_PATH
+nosetests --process-restartworker --with-timer --timer-ok 5 --timer-warning 20 -x --with-coverage --cover-package $COVER_PACKAGE -v $TESTS_PATH

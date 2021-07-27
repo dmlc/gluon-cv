@@ -549,11 +549,14 @@ class TorchImageClassificationEstimator(BaseEstimator):
         return self.validate(self.net, val_data, validate_loss_fn, amp_autocast=self._amp_autocast)
 
     def _predict(self, x, **kwargs):
+        with_proba = kwargs.get('with_proba', False)
+        if with_proba and self._problem_type not in [MULTICLASS, BINARY]:
+            raise AssertionError('with_proba is only supported for classification problems. Please use predict instead.')
         if isinstance(x, str):
-            return self._predict((x,))
+            return self._predict((x,), **kwargs).drop(columns=['image'], errors='ignore')
         elif isinstance(x, pd.DataFrame):
             assert 'image' in x.columns, "Expect column `image` for input images"
-            df = self._predict(tuple(x['image']))
+            df = self._predict(tuple(x['image']), **kwargs)
             return df.reset_index(drop=True)
         elif isinstance(x, (list, tuple)):
             loader = create_loader(
@@ -579,12 +582,15 @@ class TorchImageClassificationEstimator(BaseEstimator):
                     labels = self.net(input)
                     for l in labels:
                         probs = nn.functional.softmax(l, dim=0).cpu().numpy().flatten()
-                        topk_inds = l.topk(topk)[1].cpu().numpy().flatten()
-                        results.extend([{'class': self.classes[topk_inds[k]],
-                                         'score': probs[topk_inds[k]],
-                                         'id': topk_inds[k],
-                                         'image': x[idx]}
-                                        for k in range(topk)])
+                        if with_proba:
+                            results.append({'image_proba': probs.tolist(), 'image': x[idx]})
+                        else:
+                            topk_inds = l.topk(topk)[1].cpu().numpy().flatten()
+                            results.extend([{'class': self.classes[topk_inds[k]],
+                                             'score': probs[topk_inds[k]],
+                                             'id': topk_inds[k],
+                                             'image': x[idx]}
+                                            for k in range(topk)])
                         idx += 1
             return pd.DataFrame(results)
         elif not isinstance(x, torch.Tensor):
@@ -595,10 +601,13 @@ class TorchImageClassificationEstimator(BaseEstimator):
             topk = min(5, self.num_class)
             probs = nn.functional.softmax(label, dim=0).cpu().numpy().flatten()
             topk_inds = label.topk(topk)[1].cpu().numpy().flatten()
-            df = pd.DataFrame([{'class': self.classes[topk_inds[k]],
-                                'score': probs[topk_inds[k]],
-                                'id': topk_inds[k]}
-                               for k in range(topk)])
+            if with_proba:
+                df = pd.DataFrame([{'image_proba': probs.tolist()}])
+            else:
+                df = pd.DataFrame([{'class': self.classes[topk_inds[k]],
+                                    'score': probs[topk_inds[k]],
+                                    'id': topk_inds[k]}
+                                   for k in range(topk)])
         return df
 
 
