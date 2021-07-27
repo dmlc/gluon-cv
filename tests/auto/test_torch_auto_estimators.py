@@ -19,19 +19,36 @@
 """Test auto estimators"""
 from nose.tools import nottest
 from gluoncv.auto.estimators import TorchImageClassificationEstimator
-from gluoncv.auto.data.dataset import ImageClassificationDataset
+from gluoncv.auto.tasks import ImageClassification, ImagePrediction
 import autogluon.core as ag
 from autogluon.core.scheduler.resource import get_cpu_count, get_gpu_count
 
-IMAGE_CLASS_DATASET, _, IMAGE_CLASS_TEST = ImageClassificationDataset.from_folders(
+IMAGE_CLASS_DATASET, _, IMAGE_CLASS_TEST = ImageClassification.Dataset.from_folders(
     'https://autogluon.s3.amazonaws.com/datasets/shopee-iet.zip')
+IMAGE_REGRESS_DATASET, _, IMAGE_REGRESS_TEST = ImagePrediction.Dataset.from_folders(
+    'https://autogluon.s3.amazonaws.com/datasets/shopee-iet.zip', no_class=True)
+
+def test_image_regression_estimator():
+    est = TorchImageClassificationEstimator({'train': {'epochs': 1}, 'gpus': list(range(get_gpu_count()))},
+                                      problem_type='regression')
+    res = est.fit(IMAGE_REGRESS_DATASET)
+    assert res.get('valid_score', 3) < 3
+    est.predict(IMAGE_REGRESS_TEST)
+    est.predict(IMAGE_REGRESS_TEST.iloc[0]['image'])
+    est.evaluate(IMAGE_REGRESS_TEST)
+    est.predict_feature(IMAGE_REGRESS_TEST)
+    est.predict_feature(IMAGE_REGRESS_TEST.iloc[0]['image'])
+    # test save/load
+    _save_load_test(est, 'img_regression.pkl')
 
 def test_image_classification_estimator():
     est = TorchImageClassificationEstimator({'img_cls': {'model': 'resnet18'}, 'train': {'epochs': 1}, 'gpus': list(range(get_gpu_count()))})
     res = est.fit(IMAGE_CLASS_DATASET)
     est.predict(IMAGE_CLASS_TEST)
     est.predict(IMAGE_CLASS_TEST.iloc[0]['image'])
+    est.evaluate(IMAGE_CLASS_DATASET)
     est.predict_feature(IMAGE_CLASS_TEST)
+    est.predict_feature(IMAGE_CLASS_TEST.iloc[0]['image'])
     _save_load_test(est, 'test.pkl')
 
 def test_image_classification_estimator_custom_net():
@@ -43,14 +60,20 @@ def test_image_classification_estimator_custom_net():
                                             net=m)
     res = est.fit(IMAGE_CLASS_DATASET)
     est.predict(IMAGE_CLASS_TEST)
+    est.predict(IMAGE_CLASS_TEST.iloc[0]['image'])
+    est.evaluate(IMAGE_CLASS_DATASET)
     est.predict_feature(IMAGE_CLASS_TEST)
+    est.predict_feature(IMAGE_CLASS_TEST.iloc[0]['image'])
     _save_load_test(est, 'test.pkl')
 
 def test_image_classification_estimator_cpu():
     est = TorchImageClassificationEstimator({'img_cls': {'model': 'resnet18'}, 'train': {'epochs': 1}, 'gpus': ()})
     res = est.fit(IMAGE_CLASS_DATASET)
     est.predict(IMAGE_CLASS_TEST)
+    est.predict(IMAGE_CLASS_TEST.iloc[0]['image'])
+    est.evaluate(IMAGE_CLASS_DATASET)
     est.predict_feature(IMAGE_CLASS_TEST)
+    est.predict_feature(IMAGE_CLASS_TEST.iloc[0]['image'])
     _save_load_test(est, 'test.pkl')
 
 @nottest

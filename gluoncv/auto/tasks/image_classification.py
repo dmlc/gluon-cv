@@ -133,15 +133,13 @@ def _train_image_classification(args, reporter):
         model = args.get('model', None)
         if model:
             # timm model has higher priority
-            if torch_model_list and model in torch_model_list and problem_type != REGRESSION:
+            if torch_model_list and model in torch_model_list:
                 dispatcher = 'torch'
             elif mxnet_model_list and model in mxnet_model_list:
                 dispatcher = 'mxnet'
             else:
                 if not torch_model_list:
                     raise ValueError('Model not found in gluoncv model zoo. Install torch and timm if it supports the model.')
-                elif model in torch_model_list:
-                    raise NotImplementedError('Regression not implemented for timm models.')
                 elif not mxnet_model_list:
                     raise ValueError('Model not found in timm model zoo. Install mxnet if it supports the model.')
                 else:

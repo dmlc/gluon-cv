@@ -113,7 +113,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
     def _fit(self, train_data, val_data, time_limit=math.inf):
         tic = time.time()
         self._cp_name = ''
-        self._best_acc = 0.0
+        self._best_acc = -float('inf')
         self.epochs = self._train_cfg.epochs
         self.epoch = 0
         self.start_epoch = self._train_cfg.start_epoch
@@ -217,6 +217,10 @@ class TorchImageClassificationEstimator(BaseEstimator):
         train_loss_fn = train_loss_fn.to(self.ctx[0])
         validate_loss_fn = validate_loss_fn.to(self.ctx[0])
         eval_metric = self._misc_cfg.eval_metric
+        if self._problem_type == REGRESSION:
+            train_loss_fn = nn.MSELoss()
+            validate_loss_fn = nn.MSELoss()
+            eval_metric = 'rmse'
         early_stopper = EarlyStopperOnPlateau(
             patience=self._train_cfg.early_stop_patience,
             min_delta=self._train_cfg.early_stop_min_delta,
@@ -253,17 +257,30 @@ class TorchImageClassificationEstimator(BaseEstimator):
                     self._model_ema.module, val_loader, validate_loss_fn, amp_autocast=self._amp_autocast)
                 eval_metrics = ema_eval_metrics
 
-            val_acc = eval_metrics['top1']
-            if self._reporter:
-                self._reporter(epoch=epoch, acc_reward=val_acc)
-            early_stopper.update(val_acc)
+            if self._problem_type == REGRESSION:
+                val_acc = eval_metrics['rmse']
+                if self._reporter:
+                    self._reporter(epoch=epoch, acc_reward=-val_acc)
+                early_stopper.update(-val_acc)
 
-            if val_acc > self._best_acc:
-                self._cp_name = os.path.join(self._logdir, _BEST_CHECKPOINT_FILE)
-                self._logger.info('[Epoch %d] Current best top-1: %f vs previous %f, saved to %s',
-                                  self.epoch, val_acc, self._best_acc, self._cp_name)
-                self.save(self._cp_name)
-                self._best_acc = val_acc
+                if -val_acc > self._best_acc:
+                    self._cp_name = os.path.join(self._logdir, _BEST_CHECKPOINT_FILE)
+                    self._logger.info('[Epoch %d] Current best rmse: %f vs previous %f, saved to %s',
+                                    self.epoch, val_acc, -self._best_acc, self._cp_name)
+                    self.save(self._cp_name)
+                    self._best_acc = -val_acc
+            else:
+                val_acc = eval_metrics['top1']
+                if self._reporter:
+                    self._reporter(epoch=epoch, acc_reward=val_acc)
+                early_stopper.update(val_acc)
+
+                if val_acc > self._best_acc:
+                    self._cp_name = os.path.join(self._logdir, _BEST_CHECKPOINT_FILE)
+                    self._logger.info('[Epoch %d] Current best top-1: %f vs previous %f, saved to %s',
+                                    self.epoch, val_acc, self._best_acc, self._cp_name)
+                    self.save(self._cp_name)
+                    self._best_acc = val_acc
 
             if self._lr_scheduler is not None:
                 # step LR for next epoch
@@ -276,8 +293,13 @@ class TorchImageClassificationEstimator(BaseEstimator):
                     'time': self._time_elapsed, 'checkpoint': self._cp_name}
         # rmse
         else:
-            return {'train_score': train_metrics['rmse'], 'valid_acc': self._best_acc,
-                    'time': self._time_elapsed, 'checkpoint': self._cp_name}
+            if self._problem_type == REGRESSION:
+                return {'train_score': train_metrics['rmse'], 'valid_score': -self._best_acc,
+                        'time': self._time_elapsed, 'checkpoint': self._cp_name}
+            # mixup
+            else:
+                return {'train_score': train_metrics['rmse'], 'valid_acc': self._best_acc,
+                        'time': self._time_elapsed, 'checkpoint': self._cp_name}
 
     def train_one_epoch(
             self, epoch, net, loader, optimizer, loss_fn,
@@ -306,6 +328,8 @@ class TorchImageClassificationEstimator(BaseEstimator):
             b_tic = time.time()
             if self._time_elapsed > time_limit:
                 return {'train_acc': train_metric_score_m.avg, 'train_loss': losses_m.avg, 'time_limit': True}
+            if self._problem_type == REGRESSION:
+                target = target.to(torch.float32)
             if not self._misc_cfg.prefetcher:
                 # prefetcher would move data to cuda by default
                 input, target = input.to(self.ctx[0]), target.to(self.ctx[0])
@@ -314,12 +338,18 @@ class TorchImageClassificationEstimator(BaseEstimator):
 
             with amp_autocast():
                 output = net(input)
+                if self._problem_type == REGRESSION:
+                    output = output.flatten()
                 loss = loss_fn(output, target)
-            if output.shape == target.shape:
+            if self._problem_type == REGRESSION:
                 train_metric_name = 'rmse'
                 train_metric_score = rmse(output, target)
             else:
-                train_metric_score = accuracy(output, target)[0] / 100
+                if output.shape == target.shape:
+                    train_metric_name = 'rmse'
+                    train_metric_score = rmse(output, target)
+                else:
+                    train_metric_score = accuracy(output, target)[0] / 100
 
             losses_m.update(loss.item(), input.size(0))
             train_metric_score_m.update(train_metric_score.item(), output.size(0))
@@ -383,6 +413,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
         losses_m = AverageMeter()
         top1_m = AverageMeter()
         top5_m = AverageMeter()
+        rmse_m = AverageMeter()
 
         net.eval()
 
@@ -394,37 +425,50 @@ class TorchImageClassificationEstimator(BaseEstimator):
 
                 with amp_autocast():
                     output = net(input)
+                    if self._problem_type == REGRESSION:
+                        output = output.flatten()
                 if isinstance(output, (tuple, list)):
                     output = output[0]
 
+                if self._problem_type == REGRESSION:
+                    val_metric_score = rmse(output, target)
+                else:
+                    val_metric_score = accuracy(output, target, topk=(1, min(5, self.num_class)))
+
                 # augmentation reduction
                 reduce_factor = self._misc_cfg.tta
-                if reduce_factor > 1:
+                if self._problem_type != REGRESSION and reduce_factor > 1:
                     output = output.unfold(0, reduce_factor, reduce_factor).mean(dim=2)
                     target = target[0:target.size(0):reduce_factor]
 
                 loss = loss_fn(output, target)
-                acc1, acc5 = accuracy(output, target, topk=(1, min(5, self.num_class)))
-                acc1 /= 100
-                acc5 /= 100
-
                 reduced_loss = loss.data
 
                 if self.found_gpu:
                     torch.cuda.synchronize()
 
                 losses_m.update(reduced_loss.item(), input.size(0))
-                top1_m.update(acc1.item(), output.size(0))
-                top5_m.update(acc5.item(), output.size(0))
+                if self._problem_type == REGRESSION:
+                    rmse_score = val_metric_score
+                    rmse_m.update(rmse_score.item(), output.size(0))
+                else:
+                    acc1, acc5 = val_metric_score
+                    acc1 /= 100
+                    acc5 /= 100
+                    top1_m.update(acc1.item(), output.size(0))
+                    top5_m.update(acc5.item(), output.size(0))
 
-        self._logger.info('[Epoch %d] validation: top1=%f top5=%f', self.epoch, top1_m.avg, top5_m.avg)
-        # TODO: update early stoper
-
-        return {'loss': losses_m.avg, 'top1': top1_m.avg, 'top5': top5_m.avg}
+        if self._problem_type == REGRESSION:
+            self._logger.info('[Epoch %d] validation: rmse=%f', self.epoch, rmse_m.avg)
+            return {'loss': losses_m.avg, 'rmse': rmse_m.avg}
+        else:
+            self._logger.info('[Epoch %d] validation: top1=%f top5=%f', self.epoch, top1_m.avg, top5_m.avg)
+            return {'loss': losses_m.avg, 'top1': top1_m.avg, 'top5': top5_m.avg}
 
     def _init_network(self, **kwargs):
-        if self._problem_type == REGRESSION:
-            raise NotImplementedError
+        if not self.num_class and self._problem_type != REGRESSION:
+            raise ValueError('This is a classification problem and we are not able to create network when `num_class` is unknown. \
+                It should be inferred from dataset or resumed from saved states.')
         assert len(self.classes) == self.num_class
 
         # Disable syncBatchNorm as it's only supported on DDP
@@ -468,7 +512,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
             self.net = create_model(
                 self._img_cls_cfg.model,
                 pretrained=self._img_cls_cfg.pretrained,
-                num_classes=self.num_class,
+                num_classes=max(self.num_class, 1),
                 global_pool=self._img_cls_cfg.global_pool_type,
                 drop_rate=self._augmentation_cfg.drop,
                 drop_path_rate=self._augmentation_cfg.drop_path,
@@ -483,7 +527,10 @@ class TorchImageClassificationEstimator(BaseEstimator):
         else:
             self._logger.info(f'Use user provided model. Neglect model in config.')
             out_features = list(self.net.children())[-1].out_features
-            assert out_features == self.num_class, f'Custom model out_feature {out_features} != num_class {self.num_class}'
+            if self._problem_type != REGRESSION:
+                assert out_features == self.num_class, f'Custom model out_feature {out_features} != num_class {self.num_class}.'
+            else:
+                assert out_features == 1, f'Regression problem expects num_out_feature == 1, got {out_features} instead.'
 
         resolve_data_config(self._cfg, model=self.net)
 
@@ -540,13 +587,31 @@ class TorchImageClassificationEstimator(BaseEstimator):
                 self.net, decay=self._model_ema_cfg.model_ema_decay, device='cpu' if self._model_ema_cfg.model_ema_force_cpu else None)
 
 
-    def evaluate(self, val_data):
+    def evaluate(self, val_data, metric_name=None):
         return self._evaluate(val_data)
 
     def _evaluate(self, val_data):
-        validate_loss_fn = nn.CrossEntropyLoss()
+        if self._problem_type == REGRESSION:
+            validate_loss_fn = nn.MSELoss()
+        else:
+            validate_loss_fn = nn.CrossEntropyLoss()
         validate_loss_fn = validate_loss_fn.to(self.ctx[0])
-        return self.validate(self.net, val_data, validate_loss_fn, amp_autocast=self._amp_autocast)
+        val_data = val_data.to_torch()
+        val_loader = create_loader(
+            val_data,
+            input_size=self._data_cfg.input_size,
+            batch_size=self._data_cfg.validation_batch_size_multiplier * self._train_cfg.batch_size,
+            is_training=False,
+            use_prefetcher=self._misc_cfg.prefetcher,
+            interpolation=self._data_cfg.interpolation,
+            mean=self._data_cfg.mean,
+            std=self._data_cfg.std,
+            num_workers=self._misc_cfg.num_workers,
+            distributed=False,
+            crop_pct=self._data_cfg.crop_pct,
+            pin_memory=self._misc_cfg.pin_mem,
+        )
+        return self.validate(self.net, val_loader, validate_loss_fn, amp_autocast=self._amp_autocast)
 
     def _predict(self, x, **kwargs):
         with_proba = kwargs.get('with_proba', False)
@@ -581,16 +646,19 @@ class TorchImageClassificationEstimator(BaseEstimator):
                     input = input.to(self.ctx[0])
                     labels = self.net(input)
                     for l in labels:
-                        probs = nn.functional.softmax(l, dim=0).cpu().numpy().flatten()
-                        if with_proba:
-                            results.append({'image_proba': probs.tolist(), 'image': x[idx]})
+                        if self._problem_type in [MULTICLASS, BINARY]:
+                            probs = nn.functional.softmax(l, dim=0).cpu().numpy().flatten()
+                            if with_proba:
+                                results.append({'image_proba': probs.tolist(), 'image': x[idx]})
+                            else:
+                                topk_inds = l.topk(topk)[1].cpu().numpy().flatten()
+                                results.extend([{'class': self.classes[topk_inds[k]],
+                                                'score': probs[topk_inds[k]],
+                                                'id': topk_inds[k],
+                                                'image': x[idx]}
+                                                for k in range(topk)])
                         else:
-                            topk_inds = l.topk(topk)[1].cpu().numpy().flatten()
-                            results.extend([{'class': self.classes[topk_inds[k]],
-                                             'score': probs[topk_inds[k]],
-                                             'id': topk_inds[k],
-                                             'image': x[idx]}
-                                            for k in range(topk)])
+                            results.append({'prediction': l.cpu().numpy().flatten(), 'image': x[idx]})
                         idx += 1
             return pd.DataFrame(results)
         elif not isinstance(x, torch.Tensor):
@@ -598,16 +666,19 @@ class TorchImageClassificationEstimator(BaseEstimator):
         with torch.no_grad():
             input = x.to(self.ctx[0])
             label = self.net(input)
-            topk = min(5, self.num_class)
-            probs = nn.functional.softmax(label, dim=0).cpu().numpy().flatten()
-            topk_inds = label.topk(topk)[1].cpu().numpy().flatten()
-            if with_proba:
-                df = pd.DataFrame([{'image_proba': probs.tolist()}])
+            if self._problem_type in [MULTICLASS, BINARY]:
+                topk = min(5, self.num_class)
+                probs = nn.functional.softmax(label, dim=0).cpu().numpy().flatten()
+                topk_inds = label.topk(topk)[1].cpu().numpy().flatten()
+                if with_proba:
+                    df = pd.DataFrame([{'image_proba': probs.tolist()}])
+                else:
+                    df = pd.DataFrame([{'class': self.classes[topk_inds[k]],
+                                        'score': probs[topk_inds[k]],
+                                        'id': topk_inds[k]}
+                                    for k in range(topk)])
             else:
-                df = pd.DataFrame([{'class': self.classes[topk_inds[k]],
-                                    'score': probs[topk_inds[k]],
-                                    'id': topk_inds[k]}
-                                   for k in range(topk)])
+                df = pd.DataFrame([{'prediction': label.cpu().numpy().flatten()}])
         return df
 
 
