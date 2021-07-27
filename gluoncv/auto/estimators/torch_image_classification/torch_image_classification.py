@@ -266,7 +266,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
                 if -val_acc > self._best_acc:
                     self._cp_name = os.path.join(self._logdir, _BEST_CHECKPOINT_FILE)
                     self._logger.info('[Epoch %d] Current best rmse: %f vs previous %f, saved to %s',
-                                    self.epoch, val_acc, -self._best_acc, self._cp_name)
+                                      self.epoch, val_acc, -self._best_acc, self._cp_name)
                     self.save(self._cp_name)
                     self._best_acc = -val_acc
             else:
@@ -278,7 +278,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
                 if val_acc > self._best_acc:
                     self._cp_name = os.path.join(self._logdir, _BEST_CHECKPOINT_FILE)
                     self._logger.info('[Epoch %d] Current best top-1: %f vs previous %f, saved to %s',
-                                    self.epoch, val_acc, self._best_acc, self._cp_name)
+                                      self.epoch, val_acc, self._best_acc, self._cp_name)
                     self.save(self._cp_name)
                     self._best_acc = val_acc
 
@@ -587,7 +587,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
                 self.net, decay=self._model_ema_cfg.model_ema_decay, device='cpu' if self._model_ema_cfg.model_ema_force_cpu else None)
 
 
-    def evaluate(self, val_data, metric_name=None):
+    def evaluate(self, val_data):
         return self._evaluate(val_data)
 
     def _evaluate(self, val_data):
@@ -653,9 +653,9 @@ class TorchImageClassificationEstimator(BaseEstimator):
                             else:
                                 topk_inds = l.topk(topk)[1].cpu().numpy().flatten()
                                 results.extend([{'class': self.classes[topk_inds[k]],
-                                                'score': probs[topk_inds[k]],
-                                                'id': topk_inds[k],
-                                                'image': x[idx]}
+                                                 'score': probs[topk_inds[k]],
+                                                 'id': topk_inds[k],
+                                                 'image': x[idx]}
                                                 for k in range(topk)])
                         else:
                             results.append({'prediction': l.cpu().numpy().flatten(), 'image': x[idx]})
@@ -676,7 +676,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
                     df = pd.DataFrame([{'class': self.classes[topk_inds[k]],
                                         'score': probs[topk_inds[k]],
                                         'id': topk_inds[k]}
-                                    for k in range(topk)])
+                                       for k in range(topk)])
             else:
                 df = pd.DataFrame([{'prediction': label.cpu().numpy().flatten()}])
         return df
