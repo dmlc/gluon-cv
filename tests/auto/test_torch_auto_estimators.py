@@ -29,7 +29,7 @@ IMAGE_REGRESS_DATASET, _, IMAGE_REGRESS_TEST = ImagePrediction.Dataset.from_fold
     'https://autogluon.s3.amazonaws.com/datasets/shopee-iet.zip', no_class=True)
 
 def test_image_regression_estimator():
-    est = TorchImageClassificationEstimator({'train': {'epochs': 1}, 'gpus': list(range(get_gpu_count()))},
+    est = TorchImageClassificationEstimator({'img_cls': {'model': 'resnet18'}, 'train': {'epochs': 1}, 'gpus': list(range(get_gpu_count()))},
                                       problem_type='regression')
     res = est.fit(IMAGE_REGRESS_DATASET)
     assert res.get('valid_score', 3) < 3

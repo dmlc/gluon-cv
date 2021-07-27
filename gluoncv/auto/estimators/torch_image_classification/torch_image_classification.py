@@ -409,7 +409,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
 
         return {train_metric_name: train_metric_score_m.avg, 'train_loss': losses_m.avg, 'time_limit': False}
 
-    def validate(self, net, loader, loss_fn, amp_autocast=suppress):
+    def validate(self, net, loader, loss_fn, amp_autocast=suppress, metric_name=None):
         losses_m = AverageMeter()
         top1_m = AverageMeter()
         top5_m = AverageMeter()
@@ -431,6 +431,8 @@ class TorchImageClassificationEstimator(BaseEstimator):
                     output = output[0]
 
                 if self._problem_type == REGRESSION:
+                    if metric_name:
+                        assert metric_name == 'rmse', f'{metric_name} metric not supported for regression.'
                     val_metric_score = rmse(output, target)
                 else:
                     val_metric_score = accuracy(output, target, topk=(1, min(5, self.num_class)))
@@ -587,10 +589,10 @@ class TorchImageClassificationEstimator(BaseEstimator):
                 self.net, decay=self._model_ema_cfg.model_ema_decay, device='cpu' if self._model_ema_cfg.model_ema_force_cpu else None)
 
 
-    def evaluate(self, val_data):
-        return self._evaluate(val_data)
+    def evaluate(self, val_data, metric_name=None):
+        return self._evaluate(val_data, metric_name)
 
-    def _evaluate(self, val_data):
+    def _evaluate(self, val_data, metric_name=None):
         if self._problem_type == REGRESSION:
             validate_loss_fn = nn.MSELoss()
         else:
@@ -611,7 +613,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
             crop_pct=self._data_cfg.crop_pct,
             pin_memory=self._misc_cfg.pin_mem,
         )
-        return self.validate(self.net, val_loader, validate_loss_fn, amp_autocast=self._amp_autocast)
+        return self.validate(self.net, val_loader, validate_loss_fn, amp_autocast=self._amp_autocast, metric_name=metric_name)
 
     def _predict(self, x, **kwargs):
         with_proba = kwargs.get('with_proba', False)
