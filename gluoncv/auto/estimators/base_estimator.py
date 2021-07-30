@@ -332,7 +332,11 @@ class BaseEstimator:
             The file name for storing the full state.
         """
         with open(filename, 'wb') as fid:
-            pickle.dump(self, fid)
+            try:
+                pickle.dump(self, fid)
+            except pickle.PicklingError as e:
+                self._logger.warning(f"Unable to pickle object due to the reason: {str(e)}. This object is not saved.")
+                return
         self._logger.debug('Pickled to %s', filename)
 
     @classmethod

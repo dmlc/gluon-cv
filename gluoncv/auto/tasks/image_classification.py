@@ -212,7 +212,10 @@ def _train_image_classification(args, reporter):
                 'time': time.time() - tic, 'train_acc': -1, 'valid_acc': -1}
 
     if estimator:
-        result.update({'model_checkpoint': pickle.dumps(estimator)})
+        try:
+            result.update({'model_checkpoint': pickle.dumps(estimator)})
+        except pickle.PicklingError:
+            result.update({'model_checkpoint': estimator})
         result.update({'estimator': estimator_cls})
     return result
 
@@ -439,7 +442,10 @@ class ImageClassification(BaseTask):
             if results.get('traceback', '') == 'timeout':
                 raise TimeoutError(f'Unable to fit a usable model given `time_limit={time_limit}`')
             raise RuntimeError(f'Unexpected error happened during fit: {pprint.pformat(results, indent=2)}')
-        estimator = pickle.loads(results['model_checkpoint'])
+        if isinstance(results['model_checkpoint'], bytes):
+            estimator = pickle.loads(results['model_checkpoint'])
+        else:
+            estimator = results['model_checkpoint']
         return estimator
 
     def fit_summary(self):
