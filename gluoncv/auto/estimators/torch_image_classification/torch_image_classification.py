@@ -38,6 +38,7 @@ BINARY = problem_type_constants.BINARY
 REGRESSION = problem_type_constants.REGRESSION
 
 warnings.filterwarnings('ignore', message='.*Argument interpolation should be of type InterpolationMode instead of int.*')
+logging.getLogger('timm.models').setLevel(logging.WARNING)
 
 try:
     from apex import amp
