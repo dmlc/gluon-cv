@@ -38,6 +38,7 @@ BINARY = problem_type_constants.BINARY
 REGRESSION = problem_type_constants.REGRESSION
 
 warnings.filterwarnings('ignore', message='.*Argument interpolation should be of type InterpolationMode instead of int.*')
+logging.getLogger('timm.models').setLevel(logging.WARNING)
 
 try:
     from apex import amp
@@ -468,6 +469,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
             return {'loss': losses_m.avg, 'top1': top1_m.avg, 'top5': top5_m.avg}
 
     def _init_network(self, **kwargs):
+        load_only = kwargs.get('load_only', False)
         if not self.num_class and self._problem_type != REGRESSION:
             raise ValueError('This is a classification problem and we are not able to create network when `num_class` is unknown. \
                 It should be inferred from dataset or resumed from saved states.')
@@ -513,7 +515,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
         if not self.net:
             self.net = create_model(
                 self._img_cls_cfg.model,
-                pretrained=self._img_cls_cfg.pretrained,
+                pretrained=self._img_cls_cfg.pretrained and not load_only,
                 num_classes=max(self.num_class, 1),
                 global_pool=self._img_cls_cfg.global_pool_type,
                 drop_rate=self._augmentation_cfg.drop,
@@ -797,7 +799,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
                     self.net = pickle.loads(save_state['net_pickle'])
             else:
                 if save_state.get('state_dict', None):
-                    self._init_network()
+                    self._init_network(load_only=True)
                     net_state_dict = self._reconstruct_state_dict(save_state['state_dict'])
                     if isinstance(self.net, torch.nn.DataParallel):
                         self.net.module.load_state_dict(net_state_dict)

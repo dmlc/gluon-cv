@@ -6,7 +6,7 @@ from autocfg import dataclass, field
 @dataclass
 class ImageClassification:
     model: str = 'resnet101'
-    pretrained: bool = False
+    pretrained: bool = True
     global_pool_type: Union[str, None] = None  # Global pool type, one of (fast, avg, max, avgmax). Model default if None
 
 @dataclass
