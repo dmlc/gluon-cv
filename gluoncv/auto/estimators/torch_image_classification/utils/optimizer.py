@@ -1,3 +1,4 @@
+# pylint: disable=wildcard-import
 from timm.optim.optim_factory import *
 
 _TIMM_FC_NAMES = ('fc', 'head', 'last_linear', 'classifier')
@@ -17,7 +18,7 @@ def optimizer_kwargs(cfg):
         kwargs['fc_lr_mult'] = cfg.train.output_lr_mult
     return kwargs
 
-def add_weight_decay_filter_fc(model, learning_rate=0.001, weight_decay=1e-5, skip_list=(), 
+def add_weight_decay_filter_fc(model, learning_rate=0.001, weight_decay=1e-5, skip_list=(),
                                fc_names=_TIMM_FC_NAMES, feature_lr_mult=0.01, fc_lr_mult=1):
     if feature_lr_mult == 1 and fc_lr_mult == 1:
         return add_weight_decay(model, weight_decay, skip_list)
@@ -63,7 +64,7 @@ def filter_fc_layer(model, learning_rate=0.001, fc_names=_TIMM_FC_NAMES, feature
             fc.append(param)
         else:
             feat.append(param)
-    
+
     return [
         {'params': feat, 'lr': feature_lr_mult * learning_rate},
         {'params': fc, 'lr': fc_lr_mult * learning_rate}]
@@ -79,7 +80,7 @@ def create_optimizer_v2a(
         fc_lr_mult: float = 1,
         **kwargs):
     """ Create an optimizer.
-    Note that this version is modifed based on 
+    Note that this version is modifed based on
     https://github.com/rwightman/pytorch-image-models/blob/cd3dc4979f6ca16a09910b4a32b7a8f07cc31fda/timm/optim/optim_factory.py#L73
     It allows feature backbone and output linear layers to have different learning rate by having more groups
     TODO currently the model is passed in and all parameters are selected for optimization.
@@ -102,7 +103,7 @@ def create_optimizer_v2a(
         skip = {}
         if hasattr(model, 'no_weight_decay'):
             skip = model.no_weight_decay()
-        parameters = add_weight_decay_filter_fc(model, learning_rate, weight_decay, skip, 
+        parameters = add_weight_decay_filter_fc(model, learning_rate, weight_decay, skip,
                                                 _TIMM_FC_NAMES, feature_lr_mult, fc_lr_mult)
         weight_decay = 0.
     else:
@@ -113,14 +114,14 @@ def create_optimizer_v2a(
     opt_args = dict(lr=learning_rate, weight_decay=weight_decay, **kwargs)
     opt_split = opt_lower.split('_')
     opt_lower = opt_split[-1]
-    if opt_lower == 'sgd' or opt_lower == 'nesterov':
+    if opt_lower in ('sgd', 'nesterov'):
         opt_args.pop('eps', None)
         optimizer = optim.SGD(parameters, momentum=momentum, nesterov=True, **opt_args)
     elif opt_lower == 'momentum':
         opt_args.pop('eps', None)
         optimizer = optim.SGD(parameters, momentum=momentum, nesterov=False, **opt_args)
     elif opt_lower == 'adam':
-        optimizer = optim.Adam(parameters, **opt_args) 
+        optimizer = optim.Adam(parameters, **opt_args)
     elif opt_lower == 'adabelief':
         optimizer = AdaBelief(parameters, rectify=False, **opt_args)
     elif opt_lower == 'adamw':
@@ -129,7 +130,7 @@ def create_optimizer_v2a(
         optimizer = Nadam(parameters, **opt_args)
     elif opt_lower == 'radam':
         optimizer = RAdam(parameters, **opt_args)
-    elif opt_lower == 'adamp':        
+    elif opt_lower == 'adamp':
         optimizer = AdamP(parameters, wd_ratio=0.01, nesterov=True, **opt_args)
     elif opt_lower == 'sgdp':
         optimizer = SGDP(parameters, momentum=momentum, nesterov=True, **opt_args)
