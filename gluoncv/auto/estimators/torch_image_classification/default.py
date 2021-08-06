@@ -13,7 +13,7 @@ class ImageClassification:
 class DataCfg:
     img_size: Union[int, None] = None  # Image patch size (default: None => model default)
     input_size: Union[Tuple[int, int, int], None] = None  # Input all image dimensions (d h w, e.g. --input-size 3 224 224), uses model default if empty
-    crop_pct: Union[float, None] = None  # Input image center crop percent (for validation only)
+    crop_pct: Union[float, None] = 0.99  # Input image center crop percent (for validation only)
     mean: Union[Tuple, None] = None  # Override mean pixel value of dataset
     std : Union[Tuple, None] = None  # Override std deviation of of dataset
     interpolation: str = ''  # Image resize interpolation type (overrides model)
@@ -39,6 +39,8 @@ class TrainCfg:
     lr_noise_std: float = 1.0  # learning rate noise std-dev
     lr_cycle_mul: float = 1.0  # learning rate cycle len multiplier
     lr_cycle_limit: int = 1 # learning rate cycle limit
+    transfer_lr_mult : float = 0.01  # reduce the backbone lr_mult to avoid quickly destroying the features
+    output_lr_mult : float = 0.1  # the learning rate multiplier for last fc layer if trained with transfer learning
     warmup_lr: float = 0.0001
     min_lr: float = 1e-5
     epochs: int = 200

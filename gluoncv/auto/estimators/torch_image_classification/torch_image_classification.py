@@ -1,6 +1,7 @@
 """Torch Classification Estimator"""
 # pylint: disable=unused-variable,bad-whitespace,missing-function-docstring,logging-format-interpolation,arguments-differ,logging-not-lazy, not-callable
 import math
+import copy
 import os
 import logging
 import time
@@ -25,7 +26,7 @@ from timm.loss import LabelSmoothingCrossEntropy, SoftTargetCrossEntropy
 
 from .default import TorchImageClassificationCfg
 from .utils import resolve_data_config, update_cfg, optimizer_kwargs, \
-                   create_scheduler, rmse
+                   create_scheduler, rmse, create_optimizer_v2a
 from ..utils import EarlyStopperOnPlateau
 from ..conf import _BEST_CHECKPOINT_FILE
 from ..base_estimator import BaseEstimator, set_default
@@ -558,7 +559,11 @@ class TorchImageClassificationEstimator(BaseEstimator):
 
     def _init_trainer(self):
         if self._optimizer is None:
-            self._optimizer = create_optimizer_v2(self.net, **optimizer_kwargs(cfg=self._cfg))
+            if self._img_cls_cfg.pretrained:
+                # adjust feature/last_fc learning rate multiplier in optimizer
+                self._optimizer = create_optimizer_v2a(self.net, **optimizer_kwargs(cfg=self._cfg))
+            else:
+                self._optimizer = create_optimizer_v2(self.net, **optimizer_kwargs(cfg=self._cfg))
         self._init_loss_scaler()
         self._lr_scheduler, self.epochs = create_scheduler(self._cfg, self._optimizer)
         self._lr_scheduler.step(self.start_epoch, self.epoch)
