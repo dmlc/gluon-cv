@@ -559,8 +559,10 @@ class TorchImageClassificationEstimator(BaseEstimator):
 
     def _init_trainer(self):
         if self._optimizer is None:
-            if self._img_cls_cfg.pretrained:
+            if self._img_cls_cfg.pretrained and (self._train_cfg.transfer_lr_mult != 1 or self._train_cfg.output_lr_mult != 1):
                 # adjust feature/last_fc learning rate multiplier in optimizer
+                self._logger.debug(f'Reduce network lr multiplier to {self._train_cfg.transfer_lr_mult}, while keep ' +
+                                   f'last FC layer lr_mult to {self._train_cfg.output_lr_mult}')
                 self._optimizer = create_optimizer_v2a(self.net, **optimizer_kwargs(cfg=self._cfg))
             else:
                 self._optimizer = create_optimizer_v2(self.net, **optimizer_kwargs(cfg=self._cfg))
