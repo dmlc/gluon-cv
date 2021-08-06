@@ -13,9 +13,6 @@ def optimizer_kwargs(cfg):
         kwargs['eps'] = cfg.optimizer.opt_eps
     if cfg.optimizer.opt_betas is not None:
         kwargs['betas'] = cfg.optimizer.opt_betas
-    if cfg.img_cls.pretrained:
-        kwargs['feature_lr_mult'] = cfg.train.transfer_lr_mult
-        kwargs['fc_lr_mult'] = cfg.train.output_lr_mult
     return kwargs
 
 def add_weight_decay_filter_fc(model, learning_rate=0.001, weight_decay=1e-5, skip_list=(),
