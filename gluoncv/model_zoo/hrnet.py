@@ -741,7 +741,7 @@ def hrnet_w18_small_v1_s(**kwargs):
 def hrnet_w18_small_v2_s(**kwargs):
     r"""hrnet_w18_small_v2 for cityscapes segmentation
     """
-    return get_hrnet('w18_small_v1', stage_interp_type='bilinear_like', purpose='seg',
+    return get_hrnet('w18_small_v2', stage_interp_type='bilinear_like', purpose='seg',
                      norm_kwargs={'momentum': 0.99}, num_classes=19, **kwargs)
 
 def hrnet_w48_s(**kwargs):
