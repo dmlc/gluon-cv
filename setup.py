@@ -73,7 +73,7 @@ if cv2 is None:
 
 extra_requirements = {
     'full': ['tensorboardx', 'decord', 'autogluon.core', 'cython', 'pycocotools'],
-    'auto': ['autogluon.core']
+    'auto': ['autogluon.core==0.3.1']
 }
 
 if with_cython:
