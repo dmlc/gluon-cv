@@ -795,17 +795,16 @@ class TorchImageClassificationEstimator(BaseEstimator):
         except:
             pass
         model_state_dict = d.get('model_state_dict', None)
+        net_pickle = d.get('net_pickle', None)
         if model_state_dict:
-            net_pickle = d.get('net_pickle', None)
-            if net_pickle:
-                est.net = pickle.loads(net_pickle)
+            est._init_network(load_only=True)
+            net_state_dict = est._reconstruct_state_dict(model_state_dict)
+            if isinstance(est.net, torch.nn.DataParallel):
+                est.net.module.load_state_dict(net_state_dict)
             else:
-                est._init_network(load_only=True)
-                net_state_dict = est._reconstruct_state_dict(model_state_dict)
-                if isinstance(est.net, torch.nn.DataParallel):
-                    est.net.module.load_state_dict(net_state_dict)
-                else:
-                    est.net.load_state_dict(net_state_dict)
+                est.net.load_state_dict(net_state_dict)
+        elif net_pickle:
+            est.net = pickle.loads(net_pickle)
         optimizer_state_dict = d.get('optimizer_state_dict', None)
         if optimizer_state_dict:
             est._init_trainer()
