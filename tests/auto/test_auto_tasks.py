@@ -11,7 +11,7 @@ OBJECT_DETECTION_TRAIN, OBJECT_DETECTION_VAL, OBJECT_DETECTION_TEST = OBJECT_DET
 
 def test_image_classification():
     from gluoncv.auto.tasks import ImageClassification
-    task = ImageClassification({'num_trials': 1, 'epochs': 1, 'batch_size': 8})
+    task = ImageClassification({'model': 'resnet18_v1', 'num_trials': 1, 'epochs': 1, 'batch_size': 8})
     classifier = task.fit(IMAGE_CLASS_DATASET)
     assert task.fit_summary().get('valid_acc', 0) > 0
     test_result = classifier.predict(IMAGE_CLASS_TEST)

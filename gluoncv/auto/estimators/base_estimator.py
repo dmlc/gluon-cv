@@ -265,6 +265,8 @@ class BaseEstimator:
         valid_gpus = []
         try:
             import torch
+            if not torch.cuda.is_available():
+                return valid_gpus
             for gid in gpu_ids:
                 try:
                     _ = torch.zeros(1, device=f'cuda:{gid}')

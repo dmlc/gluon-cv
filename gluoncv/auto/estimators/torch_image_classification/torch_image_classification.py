@@ -28,6 +28,7 @@ from .default import TorchImageClassificationCfg
 from .utils import resolve_data_config, update_cfg, optimizer_kwargs, \
                    create_scheduler, rmse, create_optimizer_v2a
 from ..utils import EarlyStopperOnPlateau
+from ..utils import _suggest_load_context
 from ..conf import _BEST_CHECKPOINT_FILE
 from ..base_estimator import BaseEstimator, set_default
 from ....utils.filesystem import try_import
@@ -752,87 +753,87 @@ class TorchImageClassificationEstimator(BaseEstimator):
             new_state_dict[name] = v
         return new_state_dict
 
-    # pylint: disable=redefined-outer-name, reimported
-    def __getstate__(self):
-        d = self.__dict__.copy()
-        try:
-            import torch
-            net = d.pop('net', None)
-            model_ema = d.pop('_model_ema', None)
-            optimizer = d.pop('_optimizer', None)
-            loss_scaler = d.pop('_loss_scaler', None)
-            save_state = {}
-            if net is not None:
-                if not self._custom_net:
-                    if isinstance(net, torch.nn.DataParallel):
-                        save_state['state_dict'] = get_state_dict(net.module, unwrap_model)
-                    else:
-                        save_state['state_dict'] = get_state_dict(net, unwrap_model)
+    def save(self, filename):
+        d = dict()
+        current_states = self.__dict__.copy()
+        if self.net:
+            if not self._custom_net:
+                if isinstance(self.net, torch.nn.DataParallel):
+                    d['model_state_dict'] = get_state_dict(self.net.module, unwrap_model)
                 else:
-                    net_pickle = pickle.dumps(net)
-                    save_state['net_pickle'] = net_pickle
-            if optimizer is not None:
-                save_state['optimizer'] = optimizer.state_dict()
-            if loss_scaler is not None:
-                save_state[loss_scaler.state_dict_key] = loss_scaler.state_dict()
-            if model_ema is not None:
-                save_state['state_dict_ema'] = get_state_dict(model_ema, unwrap_model)
-        except ImportError:
-            pass
-        d['save_state'] = save_state
-        d['_logger'] = None
-        d['_reporter'] = None
-        return d
+                    d['model_state_dict'] = get_state_dict(self.net, unwrap_model)
+            else:
+                net_pickle = pickle.dumps(self.net)
+                d['net_pickle'] = net_pickle
+            self.net = None
+        if self._optimizer:
+            d['optimizer_state_dict'] = self._optimizer.state_dict()
+            self._optimizer = None
+        if hasattr(self, '_loss_scaler') and self._loss_scaler:
+            d[self._loss_scaler.state_dict_key] = self._loss_scaler.state_dict()
+            d['_loss_scaler_state_dict_key'] = self._loss_scaler.state_dict_key
+        if self._model_ema:
+            d['ema_state_dict'] = get_state_dict(self._model_ema, unwrap_model)
+            self._model_ema = None
+        self._logger = None
+        self._reporter = None
+        d['estimator'] = self
+        torch.save(d, filename)
+        self.__dict__.update(current_states)
 
-    def __setstate__(self, state):
-        save_state = state.pop('save_state', None)
-        self.__dict__.update(state)
+    @classmethod
+    def load(cls, filename, ctx='auto'):
+        d = torch.load(filename, map_location=torch.device('cpu'))
+        est = d.pop('estimator')
         # logger
-        self._logger = logging.getLogger(state.get('_name', self.__class__.__name__))
-        self._logger.setLevel(logging.ERROR)
+        est._logger = logging.getLogger(cls.__name__)
+        est._logger.setLevel(logging.ERROR)
         try:
-            fh = logging.FileHandler(self._log_file)
-            self._logger.addHandler(fh)
+            fh = logging.FileHandler(est._log_file)
+            est._logger.addHandler(fh)
         #pylint: disable=bare-except
         except:
             pass
-        if not save_state:
-            self.net = None
-            self._optimizer = None
-            self._logger.setLevel(logging.INFO)
-            return
-        try:
-            import torch
-            self.net = None
-            self._optimizer = None
-            if self._custom_net:
-                if save_state.get('net_pickle', None):
-                    self.net = pickle.loads(save_state['net_pickle'])
+        model_state_dict = d.get('model_state_dict', None)
+        net_pickle = d.get('net_pickle', None)
+        if model_state_dict:
+            est._init_network(load_only=True)
+            net_state_dict = est._reconstruct_state_dict(model_state_dict)
+            if isinstance(est.net, torch.nn.DataParallel):
+                est.net.module.load_state_dict(net_state_dict)
             else:
-                if save_state.get('state_dict', None):
-                    self._init_network(load_only=True)
-                    net_state_dict = self._reconstruct_state_dict(save_state['state_dict'])
-                    if isinstance(self.net, torch.nn.DataParallel):
-                        self.net.module.load_state_dict(net_state_dict)
-                    else:
-                        self.net.load_state_dict(net_state_dict)
-            if save_state.get('optimizer', None):
-                self._init_trainer()
-                self._optimizer.load_state_dict(save_state['optimizer'])
-            if hasattr(self, '_loss_scaler') and self._loss_scaler and self._loss_scaler.state_dict_key in save_state:
-                loss_scaler_dict = save_state[self._loss_scaler.state_dict_key]
-                self._loss_scaler.load_state_dict(loss_scaler_dict)
-            if save_state.get('state_dict_ema', None):
-                self._init_model_ema()
-                model_ema_dict = save_state.get('state_dict_ema')
-                model_ema_dict = self._reconstruct_state_dict(model_ema_dict)
-                if isinstance(self.net, torch.nn.DataParallel):
-                    self._model_ema.module.module.load_state_dict(model_ema_dict)
-                else:
-                    self._model_ema.module.load_state_dict(model_ema_dict)
-        except ImportError:
-            pass
-        self._logger.setLevel(logging.INFO)
+                est.net.load_state_dict(net_state_dict)
+        elif net_pickle:
+            est.net = pickle.loads(net_pickle)
+        optimizer_state_dict = d.get('optimizer_state_dict', None)
+        if optimizer_state_dict:
+            est._init_trainer()
+            est._optimizer.load_state_dict(optimizer_state_dict)
+        if hasattr(est, '_loss_scaler') and est._loss_scaler:
+            loss_scaler_state_dict_key = d.get('loss_scaler_state_dict')
+            loss_scaler_dict = d.get(loss_scaler_state_dict_key, None)
+            if loss_scaler_dict:
+                est._loss_scaler.load_state_dict(loss_scaler_dict)
+        ema_state_dict = d.get('ema_state_dict', None)
+        est._init_model_ema()
+        if ema_state_dict:
+            ema_state_dict = est._reconstruct_state_dict(ema_state_dict)
+            if isinstance(est.net, torch.nn.DataParallel):
+                est._model_ema.module.module.load_state_dict(ema_state_dict)
+            else:
+                est._model_ema.module.load_state_dict(ema_state_dict)
+        new_ctx = _suggest_load_context(est.net, ctx, est.ctx)
+        est.reset_ctx(new_ctx)
+        est._logger.setLevel(logging.INFO)
+        return est
+
+    # pylint: disable=redefined-outer-name, reimported
+    def __getstate__(self):
+        d = self.__dict__.copy()
+        return d
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
 
 class ImageListDataset(torch.utils.data.Dataset):
     """An internal image list dataset for batch predict"""

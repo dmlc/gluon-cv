@@ -212,10 +212,7 @@ def _train_image_classification(args, reporter):
                 'time': time.time() - tic, 'train_acc': -1, 'valid_acc': -1}
 
     if estimator:
-        try:
-            result.update({'model_checkpoint': pickle.dumps(estimator)})
-        except pickle.PicklingError:
-            result.update({'model_checkpoint': estimator})
+        result.update({'model_checkpoint': estimator})
         result.update({'estimator': estimator_cls})
     return result
 
