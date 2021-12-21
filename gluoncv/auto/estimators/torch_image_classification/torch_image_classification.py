@@ -27,17 +27,11 @@ from timm.loss import LabelSmoothingCrossEntropy, SoftTargetCrossEntropy
 from .default import TorchImageClassificationCfg
 from .utils import resolve_data_config, update_cfg, optimizer_kwargs, \
                    create_scheduler, rmse, create_optimizer_v2a
+from ..constants import BINARY, MULTICLASS, REGRESSION
 from ..utils import EarlyStopperOnPlateau
 from ..utils import _suggest_load_context
 from ..conf import _BEST_CHECKPOINT_FILE
 from ..base_estimator import BaseEstimator, set_default
-from ....utils.filesystem import try_import
-problem_type_constants = try_import(package='autogluon.core.constants',
-                                    fromlist=['MULTICLASS', 'BINARY', 'REGRESSION'],
-                                    message='Failed to import problem type constants from autogluon.core.')
-MULTICLASS = problem_type_constants.MULTICLASS
-BINARY = problem_type_constants.BINARY
-REGRESSION = problem_type_constants.REGRESSION
 
 warnings.filterwarnings('ignore', message='.*Argument interpolation should be of type InterpolationMode instead of int.*')
 logging.getLogger('timm.models').setLevel(logging.WARNING)

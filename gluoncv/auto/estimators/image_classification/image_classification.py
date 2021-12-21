@@ -19,18 +19,12 @@ from ....utils import LRSequential, LRScheduler
 from .... import nn
 from .... import loss
 from ..base_estimator import BaseEstimator, set_default
+from ..constants import BINARY, MULTICLASS, REGRESSION
 from .utils import get_data_loader, get_data_rec, smooth, mixup_transform
 from .default import ImageClassificationCfg
 from ...data.dataset import ImageClassificationDataset
 from ..conf import _BEST_CHECKPOINT_FILE
 from ..utils import EarlyStopperOnPlateau
-from ....utils.filesystem import try_import
-problem_type_constants = try_import(package='autogluon.core.constants',
-                                    fromlist=['MULTICLASS', 'BINARY', 'REGRESSION'],
-                                    message='Failed to import problem type constants from autogluon.core.')
-MULTICLASS = problem_type_constants.MULTICLASS
-BINARY = problem_type_constants.BINARY
-REGRESSION = problem_type_constants.REGRESSION
 
 __all__ = ['ImageClassificationEstimator']
 
