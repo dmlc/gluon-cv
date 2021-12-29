@@ -26,6 +26,7 @@ from .resnet import *
 from .resnest import *
 from .resnetv1b import *
 from .resnext import *
+from .shufflenet import *
 from .senet import *
 from .simple_pose.simple_pose_resnet import *
 from .simple_pose.mobile_pose import *
@@ -86,6 +87,8 @@ _models = {
     'densenet161': densenet161,
     'densenet169': densenet169,
     'densenet201': densenet201,
+    'shufflenet_v1': shufflenet_v1,
+    'shufflenet_v2': shufflenet_v2,
     'squeezenet1.0': squeezenet1_0,
     'squeezenet1.1': squeezenet1_1,
     'googlenet': googlenet,

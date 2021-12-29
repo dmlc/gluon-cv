@@ -191,4 +191,17 @@ If you feel our code or models helps in your research, kindly cite our papers:
 }
 ```
 
-Test PULL 
+# New backbone shufflenet module.
+
+Train scripts.
+
+```bash
+python3 train_imagenet.py \
+  --rec-train /home1/lyw/gluon-cv/imagenet_rec/train.rec --rec-train-idx /home1/lyw/gluon-cv/imagenet_rec/train.idx \
+  --rec-val /home1/lyw/gluon-cv/imagenet_rec/val.rec --rec-val-idx /home1/lyw/gluon-cv/imagenet_rec/val.idx \
+  --model shufflenet_v1 --mode hybrid \
+  --lr 0.4 --lr-mode cosine --num-epochs 200 --batch-size 512 --num-gpus 4 -j 64 \
+  --use-rec --dtype float16 --warmup-epochs 5 --no-wd --label-smoothing --mixup \
+  --save-dir params_shufflenet_v1_mixup \
+  --logging-file shufflenet_v1_mixup.log
+```
