@@ -137,7 +137,7 @@ class shuffleUnitV2(HybridBlock):
     def __init__(self, in_channels, out_channels, split, norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
         super(shuffleUnitV2, self).__init__(**kwargs)
         self.in_channels = in_channels
-        self.equal_channels = out_channels / 2
+        self.equal_channels = out_channels // 2
         self.split = split
         if split == True:
             self.DWConv_stride = 1
@@ -166,8 +166,8 @@ class shuffleUnitV2(HybridBlock):
 
     def hybrid_forward(self, F, x):
         if self.split == True:
-            branch1 = F.slice_axis(x, axis=1, begin=0, end=self.in_channels / 2)
-            branch2 = F.slice_axis(x, axis=1, begin=self.in_channels / 2, end=self.in_channels)
+            branch1 = F.slice_axis(x, axis=1, begin=0, end=self.in_channels // 2)
+            branch2 = F.slice_axis(x, axis=1, begin=self.in_channels // 2, end=self.in_channels)
         else:
             branch1 = x
             branch2 = x
