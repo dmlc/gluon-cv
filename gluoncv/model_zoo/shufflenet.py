@@ -58,14 +58,11 @@ class shuffleUnit(HybridBlock):
 
         with self.name_scope():
             self.conv_beforshuffle = nn.HybridSequential()
-            self.conv_beforshuffle.add(_conv2d(channel=self.bottleneck_channels, kernel=1, stride=1, 
-                                            num_group=self.first_groups))
+            self.conv_beforshuffle.add(_conv2d(channel=self.bottleneck_channels, kernel=1, stride=1, num_group=self.first_groups))
 
             self.conv_aftershuffle = nn.HybridSequential()
-            self.conv_aftershuffle.add(_conv2d(channel=self.bottleneck_channels, kernel=3, padding=1, 
-                                            stride=self.DWConv_stride, num_group=self.bottleneck_channels, use_act=False))
-            self.conv_aftershuffle.add(_conv2d(channel=self.output_channel, kernel=1, stride=1, num_group=groups, 
-                                            use_act=False))
+            self.conv_aftershuffle.add(_conv2d(channel=self.bottleneck_channels, kernel=3, padding=1, stride=self.DWConv_stride, num_group=self.bottleneck_channels, use_act=False))
+            self.conv_aftershuffle.add(_conv2d(channel=self.output_channel, kernel=1, stride=1, num_group=groups, use_act=False))
 
     def combine(self, F, branch1, branch2, combine):
         if combine == 'add':
@@ -139,24 +136,20 @@ class shuffleUnitV2(HybridBlock):
         self.in_channels = in_channels
         self.equal_channels = out_channels // 2
         self.split = split
-        if split == True:
+        if split:
             self.DWConv_stride = 1
         else:
             self.DWConv_stride = 2
             with self.name_scope():
                 self.branch1_conv = nn.HybridSequential()
-                self.branch1_conv.add(_conv2d(channel=self.in_channels, kernel=3, padding=1, stride=self.DWConv_stride, 
-                                          num_group=self.in_channels, use_act=False, use_bias=False))
-                self.branch1_conv.add(_conv2d(channel=self.equal_channels, kernel=1, stride=1, 
-                                          use_act=True, use_bias=False))
+                self.branch1_conv.add(_conv2d(channel=self.in_channels, kernel=3, padding=1, stride=self.DWConv_stride, num_group=self.in_channels, use_act=False, use_bias=False))
+                self.branch1_conv.add(_conv2d(channel=self.equal_channels, kernel=1, stride=1, use_act=True, use_bias=False))
 
         with self.name_scope():
             self.branch2_conv = nn.HybridSequential()
             self.branch2_conv.add(_conv2d(channel=self.equal_channels, kernel=1, stride=1, use_act=True, use_bias=False))
-            self.branch2_conv.add(_conv2d(channel=self.equal_channels, kernel=3, padding=1, stride=self.DWConv_stride, 
-                                          num_group=self.equal_channels, use_act=False, use_bias=False))
-            self.branch2_conv.add(_conv2d(channel=self.equal_channels, kernel=1, stride=1, 
-                                          use_act=True, use_bias=False))
+            self.branch2_conv.add(_conv2d(channel=self.equal_channels, kernel=3, padding=1, stride=self.DWConv_stride, num_group=self.equal_channels, use_act=False, use_bias=False))
+            self.branch2_conv.add(_conv2d(channel=self.equal_channels, kernel=1, stride=1, use_act=True, use_bias=False))
 
     def channel_shuffle(self, F, data, groups):
         data = F.reshape(data, shape=(0, -4, groups, -1, -2))
@@ -165,7 +158,7 @@ class shuffleUnitV2(HybridBlock):
         return data
 
     def hybrid_forward(self, F, x):
-        if self.split == True:
+        if self.split:
             branch1 = F.slice_axis(x, axis=1, begin=0, end=self.in_channels // 2)
             branch2 = F.slice_axis(x, axis=1, begin=self.in_channels // 2, end=self.in_channels)
         else:
@@ -208,6 +201,7 @@ class ShuffleNetV2(HybridBlock):
         return body
 
     def hybrid_forward(self, F, x):
+        print ('x:', x)
         x = self.features(x)
         x = self.output(x)
         return x
@@ -236,4 +230,3 @@ def get_shufflenet_v2(pretrained=False, root='~/.mxnet/models', ctx=cpu(), norm_
 
 def shufflenet_v2(**kwargs):
     return get_shufflenet_v2(**kwargs)
-
