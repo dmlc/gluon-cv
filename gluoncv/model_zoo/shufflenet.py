@@ -16,7 +16,8 @@
 # under the License.
 
 # coding: utf-8
-# pylint: disable= arguments-differ,unused-argument,missing-docstring,too-many-function-args
+# pylint: disable= line-too-long,arguments-differ,unused-argument,missing-docstring,too-many-function-args
+# pylint: disable= line-too-long
 """ShuffleNetV1 and ShuffleNetV2, implemented in Gluon."""
 from mxnet.context import cpu
 from mxnet.gluon import nn
@@ -55,11 +56,9 @@ class shuffleUnit(HybridBlock):
         self.output_channel = out_channels
         self.groups = groups
         self.combine_type = combine_type
-
         with self.name_scope():
             self.conv_beforshuffle = nn.HybridSequential()
             self.conv_beforshuffle.add(_conv2d(channel=self.bottleneck_channels, kernel=1, stride=1, num_group=self.first_groups))
-
             self.conv_aftershuffle = nn.HybridSequential()
             self.conv_aftershuffle.add(_conv2d(channel=self.bottleneck_channels, kernel=3, padding=1, stride=self.DWConv_stride, num_group=self.bottleneck_channels, use_act=False))
             self.conv_aftershuffle.add(_conv2d(channel=self.output_channel, kernel=1, stride=1, num_group=groups, use_act=False))
@@ -117,7 +116,6 @@ class ShuffleNetV1(HybridBlock):
             out_channels = [-1, 24, 272, 544, 1088]
         elif groups == 8:
             out_channels = [-1, 24, 384, 768, 1536]
-        
         body = nn.HybridSequential()
         body.add(shuffleUnit(out_channels[stage - 1], out_channels[stage], 'concat', groups, grouped_conv))
         for i in range(stage_repeats[stage - 2]):
@@ -201,7 +199,6 @@ class ShuffleNetV2(HybridBlock):
         return body
 
     def hybrid_forward(self, F, x):
-        print ('x:', x)
         x = self.features(x)
         x = self.output(x)
         return x
