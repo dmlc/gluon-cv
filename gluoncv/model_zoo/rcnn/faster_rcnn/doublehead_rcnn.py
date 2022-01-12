@@ -20,7 +20,7 @@ from ..rcnn import custom_rcnn_fpn
 from ....model_zoo.rcnn import RCNN
 from ....model_zoo.rcnn.rpn import RPN
 
-__all__ = ['FasterRCNN', 'get_doublehead_rcnn', 'custom_faster_rcnn_fpn']
+__all__ = ['DoubleHeadRCNN', 'get_doublehead_rcnn', 'custom_faster_rcnn_fpn']
 
 # Helpers
 def _conv3x3(channels, stride, in_channels):
@@ -32,8 +32,7 @@ class BottleneckV1(HybridBlock):
     <http://arxiv.org/abs/1512.03385>`_ paper.
     This is used for ResNet V1 for 50, 101, 152 layers.
     """
-    def __init__(self, channels, stride, downsample=True, in_channels=0,
-                 last_gamma=False, norm_layer=BatchNorm, norm_kwargs=None, **kwargs):
+    def __init__(self, channels, stride, downsample=True, in_channels=0, **kwargs):
         super(BottleneckV1, self).__init__(**kwargs)
         self.body = nn.HybridSequential(prefix='')
         self.body.add(nn.Conv2D(channels // 4, kernel_size=1, strides=stride))
@@ -56,8 +55,8 @@ class BottleneckV1(HybridBlock):
         x = F.Activation(x + residual, act_type='relu')
         return x
 
-class FasterRCNN(RCNN):
-    r"""Faster RCNN network.
+class DoubleHeadRCNN(RCNN):
+    r"""Double Head RCNN network.
 
     Parameters
     ----------
@@ -202,7 +201,7 @@ class FasterRCNN(RCNN):
                  rpn_test_post_nms=300, rpn_min_size=16, per_device_batch_size=1, num_sample=128,
                  pos_iou_thresh=0.5, pos_ratio=0.25, max_num_gt=300, additional_output=False,
                  force_nms=False, minimal_opset=False, **kwargs):
-        super(FasterRCNN, self).__init__(
+        super(DoubleHeadRCNN, self).__init__(
             features=features, top_features=top_features, classes=classes,
             box_features=box_features, short=short, max_size=max_size,
             train_patterns=train_patterns, nms_thresh=nms_thresh, nms_topk=nms_topk, post_nms=post_nms,
@@ -303,7 +302,7 @@ class FasterRCNN(RCNN):
         >>> net.reset_class(classes=['person'], reuse_weights=['person'])
 
         """
-        super(FasterRCNN, self).reset_class(classes, reuse_weights)
+        super(DoubleHeadRCNN, self).reset_class(classes, reuse_weights)
         self._target_generator = lambda: RCNNTargetGenerator(self.num_class, self.sampler._max_pos,
                                                              self._batch_size)
 
@@ -380,7 +379,7 @@ class FasterRCNN(RCNN):
 
     # pylint: disable=arguments-differ
     def hybrid_forward(self, F, x, gt_box=None, gt_label=None):
-        """Forward Faster-RCNN network.
+        """Forward DoubleHeadRCNN-RCNN network.
 
         The behavior during training and inference is different.
 
@@ -524,8 +523,7 @@ class FasterRCNN(RCNN):
         return ids, scores, bboxes
 
 
-def get_doublehead_rcnn(name, dataset, pretrained=False, ctx=mx.cpu(),
-                    root=os.path.join('~', '.mxnet', 'models'), **kwargs):
+def get_doublehead_rcnn(name, dataset, pretrained=False, ctx=mx.cpu(), root=os.path.join('~', '.mxnet', 'models'), **kwargs):
     r"""Utility function to return faster rcnn networks.
 
     Parameters
@@ -545,10 +543,10 @@ def get_doublehead_rcnn(name, dataset, pretrained=False, ctx=mx.cpu(),
     Returns
     -------
     mxnet.gluon.HybridBlock
-        The Faster-RCNN network.
+        The DoubleHeadRCNN-RCNN network.
 
     """
-    net = FasterRCNN(minimal_opset=pretrained, **kwargs)
+    net = DoubleHeadRCNN(minimal_opset=pretrained, **kwargs)
     if pretrained:
         from ....model_zoo.model_store import get_model_file
         full_name = '_'.join(('faster_rcnn', name, dataset))
