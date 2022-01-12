@@ -8,9 +8,11 @@ from mxnet.gluon import nn
 from mxnet.gluon.contrib.nn import SyncBatchNorm
 
 from ..faster_rcnn import get_faster_rcnn
+from .doublehead_rcnn import get_doublehead_rcnn
 from ....nn.feature import FPNFeatureExpander
 
 __all__ = ['faster_rcnn_resnet50_v1b_voc',
+           'doublehead_rcnn_resnet50_v1b_voc',
            'faster_rcnn_resnet50_v1b_coco',
            'faster_rcnn_fpn_resnet50_v1b_coco',
            'faster_rcnn_fpn_syncbn_resnet50_v1b_coco',
@@ -73,6 +75,55 @@ def faster_rcnn_resnet50_v1b_voc(pretrained=False, pretrained_base=True, **kwarg
         rpn_test_pre_nms=6000, rpn_test_post_nms=300, rpn_min_size=16,
         num_sample=128, pos_iou_thresh=0.5, pos_ratio=0.25, max_num_gt=100,
         **kwargs)
+
+def doublehead_rcnn_resnet50_v1b_voc(pretrained=False, pretrained_base=True, **kwargs):
+    r"""Double Head Faster RCNN model from the paper
+    "(2019). Rethinking Classification and Localization for Object Detection."
+
+    Parameters
+    ----------
+    pretrained : bool or str
+        Boolean value controls whether to load the default pretrained weights for model.
+        String value represents the hashtag for a certain version of pretrained weights.
+    pretrained_base : bool or str, optional, default is True
+        Load pretrained base network, the extra layers are randomized. Note that
+        if pretrained is `True`, this has no effect.
+    ctx : Context, default CPU
+        The context in which to load the pretrained weights.
+    root : str, default '~/.mxnet/models'
+        Location for keeping the model parameters.
+
+    Examples
+    --------
+    >>> model = get_faster_rcnn_resnet50_v1b_voc(pretrained=True)
+    >>> print(model)
+    """
+    from ....model_zoo.resnetv1b import resnet50_v1b
+    from ....data import VOCDetection
+    classes = VOCDetection.CLASSES
+    pretrained_base = False if pretrained else pretrained_base
+    base_network = resnet50_v1b(pretrained=pretrained_base, dilated=False,
+                                use_global_stats=True, **kwargs)
+    features = nn.HybridSequential()
+    top_features = nn.HybridSequential()
+    for layer in ['conv1', 'bn1', 'relu', 'maxpool', 'layer1', 'layer2', 'layer3']:
+        features.add(getattr(base_network, layer))
+    for layer in ['layer4']:
+        top_features.add(getattr(base_network, layer))
+    train_patterns = '|'.join(['.*dense', '.*rpn', '.*down(2|3|4)_conv', '.*layers(2|3|4)_conv', '.*double_fc', '.*double_conv'])
+    return get_doublehead_rcnn(
+        name='resnet50_v1b', dataset='voc', pretrained=pretrained,
+        features=features, top_features=top_features, classes=classes,
+        short=600, max_size=1000, train_patterns=train_patterns,
+        nms_thresh=0.3, nms_topk=400, post_nms=100,
+        roi_mode='align', roi_size=(14, 14), strides=16, clip=None,
+        rpn_channel=1024, base_size=16, scales=(2, 4, 8, 16, 32),
+        ratios=(0.5, 1, 2), alloc_size=(128, 128), rpn_nms_thresh=0.7,
+        rpn_train_pre_nms=12000, rpn_train_post_nms=2000,
+        rpn_test_pre_nms=6000, rpn_test_post_nms=300, rpn_min_size=16,
+        num_sample=128, pos_iou_thresh=0.5, pos_ratio=0.25, max_num_gt=100,
+        **kwargs)
+
 
 
 def faster_rcnn_resnet50_v1b_coco(pretrained=False, pretrained_base=True, **kwargs):

@@ -137,6 +137,7 @@ _models = {
     'faster_rcnn_resnet50_v1b_voc': faster_rcnn_resnet50_v1b_voc,
     'mask_rcnn_resnet18_v1b_coco': mask_rcnn_resnet18_v1b_coco,
     'faster_rcnn_resnet50_v1b_coco': faster_rcnn_resnet50_v1b_coco,
+    'doublehead_rcnn_resnet50_v1b_voc': doublehead_rcnn_resnet50_v1b_voc,
     'faster_rcnn_fpn_resnet50_v1b_coco': faster_rcnn_fpn_resnet50_v1b_coco,
     'faster_rcnn_fpn_syncbn_resnet50_v1b_coco': faster_rcnn_fpn_syncbn_resnet50_v1b_coco,
     'faster_rcnn_fpn_syncbn_resnest50_coco': faster_rcnn_fpn_syncbn_resnest50_coco,
