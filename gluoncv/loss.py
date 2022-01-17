@@ -6,10 +6,49 @@ from __future__ import absolute_import
 from mxnet import gluon
 from mxnet import nd
 from mxnet.gluon.loss import Loss, _apply_weighting, _reshape_like
+import numpy as np
 
 __all__ = ['FocalLoss', 'SSDMultiBoxLoss', 'YOLOV3Loss',
            'MixSoftmaxCrossEntropyLoss', 'ICNetLoss', 'MixSoftmaxCrossEntropyOHEMLoss',
-           'SegmentationMultiLosses', 'DistillationSoftmaxCrossEntropyLoss', 'SiamRPNLoss']
+           'SegmentationMultiLosses', 'DistillationSoftmaxCrossEntropyLoss', 'SiamRPNLoss', 'BalancedL1Loss']
+
+class BalancedL1Loss(Loss):
+    r"""Balanced L1 Loss for balanced classification.
+    Balanced L1 loss was described in https://arxiv.org/abs/1904.02701
+    Libra R-CNN: Towards Balanced Learning for Object Detection.
+
+    Parameters
+    ----------
+    rho : float, default 1
+        Threshold for trimmed mean estimator.
+    alpha : float, default 0.5
+        Threshold for increases the gradients of inliers.
+    gamma : float, default 1.5
+        Threshold for an overall promotion magnification.
+    weight : float or None
+        Global scalar weight for loss.
+    batch_axis : int, default 0
+        The axis that represents mini-batch.
+
+    """
+
+    def __init__(self, rho=1, alpha=0.5, gamma=1.5, weight=None, batch_axis=0, **kwargs):
+        super(BalancedL1Loss, self).__init__(weight, batch_axis, **kwargs)
+        self._rho = rho
+        self._alpha = alpha
+        self._gamma = gamma
+
+    def hybrid_forward(self, F, pred, label, sample_weight=None):
+        label = _reshape_like(F, label, pred)
+        loss = F.abs(label - pred)
+        b = np.exp(self._gamma / self._alpha) - 1
+        loss = F.where(
+            loss < self._rho, self._alpha / b *
+            (b * loss + 1) * F.log(b * loss / self._rho + 1) - self._alpha * loss,
+            self._gamma * loss + self._gamma / b - self._alpha * self._rho)
+        loss = _apply_weighting(F, loss, self._weight, sample_weight)
+
+        return F.mean(loss, axis=self._batch_axis, exclude=True)
 
 class FocalLoss(Loss):
     """Focal Loss for inbalanced classification.
