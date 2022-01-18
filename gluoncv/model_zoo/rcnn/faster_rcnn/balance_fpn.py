@@ -13,7 +13,7 @@ def _conv2dsym(channel, kernel, padding, stride, norm_layer=BatchNorm, norm_kwar
     cell.add(nn.LeakyReLU(0.1))
     return cell
 
-def _conv2d(channel, kernel, padding, stride, norm_layer=BatchNorm, norm_kwargs=None):
+def _conv2d(channel, kernel, padding, stride):
     """A common conv-bn-leakyrelu cell"""
     cell = nn.HybridSequential(prefix='')
     cell.add(nn.Conv2D(channel, kernel_size=kernel,
@@ -59,10 +59,10 @@ class BFPNBlock(gluon.HybridBlock):
 
         self.extra_convs = nn.HybridSequential('E_')
         with self.extra_convs.name_scope():
-            if self.num_outs> self.num_ins:
-               for i in range(self.num_outs - self.num_ins):
-                   extra_conv = _conv2d(out_channels, 3, 1, 2)
-                   self.extra_convs.add(extra_conv)
+            if self.num_outs > self.num_ins:
+                for i in range(self.num_outs - self.num_ins):
+                    extra_conv = _conv2d(out_channels, 3, 1, 2)
+                    self.extra_convs.add(extra_conv)
 
         self.refine = nn.HybridSequential('R_')
         with self.refine.name_scope():
@@ -126,6 +126,9 @@ class BFPNBlock(gluon.HybridBlock):
 
 
 class BFPN_feature(gluon.HybridBlock):
+    '''
+    balance fpn
+    '''
     def __init__(self, stages, out_channels=256, use_p6=True, **kwargs):
         super(BFPN_feature, self).__init__(**kwargs)
         self.stages = stages
@@ -133,12 +136,9 @@ class BFPN_feature(gluon.HybridBlock):
             num_outs = len(self.stages)+1
         else:
             num_outs = len(self.stages)
-
-        # self.fpn_blocks = nn.HybridSequential(prefix='P_')
-        # with self.fpn_blocks.name_scope():
         self.fpn_blocks = BFPNBlock(out_channels, len(self.stages), num_outs=num_outs)
 
-    def hybrid_forward(self, F, x):
+    def hybrid_forward(self, x):
         routes = []
         for stage in self.stages:
             x = stage(x)

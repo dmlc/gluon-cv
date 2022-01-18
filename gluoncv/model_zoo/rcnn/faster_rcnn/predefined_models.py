@@ -292,7 +292,6 @@ def faster_rcnn_fpn_resnet50_v1b_voc(pretrained=False, pretrained_base=True, **k
     for _ in range(2):
         box_features.add(nn.Dense(1024, weight_initializer=mx.init.Normal(0.01)))
         box_features.add(nn.Activation('relu'))
-    
     train_patterns = '|'.join(
         ['.*dense', '.*rpn', '.*down(2|3|4)_conv', '.*layers(2|3|4)_conv', 'P', 'L', 'E', 'R'])
     return get_faster_rcnn(
