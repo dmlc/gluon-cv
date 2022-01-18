@@ -232,8 +232,12 @@ class VideoClsCustom(dataset.Dataset):
                 if len(line_info) < 3:
                     raise(RuntimeError('Video input format is not correct, missing one or more element. %s' % line))
                 clip_path = os.path.join(directory, line_info[0])
-                duration = int(line_info[1])
-                target = int(line_info[2])
+                try:
+                    duration = int(line_info[1])
+                    target = int(line_info[2])
+                except:
+                    duration = int(float(line_info[1]))
+                    target = int(float(line_info[2]))
                 item = (clip_path, duration, target)
                 clips.append(item)
         return clips
