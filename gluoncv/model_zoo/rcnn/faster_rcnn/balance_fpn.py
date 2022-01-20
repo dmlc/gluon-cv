@@ -72,8 +72,6 @@ class BFPNBlock(gluon.HybridBlock):
                 no_local_block = NonLocal(in_channels=out_channels, dim=2, use_bn=False)
                 self.refine.add(no_local_block)
 
-
-
     def hybrid_forward(self, F, inputs):
         assert len(inputs) == self.num_ins
         # step 1: gather multi-level features by resize and average
@@ -88,7 +86,6 @@ class BFPNBlock(gluon.HybridBlock):
             laterals[i - 1] = laterals[i - 1] + F.contrib.BilinearResize2D(data=laterals[i],
                                                                            like=laterals[i - 1],
                                                                            mode='like')
-
         fpn_outs = [
             self.fpn_convs[i](laterals[i]) for i in range(len(laterals))  # 3*3,1
             ]
