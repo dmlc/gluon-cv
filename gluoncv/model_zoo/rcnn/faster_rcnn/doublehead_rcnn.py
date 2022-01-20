@@ -1,8 +1,8 @@
 # pylint: disable=not-callable
 """
 Double Head Faster RCNN Model. https://arxiv.org/abs/1904.06493
-title={Rethinking Classification and Localization for Object Detection},
-author={Wu, Yue and Chen, Yinpeng and Yuan},
+title={Rethinking Classification and Localization for Object Detection}
+author={Wu, Yue and Chen, Yinpeng and Yuan}
 booktitle={Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition}
 year={2020}
 The gluoncv verison author={SSK}
