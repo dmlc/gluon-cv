@@ -1,14 +1,11 @@
 """
 Double Head Faster RCNN Model. https://arxiv.org/abs/1904.06493
-{
- title={Rethinking Classification and Localization for Object Detection},
- author={Wu, Yue and Chen, Yinpeng and Yuan, Lu and Liu, Zicheng and Wang, Lijuan and Li, Hongzhi and Fu, Yun},
- booktitle={Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition},
- year={2020}
-}
-Autuor. SSK. 
+title={Rethinking Classification and Localization for Object Detection},
+author={Wu, Yue and Chen, Yinpeng and Yuan},
+booktitle={Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition},
+year={2020}
+The gluoncv verison author={SSK}, 
 """
-
 # pylint: disable=not-callable
 from __future__ import absolute_import
 
