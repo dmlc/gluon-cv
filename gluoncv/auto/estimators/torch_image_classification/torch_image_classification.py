@@ -562,7 +562,7 @@ class TorchImageClassificationEstimator(BaseEstimator):
                 optim_kwargs = optimizer_kwargs(cfg=self._cfg)
                 optim_kwargs['feature_lr_mult'] = self._cfg.train.transfer_lr_mult
                 optim_kwargs['fc_lr_mult'] = self._cfg.train.output_lr_mult
-                self._optimizer = create_optimizer_v2a(self.net, **optim_kwargs)
+                self._optimizer = create_optimizer_v2(self.net, **optimizer_kwargs(cfg=self._cfg))
             else:
                 self._optimizer = create_optimizer_v2(self.net, **optimizer_kwargs(cfg=self._cfg))
         self._init_loss_scaler()

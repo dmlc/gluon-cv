@@ -31,7 +31,7 @@ def resolve_data_config(cfg, default_cfg={}, model=None, use_test_size=False):
 
     # resolve interpolation method
     interpolation = 'bicubic'
-    if cfg.data.interpolation is not None:
+    if cfg.data.interpolation is not None and cfg.data.interpolation != '':
         interpolation = cfg.data.interpolation
     elif 'interpolation' in default_cfg:
         interpolation = default_cfg['interpolation']
