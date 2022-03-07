@@ -29,4 +29,4 @@ dependencies:
     - portalocker
     - autocfg>=0.0.6
     - autogluon.core==0.2.0
-    - timm==0.4.12
+    - timm==0.5.4

@@ -5,8 +5,8 @@ _TIMM_FC_NAMES = ('fc', 'head', 'last_linear', 'classifier')
 
 def optimizer_kwargs(cfg):
     kwargs = dict(
-        optimizer_name=cfg.optimizer.opt,
-        learning_rate=cfg.train.lr,
+        opt=cfg.optimizer.opt,
+        lr=cfg.train.lr,
         weight_decay=cfg.optimizer.weight_decay,
         momentum=cfg.optimizer.momentum)
     if cfg.optimizer.opt_eps is not None:
