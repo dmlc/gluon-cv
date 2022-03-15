@@ -58,26 +58,33 @@ jobs:
       - name: Test model_zoo_mxnet on AWS Batch(For push)
         shell: bash -l {0}
         if: ${{ github.event.workflow_run.event == 'push' }}
+        env:
+          THIS_REF: ${{ env.REF }}
+          THIS_REPO: ${{ env.REPO }}
         run: |
           echo "Start submitting job"
           python ./tools/batch/submit-job.py --region us-east-1 \
                                              --job-type ci \
-                                             --name GluonCV-GPU-ModelZooMxnet-${{ env.REF }} \
-                                             --source-ref ${{ env.REF }} \
+                                             --name "GluonCV-GPU-ModelZooMxnet-$THIS_REF" \
+                                             --source-ref "$THIS_REF" \
                                              --work-dir . \
-                                             --remote https://github.com/${{ env.REPO }} \
+                                             --remote "https://github.com/$THIS_REPO" \
                                              --command "chmod +x ./.github/workflows/gpu_test.sh && ./.github/workflows/gpu_test.sh gluoncv tests/model_zoo" \
                                              --wait
       - name: Test model_zoo_mxnet on AWS Batch(For pull request)
         if: ${{ github.event.workflow_run.event == 'pull_request' }}
+        env:
+          THIS_PR: ${{ env.PR }}
+          THIS_REF: ${{ env.REF }}
+          THIS_REPO: ${{ env.REPO }}
         run: |
           echo "Start submitting job"
           python ./tools/batch/submit-job.py --region us-east-1 \
                                              --job-type ci \
-                                             --name GluonCV-GPU-ModelZooMxnet-PR#${{ env.PR }} \
-                                             --source-ref ${{ env.REF }} \
+                                             --name "GluonCV-GPU-ModelZooMxnet-PR#$THIS_PR" \
+                                             --source-ref "$THIS_REF" \
                                              --work-dir . \
-                                             --remote https://github.com/${{ env.REPO }} \
+                                             --remote "https://github.com/$THIS_REPO" \
                                              --command "chmod +x ./.github/workflows/gpu_test.sh && ./.github/workflows/gpu_test.sh gluoncv tests/model_zoo" \
                                              --wait
   model_zoo_torch:
@@ -121,26 +128,33 @@ jobs:
       - name: Test model_zoo_torch on AWS Batch(For push)
         shell: bash -l {0}
         if: ${{ github.event.workflow_run.event == 'push' }}
+        env:
+          THIS_REF: ${{ env.REF }}
+          THIS_REPO: ${{ env.REPO }}
         run: |
           echo "Start submitting job"
           python ./tools/batch/submit-job.py --region us-east-1 \
                                              --job-type ci \
-                                             --name GluonCV-GPU-ModelZooTorch-${{ env.REF }} \
-                                             --source-ref ${{ env.REF }} \
+                                             --name "GluonCV-GPU-ModelZooTorch-$THIS_REF" \
+                                             --source-ref "$THIS_REF" \
                                              --work-dir . \
-                                             --remote https://github.com/${{ env.REPO }} \
+                                             --remote "https://github.com/$THIS_REPO" \
                                              --command "chmod +x ./.github/workflows/gpu_test.sh && ./.github/workflows/gpu_test.sh gluoncv/torch tests/model_zoo_torch" \
                                              --wait
       - name: Test model_zoo_torch on AWS Batch(For pull request)
         if: ${{ github.event.workflow_run.event == 'pull_request' }}
+        env:
+          THIS_PR: ${{ env.PR }}
+          THIS_REF: ${{ env.REF }}
+          THIS_REPO: ${{ env.REPO }}
         run: |
           echo "Start submitting job"
           python ./tools/batch/submit-job.py --region us-east-1 \
                                              --job-type ci \
-                                             --name GluonCV-GPU-ModelZooTorch-PR#${{ env.PR }} \
-                                             --source-ref ${{ env.REF }} \
+                                             --name "GluonCV-GPU-ModelZooTorch-PR#$THIS_PR" \
+                                             --source-ref "$THIS_REF" \
                                              --work-dir . \
-                                             --remote https://github.com/${{ env.REPO }} \
+                                             --remote "https://github.com/$THIS_REPO" \
                                              --command "chmod +x ./.github/workflows/gpu_test.sh && ./.github/workflows/gpu_test.sh gluoncv/torch tests/model_zoo_torch" \
                                              --wait
   auto:
@@ -184,26 +198,33 @@ jobs:
       - name: Test model_zoo_torch on AWS Batch(For push)
         shell: bash -l {0}
         if: ${{ github.event.workflow_run.event == 'push' }}
+        env:
+          THIS_REF: ${{ env.REF }}
+          THIS_REPO: ${{ env.REPO }}
         run: |
           echo "Start submitting job"
           python ./tools/batch/submit-job.py --region us-east-1 \
                                              --job-type ci \
-                                             --name GluonCV-GPU-Auto-${{ env.REF }} \
-                                             --source-ref ${{ env.REF }} \
+                                             --name "GluonCV-GPU-Auto-$THIS_REF" \
+                                             --source-ref "$THIS_REF" \
                                              --work-dir . \
-                                             --remote https://github.com/${{ env.REPO }} \
+                                             --remote "https://github.com/$THIS_REPO" \
                                              --command "chmod +x ./.github/workflows/gpu_test.sh && ./.github/workflows/gpu_test.sh gluoncv tests/auto" \
                                              --wait
       - name: Test model_zoo_torch on AWS Batch(For pull request)
         if: ${{ github.event.workflow_run.event == 'pull_request' }}
+        env:
+          THIS_PR: ${{ env.PR }}
+          THIS_REF: ${{ env.REF }}
+          THIS_REPO: ${{ env.REPO }}
         run: |
           echo "Start submitting job"
           python ./tools/batch/submit-job.py --region us-east-1 \
                                              --job-type ci \
-                                             --name GluonCV-GPU-Auto-PR#${{ env.PR }} \
-                                             --source-ref ${{ env.REF }} \
+                                             --name "GluonCV-GPU-Auto-PR#$THIS_PR" \
+                                             --source-ref "$THIS_REF" \
                                              --work-dir . \
-                                             --remote https://github.com/${{ env.REPO }} \
+                                             --remote "https://github.com/$THIS_REPO" \
                                              --command "chmod +x ./.github/workflows/gpu_test.sh && ./.github/workflows/gpu_test.sh gluoncv tests/auto" \
                                              --wait
   build-docs:
@@ -251,27 +272,37 @@ jobs:
       - name: Build docs on AWS Batch(For push)
         shell: bash -l {0}
         if: ${{ github.event.workflow_run.event == 'push' }}
+        env:
+          THIS_PR: ${{ env.PR }}
+          THIS_REF: ${{ env.REF }}
+          THIS_REPO: ${{ env.REPO }}
+          SHORT_SHA: ${{ env.SHORT_SHA }}
         run: |
           echo "Start submitting job"
           python ./tools/batch/submit-job.py --region us-east-1 \
                                              --job-type ci \
-                                             --name GluonCV-GPU-BuildDocs-${{ env.REF }} \
-                                             --source-ref ${{ env.REF }} \
+                                             --name "GluonCV-GPU-BuildDocs-$THIS_REF" \
+                                             --source-ref "$THIS_REF" \
                                              --work-dir . \
-                                             --remote https://github.com/${{ env.REPO }} \
-                                             --command "chmod +x ./.github/workflows/build_docs.sh && ./.github/workflows/build_docs.sh ${{ env.REF }} ${{ env.REPO }} ${{ env.SHORT_SHA }} ${{ env.PR }}" \
+                                             --remote "https://github.com/$THIS_REPO" \
+                                             --command "chmod +x ./.github/workflows/build_docs.sh && ./.github/workflows/build_docs.sh $THIS_REF $THIS_REPO $SHORT_SHA $THIS_PR" \
                                              --wait
       - name: Build docs on AWS Batch(For pull request)
         if: ${{ github.event.workflow_run.event == 'pull_request' }}
+        env:
+          THIS_PR: ${{ env.PR }}
+          THIS_REF: ${{ env.REF }}
+          THIS_REPO: ${{ env.REPO }}
+          SHORT_SHA: ${{ env.SHORT_SHA }}
         run: |
           echo "Start submitting job"
           python ./tools/batch/submit-job.py --region us-east-1 \
                                              --job-type ci \
-                                             --name GluonCV-GPU-BuildDocs-PR#${{ env.PR }} \
-                                             --source-ref ${{ env.REF }} \
+                                             --name "GluonCV-GPU-BuildDocs-PR#$THIS_PR" \
+                                             --source-ref "$THIS_REF" \
                                              --work-dir . \
-                                             --remote https://github.com/${{ env.REPO }} \
-                                             --command "chmod +x ./.github/workflows/build_docs.sh && ./.github/workflows/build_docs.sh ${{ env.REF }} ${{ env.REPO }} ${{ env.SHORT_SHA }} ${{ env.PR }} " \
+                                             --remote "https://github.com/$THIS_REPO" \
+                                             --command "chmod +x ./.github/workflows/build_docs.sh && ./.github/workflows/build_docs.sh $THIS_REF $THIS_REPO $SHORT_SHA $THIS_PR " \
                                              --wait
       - name: Comment on PR
         if: ${{ github.event.workflow_run.event == 'pull_request' }}
