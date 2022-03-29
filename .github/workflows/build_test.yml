@@ -16,6 +16,7 @@ jobs:
   model_zoo_mxnet:
     permissions:
       id-token: write
+      actions: write
       contents: read
       checks: read
       statuses: read
