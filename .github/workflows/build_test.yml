@@ -7,12 +7,12 @@ on:
 
 jobs:
   unittest-check:
-    permissions:
-      id-token: write
-      contents: read
-      statuses: read
-      checks: read
-      pull-requests: read
+    # permissions:
+    #   id-token: write
+    #   contents: read
+    #   statuses: read
+    #   checks: read
+    #   pull-requests: read
     runs-on: ubuntu-latest
     steps:
       - uses: haya14busa/action-workflow_run-status@v1
