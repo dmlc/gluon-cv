@@ -16,16 +16,9 @@ jobs:
   model_zoo_mxnet:
     permissions:
       id-token: write
-      actions: write
+      contents: read
       checks: write
-      contents: write
-      deployments: write
-      packages: write
-      pages: write
-      pull-requests: write
-      repository-projects: write
       statuses: write
-
     needs: unittest-check
     runs-on: ubuntu-latest
     steps:
