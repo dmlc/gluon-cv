@@ -4,13 +4,13 @@ on:
     workflows: ["Unit Test"]
     types:
       - completed
-permissions:
-  id-token: write
-  contents: read
-  statuses: read
 
 jobs:
   unittest-check:
+    permissions:
+      id-token: write
+      contents: read
+      statuses: read
     runs-on: ubuntu-latest
     steps:
       - uses: haya14busa/action-workflow_run-status@v1
