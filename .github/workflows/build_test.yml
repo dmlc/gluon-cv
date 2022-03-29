@@ -4,6 +4,11 @@ on:
     workflows: ["Unit Test"]
     types:
       - completed
+permissions:
+  id-token: write
+  contents: read
+  statuses: read
+
 jobs:
   unittest-check:
     runs-on: ubuntu-latest
@@ -48,8 +53,8 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
-          aws-access-key-id: ${{ secrets.GLUONCV_DEV_ACCESS_ID }}
-          aws-secret-access-key: ${{ secrets.GLUONCV_DEV_SECRET_ACCESS_KEY }}
+          role-to-assume: arn:aws:iam::985964311364:role/GluonCVCIRole
+          role-duration-seconds: 7200
           aws-region: us-east-1
       - name: Install dependencies
         run: |
@@ -118,8 +123,8 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
-          aws-access-key-id: ${{ secrets.GLUONCV_DEV_ACCESS_ID }}
-          aws-secret-access-key: ${{ secrets.GLUONCV_DEV_SECRET_ACCESS_KEY }}
+          role-to-assume: arn:aws:iam::985964311364:role/GluonCVCIRole
+          role-duration-seconds: 7200
           aws-region: us-east-1
       - name: Install dependencies
         run: |
@@ -188,8 +193,8 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
-          aws-access-key-id: ${{ secrets.GLUONCV_DEV_ACCESS_ID }}
-          aws-secret-access-key: ${{ secrets.GLUONCV_DEV_SECRET_ACCESS_KEY }}
+          role-to-assume: arn:aws:iam::985964311364:role/GluonCVCIRole
+          role-duration-seconds: 7200
           aws-region: us-east-1
       - name: Install dependencies
         run: |
@@ -262,8 +267,8 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
-          aws-access-key-id: ${{ secrets.GLUONCV_DEV_ACCESS_ID }}
-          aws-secret-access-key: ${{ secrets.GLUONCV_DEV_SECRET_ACCESS_KEY }}
+          role-to-assume: arn:aws:iam::985964311364:role/GluonCVCIRole
+          role-duration-seconds: 7200
           aws-region: us-east-1
       - name: Install dependencies
         run: |
