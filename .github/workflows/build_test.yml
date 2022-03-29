@@ -23,6 +23,7 @@ jobs:
       packages: write
       pages: write
       pull-requests: write
+      repository-projects: write
       statuses: write
 
     needs: unittest-check
