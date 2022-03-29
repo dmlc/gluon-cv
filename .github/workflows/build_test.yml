@@ -17,9 +17,14 @@ jobs:
     permissions:
       id-token: write
       actions: write
-      contents: write
       checks: write
+      contents: write
+      deployments: write
+      packages: write
+      pages: write
+      pull-requests: write
       statuses: write
+
     needs: unittest-check
     runs-on: ubuntu-latest
     steps:
