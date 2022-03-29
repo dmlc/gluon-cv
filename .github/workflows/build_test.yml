@@ -17,6 +17,9 @@ jobs:
     permissions:
       id-token: write
       contents: read
+      checks: read
+      metadata: read
+      statuses: read
     needs: unittest-check
     runs-on: ubuntu-latest
     steps:
