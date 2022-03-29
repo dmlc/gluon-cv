@@ -4,7 +4,10 @@ on:
     workflows: ["Unit Test"]
     types:
       - completed
-
+permissions:
+      id-token: write
+      contents: read
+      statuses: write
 jobs:
   unittest-check:
     runs-on: ubuntu-latest
@@ -14,11 +17,6 @@ jobs:
         if: ${{ github.event.workflow_run.conclusion != 'success' }}
         run: exit 1
   model_zoo_mxnet:
-    permissions:
-      id-token: write
-      contents: read
-      checks: write
-      statuses: write
     needs: unittest-check
     runs-on: ubuntu-latest
     steps:
@@ -94,9 +92,6 @@ jobs:
                                              --command "chmod +x ./.github/workflows/gpu_test.sh && ./.github/workflows/gpu_test.sh gluoncv tests/model_zoo" \
                                              --wait
   model_zoo_torch:
-    permissions:
-      id-token: write
-      contents: read
     needs: unittest-check
     runs-on: ubuntu-latest
     steps:
@@ -167,9 +162,6 @@ jobs:
                                              --command "chmod +x ./.github/workflows/gpu_test.sh && ./.github/workflows/gpu_test.sh gluoncv/torch tests/model_zoo_torch" \
                                              --wait
   auto:
-    permissions:
-      id-token: write
-      contents: read
     needs: unittest-check
     runs-on: ubuntu-latest
     steps:
@@ -240,9 +232,6 @@ jobs:
                                              --command "chmod +x ./.github/workflows/gpu_test.sh && ./.github/workflows/gpu_test.sh gluoncv tests/auto" \
                                              --wait
   build-docs:
-    permissions:
-      id-token: write
-      contents: read
     needs: [unittest-check, model_zoo_mxnet, model_zoo_torch, auto]
     runs-on: ubuntu-latest
     steps:
