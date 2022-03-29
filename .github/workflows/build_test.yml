@@ -7,6 +7,7 @@ on:
 permissions:
   id-token: write
   contents: read
+  statuses: read
 
 jobs:
   unittest-check:
