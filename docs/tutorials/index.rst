@@ -1,4 +1,4 @@
-MXNet Tutorials
+Apache MXNet Tutorials
 =========
 
 Interested in getting started in a new CV area? Here are some tutorials to help get started.
