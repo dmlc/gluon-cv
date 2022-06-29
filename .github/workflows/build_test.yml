@@ -8,6 +8,7 @@ permissions:
       id-token: write
       contents: read
       statuses: write
+      pull-requests: write
 jobs:
   unittest-check:
     runs-on: ubuntu-latest
