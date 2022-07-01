@@ -11,7 +11,7 @@ dependencies:
   - scipy
   - cython
   - pip=20.2.4
-  - requests
+  - requests==2.27.1
   - matplotlib
   - tqdm
   - pillow
