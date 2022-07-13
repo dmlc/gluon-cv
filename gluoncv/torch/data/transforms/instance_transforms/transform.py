@@ -968,13 +968,14 @@ class ResizeTransform(Transform):
         return ResizeTransform(self.new_h, self.new_w, self.h, self.w, self.interp)
 
 
+
 class RotationTransform(Transform):
     """
     This method returns a copy of this image, rotated the given
     number of degrees counter clockwise around its center.
     """
 
-    def __init__(self, h, w, angle, expand=True, center=None, interp=None):
+    def __init__(self, h, w, angle, expand=True, center=None, interp=None, box_method="largest"):
         """
         Args:
             h, w (int): original image size
@@ -985,6 +986,11 @@ class RotationTransform(Transform):
                 if left to None, the center will be fit to the center of each image
                 center has no effect if expand=True because it only affects shifting
             interp: cv2 interpolation method, default cv2.INTER_LINEAR
+            box_method: either `'largest'` (default) or `'ellipse'`. Affects how bboxes are rotated.
+                If `'ellipse'`, then bboxes are rotated as if the object is an ellipse rather than a
+                rectangle, which avoids creating oversized bounding boxes. (see https://arxiv.org/abs/2109.13488)
+                If `'largest'`, this will rotate the corner points and use their minimum/maximum
+                to create a new axis-aligned box.
         """
         super().__init__()
         image_center = np.array((w / 2, h / 2))
@@ -1005,6 +1011,10 @@ class RotationTransform(Transform):
         self.rm_coords = self.create_rotation_matrix()
         # Needed because of this problem https://github.com/opencv/opencv/issues/11784
         self.rm_image = self.create_rotation_matrix(offset=-0.5)
+
+        if box_method not in ["largest", "ellipse"]:
+            raise ValueError(f"Method '{box_method}' is not a valid box rotation method.")
+        self.box_method = box_method
 
     def apply_image(self, img, interp=None):
         """
@@ -1054,6 +1064,31 @@ class RotationTransform(Transform):
             (rotation.bound_w - self.w) // 2, (rotation.bound_h - self.h) // 2, self.w, self.h
         )
         return TransformList([rotation, crop])
+
+    def apply_box(self, box):
+        """
+        box should be a Nx4 floating point array of XYXY format in absolute coordinates.
+        """
+        if self.box_method == "largest":
+            return super().apply_box(box)
+        else:
+            box = np.asarray(box)
+            w, h = box[:, 2] - box[:, 0], box[:, 3] - box[:, 1]
+            x, y = box[:, 0] + w / 2, box[:, 1] + h / 2
+
+            # Create 32 keypoints along ellipsis
+            coords = [
+                [x + np.sin(t) * (w / 2), y + np.cos(t) * (h / 2)]
+                for t in np.arange(0, 2 * np.pi, 0.2)
+            ]  # 32x2xN
+            coords = np.moveaxis(coords, 2, 0).reshape(-1, 2)  # (N*32)x2
+
+            # Transform these coordinates in the same way as rectangle coordinates
+            coords = self.apply_coords(coords).reshape(-1, 32, 2)  # Nx32x2
+            minxy = coords.min(axis=1)
+            maxxy = coords.max(axis=1)
+            trans_boxes = np.concatenate((minxy, maxxy), axis=1)
+            return trans_boxes
 
 
 def HFlip_rotated_box(transform, rotated_boxes):
