@@ -20,7 +20,6 @@ CONFIG:
     LR_POLICY: 'Step'
     MOMENTUM: 0.9
     W_DECAY: 1e-5
-    LR_POLICY: 'Step'
     USE_WARMUP: False
     LR_MILESTONE: [40, 80]
     STEP: 0.1
