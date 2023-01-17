@@ -38,8 +38,6 @@ jobs:
       - name: unit-test
         shell: bash -l {0}
         run: |
-          export KMP_DUPLICATE_LIB_OK=TRUE
-          make clean
           pip install --upgrade pip setuptools wheel
           pip install mxnet nose coverage nose-timer
           pip install --upgrade --force-reinstall --no-deps .
