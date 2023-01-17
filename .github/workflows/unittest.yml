@@ -38,14 +38,10 @@ jobs:
       - name: unit-test
         shell: bash -l {0}
         run: |
-          conda env create -n gluon_cv_py3_test -f tests/py3_mxnet_ci.yml
-          conda env update -n gluon_cv_py3_test -f tests/py3_mxnet_ci.yml --prune
-          conda activate gluon_cv_py3_test
-          conda list
-          export CUDA_VISIBLE_DEVICES=0
           export KMP_DUPLICATE_LIB_OK=TRUE
           make clean
           pip install --upgrade pip setuptools wheel
+          pip install mxnet nose coverage
           pip install --upgrade --force-reinstall --no-deps .
           env
           export LD_LIBRARY_PATH=/usr/local/cuda-10.0/lib64
