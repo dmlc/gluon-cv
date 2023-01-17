@@ -3,6 +3,10 @@ Apache MXNet Tutorials
 
 Interested in getting started in a new CV area? Here are some tutorials to help get started.
 
+Note: For image classification or object detection task, feel free to explore tutorials in
+`AutoGluon MultiModalPredictor <https://auto.gluon.ai/stable/tutorials/multimodal/index.html>`_ with better support in PyTorch.
+
+
 Image Classification
 --------------------
 
