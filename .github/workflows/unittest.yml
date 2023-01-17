@@ -40,7 +40,7 @@ jobs:
         run: |
           pip install --upgrade pip setuptools wheel
           pip install mxnet nose coverage nose-timer
-          pip install --upgrade --force-reinstall --no-deps .
+          pip install --upgrade -e .
           python3 -c "import mxnet as mx"
           export TINY_COCO=~/.mxnet/datasets/tiny_coco
           export TINY_MOTORBIKE=~/.mxnet/datasets/tiny_motorbike
