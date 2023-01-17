@@ -45,6 +45,7 @@ jobs:
           export CUDA_VISIBLE_DEVICES=0
           export KMP_DUPLICATE_LIB_OK=TRUE
           make clean
+          pip install --upgrade pip setuptools wheel
           pip install --upgrade --force-reinstall --no-deps .
           env
           export LD_LIBRARY_PATH=/usr/local/cuda-10.0/lib64
