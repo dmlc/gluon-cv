@@ -38,10 +38,10 @@ jobs:
       - name: unit-test
         shell: bash -l {0}
         run: |
+          conda env create -n gluon_cv_py3_test -f tests/py3_mxnet_ci.yml
+          conda activate gluon_cv_py3_test
           pip install --upgrade pip setuptools wheel
-          pip install mxnet nose coverage nose-timer
           pip install --upgrade -e .
-          python3 -c "import mxnet as mx"
           export TINY_COCO=~/.mxnet/datasets/tiny_coco
           export TINY_MOTORBIKE=~/.mxnet/datasets/tiny_motorbike
           mkdir -p $TINY_COCO/annotations
