@@ -3,7 +3,7 @@ from functools import reduce
 import numpy as np
 
 from torch.utils.data import Sampler
-from torch._six import int_classes as _int_classes
+_int_classes = int
 
 
 __all__ = ['multiGridHelper', 'MultiGridBatchSampler']

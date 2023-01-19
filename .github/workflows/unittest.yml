@@ -39,17 +39,9 @@ jobs:
         shell: bash -l {0}
         run: |
           conda env create -n gluon_cv_py3_test -f tests/py3_mxnet_ci.yml
-          conda env update -n gluon_cv_py3_test -f tests/py3_mxnet_ci.yml --prune
           conda activate gluon_cv_py3_test
-          conda list
-          export CUDA_VISIBLE_DEVICES=0
-          export KMP_DUPLICATE_LIB_OK=TRUE
-          make clean
-          pip install --upgrade --force-reinstall --no-deps .
-          env
-          export LD_LIBRARY_PATH=/usr/local/cuda-10.0/lib64
-          export MPLBACKEND=Agg
-          export MXNET_CUDNN_AUTOTUNE_DEFAULT=0
+          pip install --upgrade pip setuptools wheel
+          pip install --upgrade -e .
           export TINY_COCO=~/.mxnet/datasets/tiny_coco
           export TINY_MOTORBIKE=~/.mxnet/datasets/tiny_motorbike
           mkdir -p $TINY_COCO/annotations

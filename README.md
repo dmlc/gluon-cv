@@ -26,6 +26,9 @@ models. This toolkit offers four main features:
 4. Carefully designed APIs that greatly reduce the implementation complexity
 5. Community supports
 
+Please also checkout [AutoGluon](https://github.com/autogluon/autogluon) if you have [image classification](https://auto.gluon.ai/stable/tutorials/multimodal/image_prediction/index.html) or [object detection](https://auto.gluon.ai/stable/tutorials/multimodal/object_detection/index.html) needs. We have built the [MultimodalPredictor](https://auto.gluon.ai/stable/tutorials/multimodal/index.html) with an improved model zoo, including [TIMM](https://github.com/rwightman/pytorch-image-models), [Huggingface](https://huggingface.co/), [MMDetection](https://github.com/open-mmlab/mmdetection) and more. With just a few lines of code, you can train and deploy high accuracy computer vision models for your application.
+
+
 # Demo
 
 <div align="center">

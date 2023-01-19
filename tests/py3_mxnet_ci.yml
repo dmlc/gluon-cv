@@ -3,26 +3,10 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - python=3.6
-  - perl
-  - sphinx=1.7.2
+  - python=3.7
   - nose
   - coverage=4.5.4
-  - scipy
-  - cython
-  - pip=20.2.4
-  - requests==2.27.1
-  - matplotlib
-  - tqdm
-  - pillow
   - pip:
     - mxnet
     - coverage-badge
-    - awscli
     - nose-timer
-    - opencv-python
-    - git+https://github.com/zhanghang1989/detail-api.git#subdirectory=PythonAPI
-    - portalocker
-    - autocfg>=0.0.6
-    - boto3
-    - autogluon.core==0.2.0
