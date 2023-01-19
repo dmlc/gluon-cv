@@ -102,12 +102,13 @@ def to_mask(polys, size):
     return cocomask.decode(rle)
 
 
-def fill(masks, bboxes, size, fast_fill=True):
+def fill(masks, bbox, size, fast_fill=True):
     """Fill mask to full image size
 
     Parameters
     ----------
-    mask : numpy.ndarray with dtype=uint8
+    masks : list of numpy.ndarray
+        Numpy.ndarray with dtype=uint8
         Binary mask prediction of a box
     bbox : numpy.ndarray of float
         They are :math:`(xmin, ymin, xmax, ymax)`.
@@ -124,7 +125,7 @@ def fill(masks, bboxes, size, fast_fill=True):
     from scipy import interpolate
 
     width, height = size
-    x1, y1, x2, y2 = np.split(bboxes, 4, axis=1)
+    x1, y1, x2, y2 = np.split(bbox, 4, axis=1)
     m_h, m_w = masks.shape[1:]
     x1, y1, x2, y2 = x1.reshape((-1,)), y1.reshape((-1,)), x2.reshape((-1,)), y2.reshape((-1,))
     # pad mask
