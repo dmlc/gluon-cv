@@ -85,7 +85,26 @@ def extract_train(tar_fname, target_dir, with_rec=False, num_thread=1):
             class_dir = os.path.splitext(class_fname)[0]
             os.mkdir(class_dir)
             with tarfile.open(class_fname) as f:
-                f.extractall(class_dir)
+                def is_within_directory(directory, target):
+                    
+                    abs_directory = os.path.abspath(directory)
+                    abs_target = os.path.abspath(target)
+                
+                    prefix = os.path.commonprefix([abs_directory, abs_target])
+                    
+                    return prefix == abs_directory
+                
+                def safe_extract(tar, path=".", members=None, *, numeric_owner=False):
+                
+                    for member in tar.getmembers():
+                        member_path = os.path.join(path, member.name)
+                        if not is_within_directory(path, member_path):
+                            raise Exception("Attempted Path Traversal in Tar File")
+                
+                    tar.extractall(path, members, numeric_owner=numeric_owner) 
+                    
+                
+                safe_extract(f, class_dir)
             os.remove(class_fname)
             pbar.update(1)
         pbar.close()
@@ -96,7 +115,26 @@ def extract_val(tar_fname, target_dir, with_rec=False, num_thread=1):
     os.makedirs(target_dir)
     print('Extracting ' + tar_fname)
     with tarfile.open(tar_fname) as tar:
-        tar.extractall(target_dir)
+        def is_within_directory(directory, target):
+            
+            abs_directory = os.path.abspath(directory)
+            abs_target = os.path.abspath(target)
+        
+            prefix = os.path.commonprefix([abs_directory, abs_target])
+            
+            return prefix == abs_directory
+        
+        def safe_extract(tar, path=".", members=None, *, numeric_owner=False):
+        
+            for member in tar.getmembers():
+                member_path = os.path.join(path, member.name)
+                if not is_within_directory(path, member_path):
+                    raise Exception("Attempted Path Traversal in Tar File")
+        
+            tar.extractall(path, members, numeric_owner=numeric_owner) 
+            
+        
+        safe_extract(tar, target_dir)
     # build rec file before images are moved into subfolders
     if with_rec:
         build_rec_process(target_dir, False, num_thread)
