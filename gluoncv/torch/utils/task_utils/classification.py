@@ -198,7 +198,7 @@ def test_classification(model, test_loader, criterion, cfg, file):
             top5.update(prec5.item(), val_batch.size(0))
             batch_time.update(time.time() - end)
             end = time.time()
-            if step % cfg.CONFIG.LOG.DISPLAY_FREQ == 0 and cfg.DDP_CONFIG.GPU_WORLD_RANK == 0:
+            if step % cfg.CONFIG.LOG.DISPLAY_FREQ == 0 == cfg.DDP_CONFIG.GPU_WORLD_RANK:
                 print('----Testing----')
                 print_string = 'Epoch: [{0}][{1}/{2}]'.format(
                     0, step + 1, len(test_loader))
