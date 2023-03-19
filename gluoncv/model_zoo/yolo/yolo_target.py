@@ -103,6 +103,8 @@ class YOLOV3PrefetchTargetGenerator(gluon.Block):
                 for m in range(matches.shape[1]):
                     if valid_gts[b, m] < 1:
                         break
+                    if np_gt_ids[b, m, 0] < 0:  # ignore fake bbox
+                        break
                     match = int(matches[b, m])
                     nlayer = np.nonzero(num_anchors > match)[0][0]
                     height = xs[nlayer].shape[2]
