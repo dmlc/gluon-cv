@@ -1,0 +1,91 @@
+.clr {
+    clear: both;
+}
+
+.tab {
+    overflow: hidden;
+    border: 1px solid #ccc;
+    background-color: #f1f1f1;
+}
+
+.tab button {
+    background-color: inherit;
+    font-size: 20px;
+    float: left;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    padding: 14px 16px;
+    transition: 0.3s;
+}  
+
+.tab button:hover {
+    background-color: #ddd;
+}
+
+.tab button.selected {
+    background-color: #ccc;
+}
+
+.video_container {
+    float: left;
+    width: 50%;
+    height: 0px;
+    padding-top: 33.4%; /* 50% * (480/720) */
+    position: relative;
+}
+
+.display {
+    width: 100%;
+    height: 100%;
+    position:absolute;
+    top: 0;
+    left: 0;
+    border: 2px solid black;
+    box-sizing: border-box;
+}
+
+.canvas_container {
+    float:right;
+    width: 50%;
+    height: 0px;
+    padding-top: 33.4%;
+    position: relative;
+}
+
+#camera_prompt {
+    float: left;
+    margin: 5px;
+}
+
+#camera_select {
+    float: left;
+    margin: 13px;
+}
+
+#predict_button {
+    background-color: white;
+    color: black;
+    font-size: 25px;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 10px;
+}
+
+#predict_button:hover {
+    background-color: red;
+    color: white;
+}
+
+#classification_left, #classification_right {
+    display: inline-block;
+}
+
+.classification_label {
+    margin: 10px;
+}
+
+.classification_prob {
+    display: inline-block;
+    margin: 5px;
+}
