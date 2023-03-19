@@ -126,9 +126,15 @@ def get_dataloader(net, train_dataset, val_dataset, data_shape, batch_size, num_
         _, _, anchors = net(mx.nd.zeros((1, 3, height, width), ctx))
     anchors = anchors.as_in_context(mx.cpu())
     batchify_fn = Tuple(Stack(), Stack(), Stack())  # stack image, cls_targets, box_targets
+    train_sampler = \
+        gcv.nn.sampler.SplitSortedBucketSampler(train_dataset.get_im_aspect_ratio(),
+                                                batch_size,
+                                                num_parts=hvd.size() if args.horovod else 1,
+                                                part_index=hvd.rank() if args.horovod else 0,
+                                                shuffle=True)
     train_loader = gluon.data.DataLoader(
         train_dataset.transform(SSDDefaultTrainTransform(width, height, anchors)),
-        batch_size, True, batchify_fn=batchify_fn, last_batch='rollover', num_workers=num_workers)
+        batch_sampler=train_sampler, batchify_fn=batchify_fn, num_workers=num_workers)
     val_batchify_fn = Tuple(Stack(), Pad(pad_val=-1))
     val_loader = gluon.data.DataLoader(
         val_dataset.transform(SSDDefaultValTransform(width, height)),
@@ -341,15 +347,17 @@ def train(net, train_data, val_data, eval_metric, ctx, args):
                     name1, loss1 = ce_metric.get()
                     name2, loss2 = smoothl1_metric.get()
                     logger.info('[Epoch {}][Batch {}], Speed: {:.3f} samples/sec, {}={:.3f}, {}={:.3f}'.format(
-                        epoch, i, args.batch_size/(time.time()-btic), name1, loss1, name2, loss2))
-                btic = time.time()
+                        epoch, i, args.log_interval * args.batch_size / (time.time() - btic),
+                        name1, loss1, name2, loss2))
+                    btic = time.time()
 
         if (not args.horovod or hvd.rank() == 0):
             name1, loss1 = ce_metric.get()
             name2, loss2 = smoothl1_metric.get()
             logger.info('[Epoch {}] Training cost: {:.3f}, {}={:.3f}, {}={:.3f}'.format(
                 epoch, (time.time()-tic), name1, loss1, name2, loss2))
-            if (epoch % args.val_interval == 0) or (args.save_interval and epoch % args.save_interval == 0):
+            if ((epoch + 1) % args.val_interval == 0) or \
+                    (args.save_interval and (epoch + 1) % args.save_interval == 0):
                 # consider reduce the frequency of validation to save time
                 map_name, mean_ap = validate(net, val_data, ctx, eval_metric)
                 val_msg = '\n'.join(['{}={}'.format(k, v) for k, v in zip(map_name, mean_ap)])
