@@ -5,9 +5,7 @@ from __future__ import absolute_import
 import types
 
 def import_dummy_module(code, name):
-    # create blank module
     module = types.ModuleType(name)
-    # populate the module with code
     exec(code, module.__dict__)
     return module
 
@@ -20,15 +18,18 @@ def __getattr__(name):
 from . import bbox
 from . import random
 from . import filesystem
-try:
-    import mxnet
+from ..backend import BackendManager, Backend
+
+_manager = BackendManager()
+
+if _manager.is_available(Backend.MXNET):
     from . import viz
     from . import metrics
     from . import parallel
     from .lr_scheduler import LRSequential, LRScheduler
     from .export_helper import export_block, export_tvm
     from .sync_loader_helper import split_data, split_and_load
-except ImportError:
+else:
     viz = import_dummy_module(dummy_module, 'viz')
     metrics = import_dummy_module(dummy_module, 'metrics')
     parallel = import_dummy_module(dummy_module, 'parallel')

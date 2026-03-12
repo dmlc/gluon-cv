@@ -12,20 +12,26 @@ import cv2
 from ..data import is_url, url_data
 from ...utils.filesystem import import_try_install
 from ...utils.bbox import bbox_xywh_to_xyxy, bbox_clip_xyxy
+from ...backend import BackendManager, Backend, is_available
+
 try:
     import xml.etree.cElementTree as ET
 except ImportError:
     import xml.etree.ElementTree as ET
-try:
-    import mxnet as mx
+
+_manager = BackendManager()
+
+if _manager.is_available(Backend.MXNET):
+    mx = _manager.get_module(Backend.MXNET)
     MXDataset = mx.gluon.data.Dataset
-except ImportError:
+else:
     MXDataset = object
     mx = None
-try:
-    import torch
+
+if _manager.is_available(Backend.PYTORCH):
+    torch = _manager.get_module(Backend.PYTORCH)
     TorchDataset = torch.utils.data.Dataset
-except ImportError:
+else:
     TorchDataset = object
     torch = None
 
